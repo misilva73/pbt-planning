@@ -1,0 +1,3 @@
+# Python virtualenv used to run scripts/gen_gantt.py
+.venv/
+__pycache__/

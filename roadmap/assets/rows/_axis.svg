@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1056" height="58" viewBox="0 0 1056 58" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1056" height="58" fill="#ffffff"/>
+<rect x="258" y="16" width="180" height="20" fill="#f1f5f9" stroke="#e2e8f0"/>
+<text x="348.0" y="30" text-anchor="middle" font-size="12" font-weight="600" fill="#334155">2026</text>
+<rect x="438" y="16" width="360" height="20" fill="#f1f5f9" stroke="#e2e8f0"/>
+<text x="618.0" y="30" text-anchor="middle" font-size="12" font-weight="600" fill="#334155">2027</text>
+<rect x="798" y="16" width="240" height="20" fill="#f1f5f9" stroke="#e2e8f0"/>
+<text x="918.0" y="30" text-anchor="middle" font-size="12" font-weight="600" fill="#334155">2028</text>
+<text x="273.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">07</text>
+<text x="303.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">08</text>
+<text x="333.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">09</text>
+<text x="363.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">10</text>
+<text x="393.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">11</text>
+<text x="423.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">12</text>
+<text x="453.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">01</text>
+<text x="483.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">02</text>
+<text x="513.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">03</text>
+<text x="543.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">04</text>
+<text x="573.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">05</text>
+<text x="603.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">06</text>
+<text x="633.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">07</text>
+<text x="663.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">08</text>
+<text x="693.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">09</text>
+<text x="723.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">10</text>
+<text x="753.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">11</text>
+<text x="783.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">12</text>
+<text x="813.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">01</text>
+<text x="843.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">02</text>
+<text x="873.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">03</text>
+<text x="903.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">04</text>
+<text x="933.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">05</text>
+<text x="963.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">06</text>
+<text x="993.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">07</text>
+<text x="1023.0" y="50" text-anchor="middle" font-size="9.5" fill="#64748b">08</text>
+<text x="12" y="30" font-size="12" font-weight="700" fill="#0f172a">Deliverable</text>
+<line x1="618" y1="38" x2="618" y2="58" stroke="#b45309" stroke-width="1.6" stroke-dasharray="5 4"/>
+<text x="618.0" y="11" text-anchor="middle" font-size="11" font-weight="700" fill="#b45309">◆ H*</text>
+<line x1="978" y1="38" x2="978" y2="58" stroke="#b91c1c" stroke-width="1.6" stroke-dasharray="5 4"/>
+<text x="978.0" y="11" text-anchor="middle" font-size="11" font-weight="700" fill="#b91c1c">◆ I*</text>
+</svg>

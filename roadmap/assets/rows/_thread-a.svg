@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1056" height="26" viewBox="0 0 1056 26" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1056" height="26" fill="#0f172a"/>
+<line x1="618" y1="0" x2="618" y2="26" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="5 4" stroke-opacity="0.35"/>
+<line x1="978" y1="0" x2="978" y2="26" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="5 4" stroke-opacity="0.35"/>
+<text x="12" y="17.0" font-size="11.5" font-weight="700" fill="#ffffff" letter-spacing="0.5">THREAD A · TRIE DESIGN</text>
+</svg>
