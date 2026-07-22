@@ -4,7 +4,7 @@
 |---|---|
 | **Thread** | B · Migration |
 | **Workstream** | Specs |
-| **Timeline** | 2026-09 → 2027-01 (5 months) |
+| **Timeline** | 2026-07 → 2026-10 (4 months) |
 | **Migration phase** | Phase 1 — Prototypes & Evidence |
 | **Milestone alignment** | feeds H\* (2027-06) |
 | **Status** | Not started (as of 2026-07) |
@@ -26,7 +26,7 @@ what turns snapshot ingestion into a sequential bulk-load rather than random ins
 - Reproducibility conformance notes so B-T1 can build golden fixtures against the format.
 
 ## Dependencies
-- **Upstream (blocks this):** [B-S1](B-S1-eip7748-adaptation.md) — anchor `N` / conversion semantics define what the snapshot and preimages represent.
+- **Co-developed in parallel:** [B-S1](B-S1-offline-migration-eip.md) — runs the same window (2026-07→2026-10); anchor `N` / conversion semantics (which define what the snapshot and preimages represent) are aligned jointly with B-S1 rather than waiting on it.
 - **Downstream (this blocks):** [B-C3](B-C3-snapshot-production-pipeline.md), [A-C4](A-C4-snapshot-serving-verification.md), [B-T1](B-T1-conversion-replay-vectors.md).
 
 ## Owners / teams

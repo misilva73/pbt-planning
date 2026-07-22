@@ -30,7 +30,7 @@ green client implementations run against.
   once per block, one witness copy), and a witness-branch-cost value left as a parameter
   until A-S3 fixes it.
 - A fixture format that carries the PBT state root (parameterized on the hash function until
-  A-S2 lands) and CI wiring so clients consume the ported suite.
+  the hash-function dependency lands) and CI wiring so clients consume the ported suite.
 
 ## Dependencies
 - **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) — the key/value tree,
@@ -45,7 +45,7 @@ green client implementations run against.
 
 ## Exit criteria (definition of done)
 - [ ] EEST can fill and run PBT state/blockchain tests end to end, producing fixtures with
-      PBT state (root parameterized on hash until A-S2).
+      PBT state (root parameterized on hash until the hash-function dependency resolves).
 - [ ] Access-event tests cover EIP-4762 with PBT's content-addressed-code and
       branch-cost-parameter modifications.
 - [ ] At least one client implementation ([A-C1](A-C1-client-tree-implementations.md))
@@ -54,7 +54,7 @@ green client implementations run against.
 
 ## Risks & open questions
 - Hash function is not final (BLAKE3 in the reference impl only): root-bearing fixtures must
-  stay hash-parameterized until [A-S2](A-S2-hash-function-selection.md) — see
+  stay hash-parameterized until the [hash-function dependency](../README.md) resolves — see
   [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md) (hash-function
   selection).
 - `WITNESS_BRANCH_COST` and the rest of the witness-gas constants are not yet fixed for PBT's
@@ -66,3 +66,5 @@ green client implementations run against.
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
 - [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
 - [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md)
+- [jsign/binary-tree-spec](https://github.com/jsign/binary-tree-spec) — existing Python binary-tree
+  reference impl (EIP-7864, BLAKE3) that the ported fillers can cross-check against once adapted to PBT.

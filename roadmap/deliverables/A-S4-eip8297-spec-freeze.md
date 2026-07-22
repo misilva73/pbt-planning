@@ -4,7 +4,7 @@
 |---|---|
 | **Thread** | A · Trie Design |
 | **Workstream** | Specs |
-| **Timeline** | 2027-03 → 2027-06 (4 months) |
+| **Timeline** | 2027-01 → 2027-03 (3 months) |
 | **Migration phase** | Phase 2-3 |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
 | **Status** | Not started (as of 2026-07) |
@@ -18,13 +18,13 @@ Freeze the final EIP-8297 as the H\* Considered-for-Inclusion (CFI) spec: keys, 
 - A frozen EIP-8297 text in which every previously-open parameter is pinned:
   - **Keys** — variable-length, prefix-free; per-zone fixed lengths (accounts/code 34 bytes, storage 66 bytes); `MAX_KEY_LENGTH = 8192`; first-byte zones (`0x00`/`0x01`/`0xFF`, `0x02`–`0xFE` reserved).
   - **Node types** — `LeafNode` (complete key + value) and `BranchNode` (compressed bit prefix + two children); tagged merkelization (`LEAF_TAG`/`BRANCH_TAG`).
-  - **Hash `H`** — the function chosen in [A-S2](A-S2-hash-function-selection.md), fixed for both merkelization and `key_hash` (including Poseidon2 field encoding if selected).
-  - **Gas constants** — the PBT-recalibrated witness/access-event values from [A-S3](A-S3-witness-gas-recalibration.md), fixed.
+  - **Hash `H`** — the function decided by the [hash-function dependency](../README.md) (external, due end 2026), fixed for both merkelization and `key_hash` (including Poseidon2 field encoding if selected).
+  - **Gas constants** — provisional witness/access-event values from early prototypes. The full PBT witness-gas recalibration ([A-S3](A-S3-witness-gas-recalibration.md)) is **decoupled** from this freeze and lands later (2028) for a subsequent gas-focused fork, consistent with PBT-native gas being off the critical path to the swap.
 - CFI status secured on the H\* fork agenda (coordinated via [A-O1](A-O1-tree-spec-socialization.md)).
 - A change-control statement: post-freeze edits require re-opening only through explicit process, so rehearsals target a stable spec.
 
 ## Dependencies
-- **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) (base design), [A-S2](A-S2-hash-function-selection.md) (hash `H`), [A-S3](A-S3-witness-gas-recalibration.md) (gas constants). All three must be resolved before freeze.
+- **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) (base design) and the [hash-function dependency](../README.md) (hash `H`, external, due end 2026) — both must be resolved before freeze. Witness-gas recalibration ([A-S3](A-S3-witness-gas-recalibration.md)) is **decoupled** and is **not** a freeze blocker; the freeze ships provisional gas constants, refined later.
 - **Downstream (this blocks):** the migration thread's rehearsals and devnets rely on a frozen spec — e.g. [A-T3](A-T3-pbt-genesis-conformance-sync-tests.md), [A-C3](A-C3-multiclient-pbt-genesis-devnets.md), [B-T2](B-T2-full-cycle-devnet-swap.md), and ultimately the mainnet window [B-C6](B-C6-mainnet-window.md).
 
 ## Owners / teams
@@ -33,14 +33,14 @@ Freeze the final EIP-8297 as the H\* Considered-for-Inclusion (CFI) spec: keys, 
 - ACDE/ACDC coordination via [A-O1](A-O1-tree-spec-socialization.md) — secures CFI/H\* scheduling.
 
 ## Exit criteria (definition of done)
-- [ ] Keys, node types, hash `H`, and gas constants all fixed in the EIP text with no `TBD`/pending markers.
+- [ ] Keys, node types, and hash `H` all fixed in the EIP text with no `TBD`/pending markers; witness-gas constants marked provisional (final recalibration decoupled to [A-S3](A-S3-witness-gas-recalibration.md)).
 - [ ] Poseidon2 field encoding (if applicable) included and final.
 - [ ] EIP-8297 accepted as CFI on the H\* (2027-06) fork agenda.
 - [ ] Client teams sign off that the frozen spec is a stationary target for rehearsals.
 - [ ] Change-control process for any post-freeze amendment documented.
 
 ## Risks & open questions
-- Freeze cannot happen while [A-S2](A-S2-hash-function-selection.md) (dominant open parameter) or [A-S3](A-S3-witness-gas-recalibration.md) (unfixed gas constants) are open; slippage in either pushes the freeze and risks the H\* window. See [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+- Freeze depends on the [hash-function dependency](../README.md) (hash `H`, the dominant open parameter) resolving by end 2026; slippage there pushes the freeze. Witness-gas recalibration ([A-S3](A-S3-witness-gas-recalibration.md)) is deliberately decoupled and does **not** block the freeze — provisional constants are frozen now and refined later. See [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
 - State-expiry / resurrection mechanics are deferred to a separate EIP and are explicitly **out of scope** for this freeze; the frozen spec must not embed assumptions that block a later expiry EIP (e.g. reserved zones, reference counting for shared code).
 - Diagram and rendered spec-site content must be brought in line with the frozen design so the CFI artifact is internally consistent (the old stem-node diagram must already be redrawn per [A-S1](A-S1-eip8297-spec-convergence.md)).
 

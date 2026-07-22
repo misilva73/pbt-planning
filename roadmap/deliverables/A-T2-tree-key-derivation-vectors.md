@@ -18,7 +18,7 @@ encoding, and the full zone/stem/sub-index embedding of Ethereum state. These ve
 the first concrete evidence artifact and the reference clients ([A-C1](A-C1-client-tree-implementations.md))
 check their tree code against. Because the tree hash function is not yet chosen, the initial
 vectors are **structure-only** — they pin key bytes, node shapes and preimage layouts, and
-defer digest/root values until the hash is fixed by [A-S2](A-S2-hash-function-selection.md).
+defer digest/root values until the hash is fixed by the [hash-function dependency](../README.md).
 
 ## Scope — what ships
 - **Key-derivation vectors** covering the worked examples in the key-derivation spec:
@@ -36,12 +36,12 @@ defer digest/root values until the hash is fixed by [A-S2](A-S2-hash-function-se
   bits), `LEAF_TAG`/`BRANCH_TAG` preimage layouts, and prefix-freedom / length-bound rejection
   cases (`MAX_KEY_LENGTH = 8192`).
 - Structure-only now; a hash-parameterized layer that fills in `H(...)` digests and roots once
-  A-S2 lands.
+  the hash-function dependency lands.
 
 ## Dependencies
 - **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) — vectors track the
   converged PR #11978 constants and algorithms. Hash outputs additionally need
-  [A-S2](A-S2-hash-function-selection.md) before they can be pinned.
+  the [hash-function dependency](../README.md) before they can be pinned.
 - **Downstream (this blocks):** [A-C1](A-C1-client-tree-implementations.md) — client tree
   implementations validate key derivation and merkelization against these vectors.
 
@@ -54,12 +54,12 @@ defer digest/root values until the hash is fixed by [A-S2](A-S2-hash-function-se
       encoding, and rejection paths, each independently checkable.
 - [ ] Reference implementation and at least one client agree on every structure-only vector.
 - [ ] Hash-parameterized layer defined so digest/root values drop in mechanically once
-      [A-S2](A-S2-hash-function-selection.md) fixes the hash.
+      the [hash-function dependency](../README.md) fixes the hash.
 - [ ] Vectors are versioned against the PR #11978 constant set and flagged if constants change.
 
 ## Risks & open questions
 - Hash function not final — the dominant open parameter. Digests and roots stay unpinned
-  until [A-S2](A-S2-hash-function-selection.md); see
+  until the [hash-function dependency](../README.md) resolves; see
   [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
   (hash-function selection: BLAKE3 / Poseidon2 / Keccak).
 - Header stem constants (`0x40` storage onset, `0x80` code onset) remain protocol-embedded;
@@ -71,3 +71,6 @@ defer digest/root values until the hash is fixed by [A-S2](A-S2-hash-function-se
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
 - [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
 - [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md)
+- [jsign/binary-tree-spec](https://github.com/jsign/binary-tree-spec) — candidate Python reference
+  implementation to adapt for vector generation (currently EIP-7864, not yet PR #11978; `tree.py`
+  merkelization + `embedding.py` key derivation with existing `test_*` suites).

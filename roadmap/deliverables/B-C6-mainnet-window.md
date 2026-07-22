@@ -4,9 +4,9 @@
 |---|---|
 | **Thread** | B · Migration |
 | **Workstream** | Client implementation |
-| **Timeline** | 2028-01 → 2028-06 (6 months) |
+| **Timeline** | 2028-04 → 2028-06 (3 months) |
 | **Migration phase** | Phase 5 — Mainnet Window |
-| **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
+| **Milestone alignment** | feeds fork S = I\* (2028-06) |
 | **Status** | Not started (as of 2026-07) |
 
 ← [Back to roadmap](../README.md)

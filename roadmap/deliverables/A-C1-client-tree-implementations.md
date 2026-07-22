@@ -29,7 +29,7 @@ foundation every later devnet, sync, and migration deliverable builds on.
   `1 ≤ len(key) ≤ MAX_KEY_LENGTH` (8192).
 - `merkelize` with `LEAF_TAG`/`BRANCH_TAG` and `encode_bit_prefix`
   (2-byte big-endian bit count + MSB-first packed bits), driven by the
-  A-S2-selected hash `H` used both for merkelization and `key_hash`.
+  hash `H` (selected by the hash-function dependency) used both for merkelization and `key_hash`.
 - Full key-derivation embedding: account header stem (BASIC_DATA with the
   4-byte-at-offset-4 `code_size`, CODE_HASH, header storage 0..63, header code
   chunks 0..127), content-addressed code overflow (`CODE_ZONE`), and storage
@@ -44,7 +44,7 @@ foundation every later devnet, sync, and migration deliverable builds on.
 - EL: geth, Nethermind, Besu, Reth, Erigon (+ CL where relevant)
 
 ## Dependencies
-- **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) (spec convergence), [A-S2](A-S2-hash-function-selection.md) (hash function `H` selection)
+- **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) (spec convergence), the [hash-function dependency](../README.md) (hash function `H` selection)
 - **Downstream (this blocks):** [A-C2](A-C2-pbt-native-state-sync.md), [A-C3](A-C3-multiclient-pbt-genesis-devnets.md), [B-C1](B-C1-converter-prototype.md), [A-T4](A-T4-hardware-matrix-benchmarks.md)
 
 ## Exit criteria (definition of done)
@@ -71,3 +71,6 @@ foundation every later devnet, sync, and migration deliverable builds on.
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
 - [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [jsign/binary-tree-spec](https://github.com/jsign/binary-tree-spec) — candidate Python reference
+  implementation clients can check tree code against (currently EIP-7864 — must be adapted to PBT's
+  prefix-free keys, two node types, and zone partitioning before roots match PR #11978).

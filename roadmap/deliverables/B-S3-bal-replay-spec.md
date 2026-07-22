@@ -4,7 +4,7 @@
 |---|---|
 | **Thread** | B · Migration |
 | **Workstream** | Specs |
-| **Timeline** | 2026-11 → 2027-04 (6 months) |
+| **Timeline** | 2026-11 → 2026-12 (2 months) |
 | **Migration phase** | Phase 1 — Prototypes & Evidence |
 | **Milestone alignment** | feeds H\* (2027-06) |
 | **Status** | Not started (as of 2026-07) |
@@ -28,7 +28,7 @@ method with a verifiable, re-execution-free mechanism.
 - Determinism/ordering requirements so replay is reproducible across clients.
 
 ## Dependencies
-- **Upstream (blocks this):** [B-S1](B-S1-eip7748-adaptation.md) — anchor/fork semantics. Consumes **EIP-7928 (BAL)**, which ships in Glamsterdam (≈ 2026-09) and is assumed mainnet-live (out of scope here).
+- **Upstream (blocks this):** [B-S1](B-S1-offline-migration-eip.md) — anchor/fork semantics. Consumes **EIP-7928 (BAL)**, which ships in Glamsterdam (≈ 2026-09) and is assumed mainnet-live (out of scope here).
 - **Downstream (this blocks):** [B-C2](B-C2-bal-replay-engine.md).
 
 ## Owners / teams

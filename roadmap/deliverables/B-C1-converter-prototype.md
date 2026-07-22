@@ -41,7 +41,7 @@ determinism before it hardens into the production pipeline.
   clients (Reth, Erigon) can supply preimages via extraction at height `E`.
 
 ## Dependencies
-- **Upstream (blocks this):** [B-S1](B-S1-eip7748-adaptation.md) (EIP-7748 → PBT conversion rules), [A-C1](A-C1-client-tree-implementations.md) (PBT tree + key derivation)
+- **Upstream (blocks this):** [B-S1](B-S1-offline-migration-eip.md) (offline-migration EIP: MPT→PBT conversion rules), [A-C1](A-C1-client-tree-implementations.md) (PBT tree + key derivation)
 - **Downstream (this blocks):** [B-C3](B-C3-snapshot-production-pipeline.md), [B-C4](B-C4-production-rehearsals.md)
 
 ## Exit criteria (definition of done)
@@ -64,7 +64,7 @@ determinism before it hardens into the production pipeline.
 - **Determinism across DB engines.** hash-keyed vs raw-keyed iteration order
   differs; the external merge-sort must impose a canonical order so all clients
   converge on the same tree regardless of source layout.
-- Tree hash `H` and key-derivation constants are not yet frozen (A-S2), so the
+- Tree hash `H` and key-derivation constants are not yet frozen (the hash-function dependency), so the
   converter must keep both pluggable.
 
 ## References

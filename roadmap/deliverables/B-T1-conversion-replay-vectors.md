@@ -24,7 +24,7 @@ turning the specs (B-S1/B-S2/B-S3) into executable conformance checks.
 - Machine-readable format consumable by EEST and each EL client's test harness; parallels the tree/key-derivation vectors so tooling is shared.
 
 ## Dependencies
-- **Upstream (blocks this):** [B-S1](B-S1-eip7748-adaptation.md), [B-S2](B-S2-preimage-snapshot-manifest-spec.md).
+- **Upstream (blocks this):** [B-S1](B-S1-offline-migration-eip.md), [B-S2](B-S2-preimage-snapshot-manifest-spec.md).
 - **Downstream (this blocks):** parallels [B-C1](B-C1-converter-prototype.md) — the converter prototype is validated against these fixtures; also informs [B-C2](B-C2-bal-replay-engine.md).
 
 ## Owners / teams

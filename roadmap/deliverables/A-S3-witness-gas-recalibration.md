@@ -4,9 +4,9 @@
 |---|---|
 | **Thread** | A · Trie Design |
 | **Workstream** | Specs |
-| **Timeline** | 2026-10 → 2027-04 (7 months) |
-| **Migration phase** | Phase 1 |
-| **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
+| **Timeline** | 2028-01 → 2028-03 (3 months) |
+| **Migration phase** | Deferred — post-benchmark (PBT-native gas decoupled from the swap) |
+| **Milestone alignment** | decoupled from H\*/I\*; feeds a later gas-focused fork |
 | **Status** | Not started (as of 2026-07) |
 
 ← [Back to roadmap](../README.md)
@@ -20,8 +20,8 @@ Recalibrate the EIP-4762 access-event gas schedule for PBT's tree geometry and s
 - Documentation of how the recalibration was derived (depth distribution of PBT branches vs Verkle), so the constants are defensible at freeze.
 
 ## Dependencies
-- **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) (stable key scheme and node types). Informed by [A-T4](A-T4-hardware-matrix-benchmarks.md) benchmarks (state-op and proof measurements that ground the depth/cost profile).
-- **Downstream (this blocks):** [A-S4](A-S4-eip8297-spec-freeze.md) (gas constants must be fixed to freeze the spec).
+- **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) (stable key scheme and node types) and [A-T4](A-T4-hardware-matrix-benchmarks.md) hardware-matrix benchmarks — this deliverable is **deferred until the benchmark data lands** (2027-12), so the recalibration is grounded on measured state-op and proof costs rather than early estimates.
+- **Downstream (this blocks):** a **later gas-focused fork**. This does **not** block the [A-S4](A-S4-eip8297-spec-freeze.md) spec freeze (which ships by 2027-03 with provisional witness-gas constants); PBT-native gas is deliberately decoupled from the swap.
 
 ## Owners / teams
 - EIP-8297 authors and EIP-4762 maintainers (access-event framework).
@@ -31,11 +31,11 @@ Recalibrate the EIP-4762 access-event gas schedule for PBT's tree geometry and s
 - [ ] PBT-calibrated witness gas constants (incl. `WITNESS_BRANCH_COST`) proposed with supporting depth/cost analysis.
 - [ ] Content-addressed code access spec'd: overflow chunks keyed by tree-key, charged once per block; header chunks per-account.
 - [ ] Constants validated against representative worst-case and typical-block witness sizes.
-- [ ] Values handed to [A-S4](A-S4-eip8297-spec-freeze.md) for inclusion in the frozen H\* spec.
+- [ ] Recalibrated values packaged for a later gas-focused fork (superseding the provisional constants frozen in [A-S4](A-S4-eip8297-spec-freeze.md)).
 
 ## Risks & open questions
 - **The recalibrated values are not yet fixed** in the current draft — this deliverable is what fixes them. Until then, gas constants in the spec are marked pending. See [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md) (Access events) and [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
-- Circular timing with benchmarks: good calibration wants [A-T4](A-T4-hardware-matrix-benchmarks.md) data (2027-07→2027-12), but freeze [A-S4](A-S4-eip8297-spec-freeze.md) targets H\* (2027-06); this deliverable must land defensible constants from early prototype data, with the hardware matrix serving as later confirmation rather than a prerequisite.
+- Because the freeze [A-S4](A-S4-eip8297-spec-freeze.md) ships by 2027-03 with **provisional** constants while this recalibration waits on [A-T4](A-T4-hardware-matrix-benchmarks.md) data (2027-07→2027-12), the network runs on provisional witness-gas pricing until the later gas-focused fork adopts the recalibrated values; the provisional constants must therefore be conservative enough to be safe in the interim.
 - Branch depth depends on grinding resistance and prefix compression; mispricing could under-charge grinded deep subtrees. See the "Grinding" note in [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
 - Reference-counting for shared code leaves (state-expiry interaction) is deferred to a separate EIP but touches access accounting assumptions.
 

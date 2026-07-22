@@ -21,7 +21,7 @@ point.
 
 ## Scope — what ships
 - **Readiness thresholds:** cross-client agreement **≥ X%**, coverage **≥ Y%**, sustained **D** days — concrete values fixed and justified.
-- **Shadow-root carrier mechanism:** the concrete wire/publication mechanism for per-block PBT roots (the concept comes from [B-S1](B-S1-eip7748-adaptation.md)).
+- **Shadow-root carrier mechanism:** the concrete wire/publication mechanism for per-block PBT roots (the concept comes from [B-S1](B-S1-offline-migration-eip.md)).
 - **`N′` re-anchoring cadence** for late joiners.
 - **Post-swap MPT disposal timing** (retain until finality, then sunset).
 - **Select-`N` / activate-`S` procedure:** how the finalized anchor block is chosen and how the fork is scheduled.
