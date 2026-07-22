@@ -137,7 +137,9 @@ def get_tree_key_for_storage_slot(address, storage_key):
 
 ## Access events (gas)
 
-PBT adopts **EIP-4762**'s access-event framework with two required modifications:
+PBT adopts **EIP-4762**'s access-event framework with two required modifications
+(the framework itself is documented in
+[08-gas-and-access-events.md](08-gas-and-access-events.md)):
 
 1. **Content-addressed code.** Overflow code chunks (≥128) are shared between
    contracts, so their access events MUST be keyed by the

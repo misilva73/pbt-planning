@@ -36,7 +36,9 @@ Keys of different zones differ in their first byte and cannot collide at all.
     cryptography-initiative review.
   - **Keccak** — native ubiquity, weaker in-circuit.
 - **Witness gas recalibration** — `WITNESS_BRANCH_COST` (EIP-4762's 1900) must be
-  recalibrated for PBT's deeper branches; **values not yet fixed**.
+  recalibrated for PBT's deeper branches; **values not yet fixed**. The full EIP-4762
+  framework PBT starts from is documented in
+  [08-gas-and-access-events.md](08-gas-and-access-events.md).
 - **State expiry & resurrection** — per-account (header stem) and per-bucket
   (`key_hash(address)` bucket) expiry is natural on the zone topology (record the
   subtree hash, prune below it). Open issues: content-addressed **code needs reference
