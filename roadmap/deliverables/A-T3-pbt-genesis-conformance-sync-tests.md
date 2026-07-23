@@ -34,7 +34,7 @@ implemented and observable at H\*.
 - **Upstream (blocks this):** [A-T1](A-T1-eest-test-suite-port.md) (fixtures to execute),
   [A-C2](A-C2-pbt-native-state-sync.md) (PBT-native sync under test),
   [A-C3](A-C3-multiclient-pbt-genesis-devnets.md) (multi-client PBT-genesis devnets to run on).
-- **Downstream (this blocks):** [A-S4](A-S4-eip8297-spec-freeze.md) — conformance and sync
+- **Downstream (this blocks):** [A-S3](A-S3-eip8297-spec-freeze.md) — conformance and sync
   results are the H\*-readiness evidence for freezing the spec.
 
 ## Owners / teams
@@ -47,7 +47,7 @@ implemented and observable at H\*.
       on a shared PBT genesis.
 - [ ] PBT-native sync succeeds cross-client: a fresh node converges to the serving node's root.
 - [ ] Sustained multi-client root agreement demonstrated on a devnet over a defined window.
-- [ ] Results packaged as H\*-readiness evidence for [A-S4](A-S4-eip8297-spec-freeze.md).
+- [ ] Results packaged as H\*-readiness evidence for [A-S3](A-S3-eip8297-spec-freeze.md).
 
 ## Risks & open questions
 - Readiness thresholds are undefined — cross-client agreement **X%**, coverage **Y%**, sustained

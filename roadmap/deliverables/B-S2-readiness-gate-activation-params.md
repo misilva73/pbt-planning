@@ -1,4 +1,4 @@
-# B-S4 · Readiness gate & activation params
+# B-S2 · Readiness gate & activation params
 
 | | |
 |---|---|

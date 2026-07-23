@@ -43,7 +43,7 @@ state size.
 ## Risks & open questions
 - Consensus anchoring hinges on **preimage completeness** — the MPT is hash-keyed and can't be walked back to raw keys, so extraction at `E` + `(E, N]` BAL-completion must be exhaustive ([04-migration.md §Preimages](../../knowledge-base/04-migration.md)); gaps would surface as check-2 failures.
 - Scale cost of the bottom-up rebuild and MPT-schema rehash at ~220M accounts / 600M slots is unproven until this test — depends on the finalized hash function (open parameter in [06-open-questions.md](../../knowledge-base/06-open-questions.md)).
-- Verification depends on frozen preimage/snapshot/manifest formats from [B-S2](B-S2-preimage-snapshot-manifest-spec.md) (§14 open params) and on [A-C4](A-C4-snapshot-serving-verification.md) serving infrastructure.
+- Verification depends on frozen preimage/snapshot/manifest formats from [B-S1](B-S1-offline-migration-eip.md) (§14 open params) and on [A-C4](A-C4-snapshot-serving-verification.md) serving infrastructure.
 
 ## References
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)

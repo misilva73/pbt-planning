@@ -26,7 +26,7 @@ plumbing the migration snapshot pipeline depends on.
 - Snapshot **ingestion**: sequential bulk-load of chunks into the client's PBT
   DB layout (append in key order, not random insert), with resumability markers.
 - **Manifest verification**: per-chunk hash checks against the release-anchored
-  manifest (per the B-S2 manifest spec), plus internal PBT-consistency rebuild
+  manifest (per the B-S1 manifest spec), plus internal PBT-consistency rebuild
   (rebuild tree from leaves → derive keys → hash bottom-up → check claimed PBT
   root).
 - Integration with A-C2 range sync so a node can mix snapshot ingestion with
@@ -38,7 +38,7 @@ plumbing the migration snapshot pipeline depends on.
 - EL: geth, Nethermind, Besu, Reth, Erigon (+ CL where relevant)
 
 ## Dependencies
-- **Upstream (blocks this):** [A-C2](A-C2-pbt-native-state-sync.md) (PBT-native state sync), [B-S2](B-S2-preimage-snapshot-manifest-spec.md) (snapshot manifest spec)
+- **Upstream (blocks this):** [A-C2](A-C2-pbt-native-state-sync.md) (PBT-native state sync), [B-S1](B-S1-offline-migration-eip.md) (snapshot manifest spec)
 - **Downstream (this blocks):** [B-C3](B-C3-snapshot-production-pipeline.md)
 
 ## Exit criteria (definition of done)
@@ -52,7 +52,7 @@ plumbing the migration snapshot pipeline depends on.
 
 ## Risks & open questions
 - Snapshot chunk encoding and the preimage byte-level format are still open
-  parameters (§14); serving/verification code must track the B-S2 manifest spec
+  parameters (§14); serving/verification code must track the B-S1 manifest spec
   as it settles. See [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
 - Consensus-anchoring (rehash under MPT schema vs block `N` `stateRoot`) is a
   migration-context check owned by the B thread; A-C4 covers internal

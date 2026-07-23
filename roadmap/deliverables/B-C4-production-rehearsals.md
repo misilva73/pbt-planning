@@ -37,7 +37,7 @@ selection and the readiness gate.
 
 ## Dependencies
 - **Upstream (blocks this):** [B-C3](B-C3-snapshot-production-pipeline.md) (snapshot pipeline), [B-C2](B-C2-bal-replay-engine.md) (BAL-replay to tip), [A-T4](A-T4-hardware-matrix-benchmarks.md) (EIP-7870 hardware matrix)
-- **Downstream (this blocks):** [B-C5](B-C5-testnet-migrations-shadow-fork.md), [B-C6](B-C6-mainnet-window.md), [B-S4](B-S4-readiness-gate-activation-params.md)
+- **Downstream (this blocks):** [B-C5](B-C5-testnet-migrations-shadow-fork.md), [B-C6](B-C6-mainnet-window.md), [B-S2](B-S2-readiness-gate-activation-params.md)
 
 ## Exit criteria (definition of done)
 - [ ] Converter completes on full mainnet state on every hardware tier in the
@@ -47,7 +47,7 @@ selection and the readiness gate.
 - [ ] BAL-replay catches the converted snapshot up to chain tip and holds there
       (convergence below block-production rate) on mainnet-scale data.
 - [ ] Performance metrics (time, disk, IO, memory, convergence rate) are captured
-      per tier and published to inform B-S4 readiness thresholds.
+      per tier and published to inform B-S2 readiness thresholds.
 - [ ] 2× disk overhead is confirmed confined to converters; non-converting nodes
       are unaffected.
 
@@ -57,7 +57,7 @@ selection and the readiness gate.
 - Mainnet state size keeps growing; metrics have a shelf life and may need a
   refresh close to the mainnet window.
 - Readiness thresholds (X, Y, D) are open (§14) and are partly derived from these
-  metrics — a chicken/egg loop with B-S4 to resolve.
+  metrics — a chicken/egg loop with B-S2 to resolve.
 
 ## References
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)

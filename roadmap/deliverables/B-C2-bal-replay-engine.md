@@ -39,7 +39,7 @@ tip and stay there.
   change the resulting PBT root.
 
 ## Dependencies
-- **Upstream (blocks this):** [B-S3](B-S3-bal-replay-spec.md) (BAL-replay translation rules on EIP-7928)
+- **Upstream (blocks this):** [B-S1](B-S1-offline-migration-eip.md) (BAL-replay translation rules on EIP-7928)
 - **Downstream (this blocks):** [B-C4](B-C4-production-rehearsals.md), [B-C6](B-C6-mainnet-window.md)
 
 ## Exit criteria (definition of done)

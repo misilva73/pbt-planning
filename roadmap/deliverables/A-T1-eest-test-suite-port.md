@@ -28,7 +28,7 @@ green client implementations run against.
 - Access-event fixtures on the EIP-4762 framework carrying PBT's two required modifications:
   content-addressed overflow-code events keyed by `(zone, tree_position, sub-index)` (charged
   once per block, one witness copy), and a witness-branch-cost value left as a parameter
-  until A-S3 fixes it.
+  until A-S2 fixes it.
 - A fixture format that carries the PBT state root (parameterized on the hash function until
   the hash-function dependency lands) and CI wiring so clients consume the ported suite.
 
@@ -59,7 +59,7 @@ green client implementations run against.
   selection).
 - `WITNESS_BRANCH_COST` and the rest of the witness-gas constants are not yet fixed for PBT's
   deeper branches; access-event fixtures must treat them as parameters pending
-  [A-S3](A-S3-witness-gas-recalibration.md).
+  [A-S2](A-S2-gas-cost-recalibration.md).
 
 ## References
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)

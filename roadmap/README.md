@@ -30,13 +30,13 @@ This document is the *when* and *who*.
 >
 > Protocol prerequisites — **BAL (EIP-7928)** and the **64 KiB code-size limit (EIP-7954)** —
 > ship in **Glamsterdam (≈ 2026-09)**, before this roadmap's window, so they are treated as
-> **already available** and are out of scope here. BAL-replay ([B-S3](deliverables/B-S3-bal-replay-spec.md) /
-> [B-C2](deliverables/B-C2-bal-replay-engine.md)) simply consumes the shipped BAL format.
+> **already available** and are out of scope here. BAL-replay (specified in the offline-migration EIP [B-S1](deliverables/B-S1-offline-migration-eip.md) /
+> implemented in [B-C2](deliverables/B-C2-bal-replay-engine.md)) simply consumes the shipped BAL format.
 >
 > **Hash-function selection** — the choice of the tree's hash function `H` (BLAKE3 / Poseidon2 /
 > Keccak), used for both merkelization and `key_hash` — is treated as an **external dependency**,
 > **planned to be completed by the end of 2026**. It is no longer scheduled as a roadmap deliverable;
-> the spec-freeze ([A-S4](deliverables/A-S4-eip8297-spec-freeze.md)) and all root-bearing test vectors
+> the spec-freeze ([A-S3](deliverables/A-S3-eip8297-spec-freeze.md)) and all root-bearing test vectors
 > consume the decided `H`. See [knowledge-base/06-open-questions.md](../knowledge-base/06-open-questions.md).
 
 ---
@@ -75,8 +75,8 @@ and **◆ I\*** (fork S, the swap).
 ![Timeline: months 2026-07 to 2028-08; forks H* (2027-06) and I* (2028-06)](assets/rows/_axis.svg)
 ![THREAD A · TRIE DESIGN](assets/rows/_thread-a.svg)
 [![A-S1  EIP-8297 spec convergence · 2026-07→2026-09 · open detail page](assets/rows/A-S1.svg)](deliverables/A-S1-eip8297-spec-convergence.md)
-[![A-S3  Witness-gas recalibration · 2028-01→2028-03 · open detail page](assets/rows/A-S3.svg)](deliverables/A-S3-witness-gas-recalibration.md)
-[![A-S4  EIP-8297 spec freeze · 2027-01→2027-03 · open detail page](assets/rows/A-S4.svg)](deliverables/A-S4-eip8297-spec-freeze.md)
+[![A-S2  Gas cost recalibration · 2028-01→2028-03 · open detail page](assets/rows/A-S2.svg)](deliverables/A-S2-gas-cost-recalibration.md)
+[![A-S3  EIP-8297 spec freeze · 2027-01→2027-03 · open detail page](assets/rows/A-S3.svg)](deliverables/A-S3-eip8297-spec-freeze.md)
 [![A-T1  EEST test-suite port · 2026-08→2027-01 · open detail page](assets/rows/A-T1.svg)](deliverables/A-T1-eest-test-suite-port.md)
 [![A-T2  Tree / key-derivation vectors · 2026-07→2026-12 · open detail page](assets/rows/A-T2.svg)](deliverables/A-T2-tree-key-derivation-vectors.md)
 [![A-T3  Genesis conformance & sync · 2027-01→2027-06 · open detail page](assets/rows/A-T3.svg)](deliverables/A-T3-pbt-genesis-conformance-sync-tests.md)
@@ -87,10 +87,8 @@ and **◆ I\*** (fork S, the swap).
 [![A-C4  Snapshot serving & verification · 2027-03→2027-07 · open detail page](assets/rows/A-C4.svg)](deliverables/A-C4-snapshot-serving-verification.md)
 [![A-O1  Tree-spec socialization / ACD · 2026-07→2027-03 · open detail page](assets/rows/A-O1.svg)](deliverables/A-O1-tree-spec-socialization.md)
 ![THREAD B · MIGRATION](assets/rows/_thread-b.svg)
-[![B-S1  Offline-migration EIP (new) · 2026-07→2026-10 · open detail page](assets/rows/B-S1.svg)](deliverables/B-S1-offline-migration-eip.md)
-[![B-S2  Preimage & snapshot manifest · 2026-07→2026-10 · open detail page](assets/rows/B-S2.svg)](deliverables/B-S2-preimage-snapshot-manifest-spec.md)
-[![B-S3  BAL-replay spec · 2026-11→2026-12 · open detail page](assets/rows/B-S3.svg)](deliverables/B-S3-bal-replay-spec.md)
-[![B-S4  Readiness gate & activation · 2027-09→2028-02 · open detail page](assets/rows/B-S4.svg)](deliverables/B-S4-readiness-gate-activation-params.md)
+[![B-S1  Offline-migration EIP · 2026-07→2026-12 · open detail page](assets/rows/B-S1.svg)](deliverables/B-S1-offline-migration-eip.md)
+[![B-S2  Readiness gate & activation · 2027-09→2028-02 · open detail page](assets/rows/B-S2.svg)](deliverables/B-S2-readiness-gate-activation-params.md)
 [![B-T1  Conversion / replay vectors · 2026-09→2027-03 · open detail page](assets/rows/B-T1.svg)](deliverables/B-T1-conversion-replay-vectors.md)
 [![B-T2  Full-cycle devnet w/ swap · 2027-03→2027-08 · open detail page](assets/rows/B-T2.svg)](deliverables/B-T2-full-cycle-devnet-swap.md)
 [![B-T3  Dual-check verification at scale · 2027-10→2028-04 · open detail page](assets/rows/B-T3.svg)](deliverables/B-T3-dual-check-verification-scale.md)
@@ -117,8 +115,8 @@ and **◆ I\*** (fork S, the swap).
 
 | Window | Migration phase(s) | Headline outcome |
 |--------|--------------------|------------------|
-| 2026-07 → 2026-12 | **0 → 1** Spec Convergence, Prototypes & Evidence | EIP-8297 contention resolved (spec convergence); migration specs complete (offline-migration EIP, preimage/manifest, BAL-replay); hash function `H` decided (external dependency); prototype tree + converter; first test vectors; outreach begins. |
-| 2027-01 → 2027-06 | **2 → 3** Devnets, Migration Machinery | EIP-8297 spec frozen (A-S4, by 2027-03); multi-client PBT-genesis devnets; converter + BAL-replay + snapshot pipeline; full-cycle devnet swap. **→ H\* opens shadow period against the frozen spec.** |
+| 2026-07 → 2026-12 | **0 → 1** Spec Convergence, Prototypes & Evidence | EIP-8297 contention resolved (spec convergence); migration spec complete (offline-migration EIP: conversion, snapshot/manifest, BAL-replay); hash function `H` decided (external dependency); prototype tree + converter; first test vectors; outreach begins. |
+| 2027-01 → 2027-06 | **2 → 3** Devnets, Migration Machinery | EIP-8297 spec frozen (A-S3, by 2027-03); multi-client PBT-genesis devnets; converter + BAL-replay + snapshot pipeline; full-cycle devnet swap. **→ H\* opens shadow period against the frozen spec.** |
 | 2027-07 → 2027-12 | **4** Rehearsals | Production converter runs on mainnet state; hardware-matrix + perf metrics. |
 | 2028-01 → 2028-06 | **5 → 6** Mainnet Window, Swap | Public testnet migrations + mainnet shadow fork; block `N` chosen; snapshot produced, cross-verified, distributed; BAL-replay to tip; readiness gate passed. **→ I\* = fork S, PBT canonical.** |
 | 2028-06 → 2028-08 | **6** Aftermath | MPT retained to finality then sunset; snapshot disposed; fresh-node sync restored. |

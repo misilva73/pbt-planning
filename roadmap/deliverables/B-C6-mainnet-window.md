@@ -39,7 +39,7 @@ per-block PBT roots while consensus stays on the MPT. The window closes by
   against block `N`'s `stateRoot`; all clients must reach the same PBT root.
 
 ## Dependencies
-- **Upstream (blocks this):** [B-C4](B-C4-production-rehearsals.md) (rehearsed at scale), [B-C5](B-C5-testnet-migrations-shadow-fork.md) (public + shadow-fork rehearsals), [B-S4](B-S4-readiness-gate-activation-params.md) (gate thresholds & activation params), [B-C2](B-C2-bal-replay-engine.md) (replay to tip)
+- **Upstream (blocks this):** [B-C4](B-C4-production-rehearsals.md) (rehearsed at scale), [B-C5](B-C5-testnet-migrations-shadow-fork.md) (public + shadow-fork rehearsals), [B-S2](B-S2-readiness-gate-activation-params.md) (gate thresholds & activation params), [B-C2](B-C2-bal-replay-engine.md) (replay to tip)
 - **Downstream (this blocks):** [B-C7](B-C7-swap-fork-s-aftermath.md)
 
 ## Exit criteria (definition of done)
@@ -54,7 +54,7 @@ per-block PBT roots while consensus stays on the MPT. The window closes by
       coverage ≥ Y%, builder/relay ecosystem ready — a documented go decision for S.
 
 ## Risks & open questions
-- **Readiness thresholds (X, Y, D) are open (§14)** and must be fixed by B-S4
+- **Readiness thresholds (X, Y, D) are open (§14)** and must be fixed by B-S2
   before the gate can be evaluated.
 - **Validator observability gap.** The builder stream measures block *producers*,
   not the validating majority; pre-swap divergence is harmless and self-detectable,

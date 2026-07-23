@@ -24,7 +24,7 @@ Drive EIP-8297 through the community governance process — ACDE (All Core Devs 
 
 ## Dependencies
 - **Upstream (blocks this):** none as a hard blocker; runs in parallel with and is paired to [A-S1](A-S1-eip8297-spec-convergence.md).
-- **Downstream (this blocks):** [A-S4](A-S4-eip8297-spec-freeze.md) depends on the H\* CFI agenda slot this outreach secures. Successful socialization also de-risks the migration outreach thread ([B-O1](B-O1-proof-consumer-coordination.md)).
+- **Downstream (this blocks):** [A-S3](A-S3-eip8297-spec-freeze.md) depends on the H\* CFI agenda slot this outreach secures. Successful socialization also de-risks the migration outreach thread ([B-O1](B-O1-proof-consumer-coordination.md)).
 
 ## Owners / teams
 - EIP-8297 authors and EF research (present and defend the design).

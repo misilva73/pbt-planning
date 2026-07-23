@@ -22,7 +22,7 @@ divergence, preserving interpretability.
 ## Scope — what ships
 - Builder/relay integration so **per-block PBT shadow roots are published** during the
   pre-swap period, on the carrier mechanism defined by
-  [B-S4](B-S4-readiness-gate-activation-params.md).
+  [B-S2](B-S2-readiness-gate-activation-params.md).
 - Ecosystem drive toward the **readiness-gate thresholds**: cross-client agreement **≥ X%**
   sustained over **D** days, coverage **≥ Y%**, and builder/relay ecosystem readiness.
 - Public **coverage / cross-client-agreement dashboards** so the gate status is
@@ -37,7 +37,7 @@ divergence, preserving interpretability.
 - Client teams whose PBT roots must agree cross-client.
 
 ## Dependencies
-- **Upstream (blocks this):** [B-S4](B-S4-readiness-gate-activation-params.md) (readiness-gate
+- **Upstream (blocks this):** [B-S2](B-S2-readiness-gate-activation-params.md) (readiness-gate
   thresholds X/Y/D and the shadow-root carrier mechanism),
   [B-C5](B-C5-testnet-migrations-shadow-fork.md) (testnet migrations / shadow fork that
   exercise shadow-root production first).
@@ -47,7 +47,7 @@ divergence, preserving interpretability.
 ## Exit criteria (definition of done)
 - [ ] Builders/relays covering **≥ Y%** of blocks publish per-block PBT shadow roots.
 - [ ] Cross-client agreement **≥ X%** sustained for **D** days (thresholds from
-      [B-S4](B-S4-readiness-gate-activation-params.md)) — the readiness gate passes.
+      [B-S2](B-S2-readiness-gate-activation-params.md)) — the readiness gate passes.
 - [ ] Public coverage / agreement dashboard live; omissions attributed to producers and
       counted against coverage, not divergence.
 - [ ] Proposer-signed sidecar fallback specified and available to validating node operators.
@@ -61,7 +61,7 @@ divergence, preserving interpretability.
   validation; strong shadow-root coverage and sustained cross-client agreement are what
   make that flip trustworthy, so low coverage directly weakens the swap's safety.
 - **§14 open — shadow-root carrier mechanism:** the exact carrier is still open in
-  [B-S4](B-S4-readiness-gate-activation-params.md); builder/relay integration cannot finalize
+  [B-S2](B-S2-readiness-gate-activation-params.md); builder/relay integration cannot finalize
   until it is fixed.
 
 ## References

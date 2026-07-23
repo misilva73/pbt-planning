@@ -28,7 +28,7 @@ Land [EIP PR #11978](https://github.com/ethereum/EIPs/pull/11978) as the agreed 
 
 ## Dependencies
 - **Upstream (blocks this):** none (this is the Phase 0 root of Thread A).
-- **Downstream (this blocks):** [A-S3](A-S3-witness-gas-recalibration.md), [A-S4](A-S4-eip8297-spec-freeze.md), [A-C1](A-C1-client-tree-implementations.md), [B-S1](B-S1-offline-migration-eip.md), [A-T1](A-T1-eest-test-suite-port.md), [A-T2](A-T2-tree-key-derivation-vectors.md). Paired closely with [A-O1](A-O1-tree-spec-socialization.md), which drives the same content through ACDE/ACDC.
+- **Downstream (this blocks):** [A-S2](A-S2-gas-cost-recalibration.md), [A-S3](A-S3-eip8297-spec-freeze.md), [A-C1](A-C1-client-tree-implementations.md), [B-S1](B-S1-offline-migration-eip.md), [A-T1](A-T1-eest-test-suite-port.md), [A-T2](A-T2-tree-key-derivation-vectors.md). Paired closely with [A-O1](A-O1-tree-spec-socialization.md), which drives the same content through ACDE/ACDC.
 
 ## Owners / teams
 - EIP-8297 authors (spec editors driving PR #11978).
@@ -45,7 +45,7 @@ Land [EIP PR #11978](https://github.com/ethereum/EIPs/pull/11978) as the agreed 
 ## Risks & open questions
 - The published EIP page and rendered spec site (cperezz.github.io/pbt-spec) still describe the pre-#11978 design (fixed 32-byte keys, 4-bit/3-bit zone prefixes, `StemNode`); reviewers may cite stale specifics. See [knowledge-base/05-design-evolution.md](../../knowledge-base/05-design-evolution.md).
 - The **hash function `H`** (== `key_hash`) is intentionally left open here and resolved by the [hash-function dependency](../README.md) (external, due end 2026); convergence must not accidentally pin BLAKE3 as final just because it is the reference-impl choice. See [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
-- **Witness gas constants** remain unfixed at this stage (handled in [A-S3](A-S3-witness-gas-recalibration.md)); the EIP text should mark them as pending recalibration, not final.
+- **Witness gas constants** remain unfixed at this stage (handled in [A-S2](A-S2-gas-cost-recalibration.md)); the EIP text should mark them as pending recalibration, not final.
 - Reserved zones `0x02`–`0xFE` must be documented as requiring mutual prefix-freedom for any future category.
 
 ## References

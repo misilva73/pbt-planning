@@ -41,7 +41,7 @@ before rehearsals move to mainnet-scale state.
 
 ## Risks & open questions
 - Replay must converge **below the steady-state block-production rate** or catch-up never completes — a core assumption to validate here ([04-migration.md §BAL-replay](../../knowledge-base/04-migration.md)).
-- Simulated `S` cannot fully reproduce the **unvalidated-flip** risk of a real swap; mitigation design lives in [B-S4](B-S4-readiness-gate-activation-params.md) and is stress-tested later in [B-C5](B-C5-testnet-migrations-shadow-fork.md).
+- Simulated `S` cannot fully reproduce the **unvalidated-flip** risk of a real swap; mitigation design lives in [B-S2](B-S2-readiness-gate-activation-params.md) and is stress-tested later in [B-C5](B-C5-testnet-migrations-shadow-fork.md).
 - Devnet scale is far below mainnet's ~220M accounts / 600M slots and ~100+ GB snapshot; scale behaviour is deferred to [B-C4](B-C4-production-rehearsals.md) / [B-T3](B-T3-dual-check-verification-scale.md).
 
 ## References

@@ -37,7 +37,7 @@ downstream systems know what does and does not change.
 - Ecosystem comms channels (ACD, client release notes, blog/announcements).
 
 ## Dependencies
-- **Upstream (blocks this):** [B-S4](B-S4-readiness-gate-activation-params.md) (activation
+- **Upstream (blocks this):** [B-S2](B-S2-readiness-gate-activation-params.md) (activation
   parameters — the fork `S` definition and activation trigger the comms announce).
 - **Downstream (this blocks):** pairs with [B-C6](B-C6-mainnet-window.md) (mainnet window) and
   [B-C7](B-C7-swap-fork-s-aftermath.md) (swap & aftermath) — the on-chain execution these

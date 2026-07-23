@@ -39,7 +39,7 @@ the MPT, and restore fresh-node sync onto the PBT.
   post-swap root; MPT-disposal mechanics differ by DB model.
 
 ## Dependencies
-- **Upstream (blocks this):** [B-C6](B-C6-mainnet-window.md) (block `N`, snapshot, replay, readiness gate passed), [B-S4](B-S4-readiness-gate-activation-params.md) (activation params for `S`)
+- **Upstream (blocks this):** [B-C6](B-C6-mainnet-window.md) (block `N`, snapshot, replay, readiness gate passed), [B-S2](B-S2-readiness-gate-activation-params.md) (activation params for `S`)
 - **Downstream (this blocks):** — (terminal deliverable; PBT is canonical)
 
 ## Exit criteria (definition of done)

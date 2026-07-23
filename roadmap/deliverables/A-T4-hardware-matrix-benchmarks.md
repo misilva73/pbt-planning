@@ -15,7 +15,7 @@
 Benchmark the client PBT tree implementations across the EIP-7870 hardware requirements matrix,
 measuring tree-operation throughput, branch-depth profile, witness sizes and verification cost,
 and memory/disk footprint on representative hardware tiers. The measured witness-branch costs
-and depth profile feed the gas recalibration ([A-S3](A-S3-witness-gas-recalibration.md)), and
+and depth profile feed the gas recalibration ([A-S2](A-S2-gas-cost-recalibration.md)), and
 the throughput/resource numbers size the production rehearsals ([B-C4](B-C4-production-rehearsals.md)).
 
 ## Scope — what ships
@@ -28,13 +28,13 @@ the throughput/resource numbers size the production rehearsals ([B-C4](B-C4-prod
 - Witness metrics: witness sizes and actual branch-opening cost against the EIP-4762
   `WITNESS_BRANCH_COST = 1900` baseline, isolating content-addressed overflow-code chunks
   (charged once per block, single witness copy) from per-account header chunks.
-- Resource metrics: memory, disk and I/O per tier, reported as inputs to A-S3 recalibration and
+- Resource metrics: memory, disk and I/O per tier, reported as inputs to A-S2 recalibration and
   B-C4 rehearsal sizing.
 
 ## Dependencies
 - **Upstream (blocks this):** [A-C1](A-C1-client-tree-implementations.md) (implementations to
   benchmark), [A-C3](A-C3-multiclient-pbt-genesis-devnets.md) (representative devnet workloads).
-- **Downstream (this blocks):** [A-S3](A-S3-witness-gas-recalibration.md) (recalibrated witness
+- **Downstream (this blocks):** [A-S2](A-S2-gas-cost-recalibration.md) (recalibrated witness
   gas constants from measured depth/cost), [B-C4](B-C4-production-rehearsals.md) (rehearsal
   hardware sizing).
 
@@ -47,7 +47,7 @@ the throughput/resource numbers size the production rehearsals ([B-C4](B-C4-prod
 - [ ] Reproducible benchmark results published for every EIP-7870 hardware tier across
       participating clients.
 - [ ] Measured branch-depth profile and witness-branch cost delivered to
-      [A-S3](A-S3-witness-gas-recalibration.md) in a form usable for recalibration.
+      [A-S2](A-S2-gas-cost-recalibration.md) in a form usable for recalibration.
 - [ ] Resource/throughput envelopes delivered to [B-C4](B-C4-production-rehearsals.md) for
       rehearsal sizing.
 - [ ] Content-addressed vs per-account code-chunk costs reported separately.
@@ -58,7 +58,7 @@ the throughput/resource numbers size the production rehearsals ([B-C4](B-C4-prod
   once the [hash-function dependency](../README.md) resolves. See
   [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
 - Witness-gas constants are not yet fixed; these benchmarks are the evidence that fixes them via
-  [A-S3](A-S3-witness-gas-recalibration.md) — see
+  [A-S2](A-S2-gas-cost-recalibration.md) — see
   [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
 
 ## References

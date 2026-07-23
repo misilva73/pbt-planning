@@ -1,4 +1,4 @@
-# A-S3 · Witness Gas Recalibration
+# A-S2 · Gas Cost Recalibration
 
 | | |
 |---|---|
@@ -21,7 +21,7 @@ Recalibrate the EIP-4762 access-event gas schedule for PBT's tree geometry and s
 
 ## Dependencies
 - **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) (stable key scheme and node types) and [A-T4](A-T4-hardware-matrix-benchmarks.md) hardware-matrix benchmarks — this deliverable is **deferred until the benchmark data lands** (2027-12), so the recalibration is grounded on measured state-op and proof costs rather than early estimates.
-- **Downstream (this blocks):** a **later gas-focused fork**. This does **not** block the [A-S4](A-S4-eip8297-spec-freeze.md) spec freeze (which ships by 2027-03 with provisional witness-gas constants); PBT-native gas is deliberately decoupled from the swap.
+- **Downstream (this blocks):** a **later gas-focused fork**. This does **not** block the [A-S3](A-S3-eip8297-spec-freeze.md) spec freeze (which fixes only the structural parameters — keys, node types, hash `H`); gas cost constants are out of scope for the freeze and owned here, and PBT-native gas is deliberately decoupled from the swap.
 
 ## Owners / teams
 - EIP-8297 authors and EIP-4762 maintainers (access-event framework).
@@ -31,11 +31,11 @@ Recalibrate the EIP-4762 access-event gas schedule for PBT's tree geometry and s
 - [ ] PBT-calibrated witness gas constants (incl. `WITNESS_BRANCH_COST`) proposed with supporting depth/cost analysis.
 - [ ] Content-addressed code access spec'd: overflow chunks keyed by tree-key, charged once per block; header chunks per-account.
 - [ ] Constants validated against representative worst-case and typical-block witness sizes.
-- [ ] Recalibrated values packaged for a later gas-focused fork (superseding the provisional constants frozen in [A-S4](A-S4-eip8297-spec-freeze.md)).
+- [ ] Recalibrated values packaged for a later gas-focused fork (superseding the provisional constants in place through the swap).
 
 ## Risks & open questions
 - **The recalibrated values are not yet fixed** in the current draft — this deliverable is what fixes them. Until then, gas constants in the spec are marked pending. See [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md) (Access events) and [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
-- Because the freeze [A-S4](A-S4-eip8297-spec-freeze.md) ships by 2027-03 with **provisional** constants while this recalibration waits on [A-T4](A-T4-hardware-matrix-benchmarks.md) data (2027-07→2027-12), the network runs on provisional witness-gas pricing until the later gas-focused fork adopts the recalibrated values; the provisional constants must therefore be conservative enough to be safe in the interim.
+- Because **provisional** gas constants are in place through the swap while this recalibration waits on [A-T4](A-T4-hardware-matrix-benchmarks.md) data (2027-07→2027-12), the network runs on provisional gas pricing until the later gas-focused fork adopts the recalibrated values; the provisional constants must therefore be conservative enough to be safe in the interim.
 - Branch depth depends on grinding resistance and prefix compression; mispricing could under-charge grinded deep subtrees. See the "Grinding" note in [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
 - Reference-counting for shared code leaves (state-expiry interaction) is deferred to a separate EIP but touches access accounting assumptions.
 

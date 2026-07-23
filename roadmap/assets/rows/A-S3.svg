@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1056" height="26" viewBox="0 0 1056 26" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
-<rect x="0" y="0" width="1056" height="26" fill="#f8fafc"/>
+<rect x="0" y="0" width="1056" height="26" fill="#ffffff"/>
 <line x1="258" y1="0" x2="258" y2="26" stroke="#cbd5e1" stroke-width="1"/>
 <line x1="288" y1="0" x2="288" y2="26" stroke="#eef2f6" stroke-width="1"/>
 <line x1="318" y1="0" x2="318" y2="26" stroke="#eef2f6" stroke-width="1"/>
@@ -30,8 +30,8 @@
 <line x1="618" y1="0" x2="618" y2="26" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 4" stroke-opacity="0.4"/>
 <line x1="978" y1="0" x2="978" y2="26" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="5 4" stroke-opacity="0.4"/>
 <line x1="0" y1="25.5" x2="1056" y2="25.5" stroke="#e8edf2" stroke-width="1"/>
-<text x="16" y="17.0" font-size="11" fill="#1e293b">A-S3  Witness-gas recalibration</text>
-<rect x="798" y="5.5" width="90" height="15" rx="3.5" fill="#7c3aed"/>
-<rect x="798" y="5.5" width="3" height="15" rx="1.5" fill="#5b21b6"/>
-<text x="807.0" y="16.5" font-size="10" font-weight="600" fill="#ffffff">A-S3</text>
+<text x="16" y="17.0" font-size="11" fill="#1e293b">A-S3  EIP-8297 spec freeze</text>
+<rect x="438" y="5.5" width="90" height="15" rx="3.5" fill="#7c3aed"/>
+<rect x="438" y="5.5" width="3" height="15" rx="1.5" fill="#5b21b6"/>
+<text x="447.0" y="16.5" font-size="10" font-weight="600" fill="#ffffff">A-S3</text>
 </svg>

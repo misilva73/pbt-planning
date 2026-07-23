@@ -37,7 +37,7 @@ ingestion property established by the converter.
   the artifact is identical regardless of which client produced it.
 
 ## Dependencies
-- **Upstream (blocks this):** [B-C1](B-C1-converter-prototype.md) (converter output), [B-S2](B-S2-preimage-snapshot-manifest-spec.md) (snapshot + manifest byte-level spec)
+- **Upstream (blocks this):** [B-C1](B-C1-converter-prototype.md) (converter output), [B-S1](B-S1-offline-migration-eip.md) (snapshot + manifest byte-level spec)
 - **Downstream (this blocks):** [B-C4](B-C4-production-rehearsals.md), [A-C4](A-C4-snapshot-serving-verification.md), [B-T3](B-T3-dual-check-verification-scale.md)
 
 ## Exit criteria (definition of done)
@@ -52,7 +52,7 @@ ingestion property established by the converter.
 
 ## Risks & open questions
 - **Snapshot chunk encoding is still open (§14)** — chunk boundaries and encoding
-  details must be fixed with B-S2 before the format can be frozen.
+  details must be fixed with B-S1 before the format can be frozen.
 - **Preimage byte-level format (§14)** likewise feeds the artifact; unresolved
   format details block bit-identical reproduction.
 - Any non-determinism in serialization (map ordering, padding, compression
