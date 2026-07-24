@@ -25,10 +25,11 @@ green client implementations run against.
   canonical prefix-compressed form) from EIP-8297.
 - Key-embedding hooks so fillers derive tree keys via the zone/stem/sub-index scheme
   (account header stem, storage buckets, content-addressed code overflow).
-- Access-event fixtures on the EIP-4762 framework carrying PBT's two required modifications:
-  content-addressed overflow-code events keyed by `(zone, tree_position, sub-index)` (charged
-  once per block, one witness copy), and a witness-branch-cost value left as a parameter
-  until A-S2 fixes it.
+- Gas fixtures covering PBT's state-access and code-chunk accounting: content-addressed
+  overflow-code events keyed by `(zone, tree_position, sub-index)` (shared, charged once per
+  block) versus per-account header chunks, with the actual state-access and per-chunk costs
+  left as parameters until the gas repricing EIP ([A-S2](A-S2-gas-cost-recalibration.md))
+  fixes them from benchmarks.
 - A fixture format that carries the PBT state root (parameterized on the hash function until
   the hash-function dependency lands) and CI wiring so clients consume the ported suite.
 
@@ -46,8 +47,8 @@ green client implementations run against.
 ## Exit criteria (definition of done)
 - [ ] EEST can fill and run PBT state/blockchain tests end to end, producing fixtures with
       PBT state (root parameterized on hash until the hash-function dependency resolves).
-- [ ] Access-event tests cover EIP-4762 with PBT's content-addressed-code and
-      branch-cost-parameter modifications.
+- [ ] Gas tests cover PBT's state-access accounting and content-addressed code-chunk
+      accounting, with costs treated as parameters pending [A-S2](A-S2-gas-cost-recalibration.md).
 - [ ] At least one client implementation ([A-C1](A-C1-client-tree-implementations.md))
       consumes the ported suite in CI.
 - [ ] Fixture format is documented and stable enough for [A-T3](A-T3-pbt-genesis-conformance-sync-tests.md).
@@ -57,9 +58,9 @@ green client implementations run against.
   stay hash-parameterized until the [hash-function dependency](../README.md) resolves — see
   [open-questions.md](../../open-questions.md) (hash-function
   selection).
-- `WITNESS_BRANCH_COST` and the rest of the witness-gas constants are not yet fixed for PBT's
-  deeper branches; access-event fixtures must treat them as parameters pending
-  [A-S2](A-S2-gas-cost-recalibration.md).
+- PBT's state-access and code-chunk gas costs are not yet fixed; gas fixtures must treat
+  them as parameters pending the benchmark-based repricing EIP
+  ([A-S2](A-S2-gas-cost-recalibration.md)).
 
 ## References
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)

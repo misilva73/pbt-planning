@@ -49,4 +49,4 @@ Freeze the final EIP-8297 as the H\* Considered-for-Inclusion (CFI) spec: keys, 
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
 - [knowledge-base/05-design-evolution.md](../../knowledge-base/05-design-evolution.md)
 - [open-questions.md](../../open-questions.md)
-- EIP-8297 (requires EIP-4762, EIP-7612); H\* CFI process.
+- EIP-8297 (requires EIP-7612); H\* CFI process.

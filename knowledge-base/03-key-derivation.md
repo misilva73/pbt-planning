@@ -101,7 +101,8 @@ def get_tree_key_for_code_chunk(address, code_hash, chunk_id):
 
 Chunk `i` stores a 32-byte value: bytes 1..31 are the i'th 31-byte slice of code;
 byte 0 encodes how many leading bytes are inside a PUSH data region (chunkification per
-EIP-4762 lineage, via `chunkify_code`).
+[EIP-2926](https://eips.ethereum.org/EIPS/eip-2926) chunk-based code merkleization, via
+`chunkify_code`).
 
 ## Storage
 
@@ -137,19 +138,22 @@ def get_tree_key_for_storage_slot(address, storage_key):
 
 ## Access events (gas)
 
-PBT adopts **EIP-4762**'s access-event framework with two required modifications
-(the framework itself is documented in
-[08-gas-and-access-events.md](08-gas-and-access-events.md)):
+PBT's gas repricing is a dedicated **benchmark-based EIP** built around the read/write
+performance of the tree — not a witness/statelessness schedule. It combines a repricing of
+state-access opcodes (in the spirit of EIP-8038) with chunk-based code access (EIP-2926).
+The full model is documented in
+[08-gas-and-access-events.md](08-gas-and-access-events.md) and fixed by
+[A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md). Two points bear directly on
+the key derivation above:
 
-1. **Content-addressed code.** Overflow code chunks (≥128) are shared between
+1. **Content-addressed code accounting.** Overflow code chunks (≥128) are shared between
    contracts, so their access events MUST be keyed by the
    `(zone, tree_position, sub-index)` tree-key, **not** by `(address, chunk)` — a
-   shared chunk is charged once per block regardless of which contract triggers it, and
-   the witness contains one copy. Header chunks (0..127) remain per-account.
-2. **Branch-cost recalibration.** EIP-4762 prices a witness branch at
-   `WITNESS_BRANCH_COST = 1900`, calibrated for shallow (Verkle) branches. PBT's
-   branches are deeper, so the witness gas constants MUST be recalibrated for PBT's
-   depth profile. **The recalibrated values are not yet fixed in this draft.**
+   shared chunk is charged once per block regardless of which contract triggers it. Header
+   chunks (0..127) remain per-account.
+2. **Costs derived from PBT read/write benchmarks.** State-access and code-chunk costs are
+   recalibrated from measured PBT prototype performance. **The values are not yet fixed in
+   this draft.**
 
 ## Worked test vectors
 

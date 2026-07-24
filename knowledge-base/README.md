@@ -28,7 +28,7 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 | [04-migration.md](04-migration.md) | The MPT → PBT migration roadmap: offline conversion, phases, converter, BAL-replay, snapshot, verification. |
 | [05-design-evolution.md](05-design-evolution.md) | How the design got here: EIP-7864 → early EIP-8297 draft → current EIP-8297. **Read this to avoid citing stale details.** |
 | [06-open-questions.md](06-open-questions.md) | Settled **security considerations** (collision resistance, grinding, preimage injectivity) and superseded/historical questions. **Live open questions moved to [../open-questions.md](../open-questions.md).** |
-| [08-gas-and-access-events.md](08-gas-and-access-events.md) | The gas / access-event framework (EIP-4762) PBT adopts as a starting point, and the PBT-specific deltas. |
+| [08-gas-and-access-events.md](08-gas-and-access-events.md) | PBT's gas model: benchmark-based state-access repricing (EIP-8038 lineage) plus chunk-based code access (EIP-2926), grounded in measured PBT read/write performance. |
 | [07-sources.md](07-sources.md) | Primary sources, related EIPs, and how to re-fetch them. |
 
 ## Status & provenance (important)
@@ -56,7 +56,8 @@ expiry); see [04-migration.md](04-migration.md) and [07-sources.md](07-sources.m
 |-----|------|
 | EIP-8297 | **Partitioned Binary Tree** — the tree spec this KB documents |
 | EIP-7864 | Flat unified binary tree — PBT's immediate predecessor design |
-| EIP-4762 | Statelessness gas / access-event framework (adopted with modifications) |
+| EIP-2926 | Chunk-based code merkleization — code-chunk access pricing PBT adopts |
+| EIP-8038 | Benchmark-based state-access gas repricing — the model PBT's gas EIP follows |
 | EIP-7612 | Overlay-tree fork mechanism (how the new tree is switched on) |
 | EIP-7748 | State conversion (the MPT→tree migration, adapted to PBT) |
 | EIP-7928 | Block-Level Access Lists (BAL) — used by BAL-replay and partial statefulness |

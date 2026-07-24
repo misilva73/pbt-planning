@@ -22,8 +22,8 @@ implemented and observable at H\*.
 - A conformance harness that runs the ported EEST fixtures ([A-T1](A-T1-eest-test-suite-port.md))
   across every participating client on a shared PBT genesis, asserting identical PBT state
   roots after each block.
-- Block-processing conformance covering the access-event framework (EIP-4762 with PBT's
-  content-addressed-code and recalibrated-branch modifications) and canonical-tree invariants
+- Block-processing conformance covering PBT gas accounting (state-access costs and
+  content-addressed code-chunk accounting) and canonical-tree invariants
   (two-non-empty-children branches, prefix-compressed single valid tree per state).
 - PBT-native sync tests exercising [A-C2](A-C2-pbt-native-state-sync.md): a joining client
   reconstructs state and converges to the same root as the serving client.

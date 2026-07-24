@@ -70,7 +70,7 @@ types; the table below is the diff. Do not mix the two.
 
 ### EIP-8297 metadata
 
-- `requires:` is **`4762, 7612`** (widened from `7612` when the keys/node types were reworked).
+- `requires:` is **`7612`** (the overlay-tree transition mechanism); PBT's gas repricing is a separate benchmark-based EIP, not part of the base spec's `requires`.
 - The diagram (`assets/eip-8297/diagram.png`) may still depict the old stem-node
   model and need redrawing.
 - Marked **Draft**, Standards Track: Core.

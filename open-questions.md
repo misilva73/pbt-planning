@@ -39,15 +39,17 @@ The spec-freeze ([A-S3](roadmap/deliverables/A-S3-eip8297-spec-freeze.md)) and a
 root-bearing test vectors consume the decided `H`; fixtures stay hash-parameterized until
 it resolves.
 
-### Witness gas recalibration
+### State-access gas repricing
 
-`WITNESS_BRANCH_COST` (EIP-4762's 1900) must be recalibrated for PBT's deeper branches;
-**values not yet fixed**. Branch depth depends on grinding resistance and prefix
-compression, so mispricing could under-charge grinded deep subtrees. Fixed by
+PBT changes the real cost of touching state, so gas must be repriced for it. The repricing
+is a **new benchmark-based EIP** with two components: a repricing of state-access opcodes
+(cold/warm account and storage access, storage writes, code-metadata reads), in the spirit
+of EIP-8038, and chunk-based code access (EIP-2926). **Values not yet fixed** — they are
+derived from measured PBT read/write performance. Fixed by
 [A-S2](roadmap/deliverables/A-S2-gas-cost-recalibration.md) using
 [A-T4](roadmap/deliverables/A-T4-hardware-matrix-benchmarks.md) benchmark data;
-deliberately decoupled from the spec-freeze and previewed for a later gas-focused fork.
-The EIP-4762 framework PBT starts from is documented in
+deliberately decoupled from the spec-freeze and previewed for a later gas-focused fork. The
+PBT gas model is documented in
 [knowledge-base/08-gas-and-access-events.md](knowledge-base/08-gas-and-access-events.md).
 
 ### State expiry & resurrection
@@ -57,6 +59,23 @@ the zone topology (record the subtree hash, prune below it). Open issues:
 content-addressed **code needs reference counting** (shared leaves) or deferral to a state
 sweep; **resurrection** must re-attach a subtree consistent with the recorded commitment.
 Mechanism deferred to a **separate future EIP**.
+
+### State tiering (EIP-8188)
+
+Whether to fold [EIP-8188](https://eips.ethereum.org/EIPS/eip-8188) (*Last-Written Block
+for Accounts and Slots*) into the PBT leaf schema. EIP-8188 adds a `last_written_block`
+field to accounts (+5 bytes) and storage slots (+6 bytes), letting clients partition state
+into a **mutable tier** (recently written, tuned for write throughput) and a **stable
+tier** (write-inactive, tuned for density and read throughput). It leaves tree topology
+untouched but changes leaf encoding, and therefore merkelization and the state root — so
+it must be decided *at the leaf-format level*, alongside the leaf record format that also
+drives [compression](#artifact-formats--compression). Only writes update the field; reads
+do not; no gas changes beyond bumping state-creation pricing for the extra bytes. Open:
+do we bake the field into the PBT leaf now, defer it to a separate future EIP, or reject it
+(the tiering signal partly overlaps the recency information [state expiry &
+resurrection](#state-expiry--resurrection) already needs). Decision affects
+root-bearing test vectors, so it should land before the spec-freeze
+([A-S3](roadmap/deliverables/A-S3-eip8297-spec-freeze.md)).
 
 ### Multi-proof compression
 

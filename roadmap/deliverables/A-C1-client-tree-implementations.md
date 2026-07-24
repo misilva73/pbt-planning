@@ -59,9 +59,10 @@ foundation every later devnet, sync, and migration deliverable builds on.
       leaf-embedded `storage_root`.
 
 ## Risks & open questions
-- Witness gas constants (recalibrated `WITNESS_BRANCH_COST` for PBT's deeper
-  branches) and the final hash `H` are not yet fixed; implementations must keep
-  both pluggable. See [open-questions.md](../../open-questions.md).
+- PBT gas costs (state-access and code-chunk pricing, fixed by the benchmark-based
+  repricing EIP [A-S2](A-S2-gas-cost-recalibration.md)) and the final hash `H` are
+  not yet fixed; implementations must keep both pluggable. See
+  [open-questions.md](../../open-questions.md).
 - Divergent DB engines across clients (hash-keyed vs raw-keyed) make a single
   canonical zone layout non-trivial; a correlated all-client merkelization bug
   would be hard to detect before cross-client agreement testing.

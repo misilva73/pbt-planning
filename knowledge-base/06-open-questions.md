@@ -41,8 +41,8 @@ EIP-8297 full-digest keys — kept here for historical context:
 - Header stem constants (`0x40` storage onset, `0x80` code onset) — still
   protocol-embedded; changing them requires migrating all header stems.
 
-The **live** trie and migration open questions (hash-function selection, witness-gas
-recalibration, state expiry, readiness thresholds, artifact formats, shadow-root carrier,
+The **live** trie and migration open questions (hash-function selection, state-access gas
+repricing, state expiry, readiness thresholds, artifact formats, shadow-root carrier,
 etc.) now live in [../open-questions.md](../open-questions.md).
 
 ## Privacy note — "wormholes" (from the spec site)

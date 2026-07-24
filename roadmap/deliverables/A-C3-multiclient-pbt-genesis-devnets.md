@@ -54,7 +54,7 @@ feeds the H\* milestone.
 - Cross-client agreement is the H\* readiness signal, but a **correlated
   all-client bug** would pass agreement undetected — conformance vectors (A-T3)
   must backstop it. See [open-questions.md](../../open-questions.md).
-- Not-yet-final witness gas constants could surface as subtle cross-client gas
+- Not-yet-final PBT gas constants could surface as subtle cross-client gas
   divergences under adversarial blocks.
 
 ## References

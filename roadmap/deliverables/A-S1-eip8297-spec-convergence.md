@@ -23,7 +23,7 @@ Converge every client team and researcher on the current [EIP-8297](https://eips
   - **First-byte zone identifier**: `0x00` accounts, `0x01` code overflow, `0x02`–`0xFE` reserved, `0xFF` storage.
   - **BASIC_DATA** change: `code_size` widened to 4 bytes at offset 4.
 - Redrawn stem-node diagram (`assets/eip-8297/diagram.png`) if it still depicts the superseded stem-node model rather than the two-node `LeafNode`/`BranchNode` model.
-- Confirmation that the EIP `requires:` header reads **`4762, 7612`** (already reflected in the merged EIP).
+- Confirmation that the EIP `requires:` header reads **`7612`** (the overlay-tree transition mechanism); PBT's gas repricing is a separate benchmark-based EIP and is not part of the base spec's `requires`.
 - A written record of resolved client-team design objections, so downstream work does not re-litigate settled points.
 
 ## Dependencies
@@ -37,7 +37,7 @@ Converge every client team and researcher on the current [EIP-8297](https://eips
 
 ## Exit criteria (definition of done)
 - [ ] Client teams and researchers confirm the current EIP-8297 design (variable-length prefix-free keys, two node types, full-digest keys, tagged merkelization) as the convergence base.
-- [ ] `requires:` confirmed as `4762, 7612`.
+- [ ] `requires:` confirmed as `7612`.
 - [ ] Stem-node diagram redrawn to the `LeafNode`/`BranchNode` model (if not already).
 - [ ] All client-team design objections logged and resolved (no open blocking review comments).
 - [ ] Reference implementation (`insert`, `merkelize`, `encode_bit_prefix`, key derivation) matches the merged text.
@@ -45,7 +45,7 @@ Converge every client team and researcher on the current [EIP-8297](https://eips
 ## Risks & open questions
 - The third-party rendered spec site (cperezz.github.io/pbt-spec) may still describe the earlier draft (fixed 32-byte keys, 4-bit/3-bit zone prefixes, `StemNode`); reviewers may cite stale specifics. See [knowledge-base/05-design-evolution.md](../../knowledge-base/05-design-evolution.md).
 - The **hash function `H`** (== `key_hash`) is intentionally left open here and resolved by the [hash-function dependency](../README.md) (external, due end 2026); convergence must not accidentally pin BLAKE3 as final just because it is the reference-impl choice. See [open-questions.md](../../open-questions.md).
-- **Witness gas constants** remain unfixed at this stage (handled in [A-S2](A-S2-gas-cost-recalibration.md)); the EIP text should mark them as pending recalibration, not final.
+- **Gas costs** are out of scope for the base design and are owned by the separate PBT gas repricing EIP ([A-S2](A-S2-gas-cost-recalibration.md)); the base EIP text should not pin state-access or code-chunk costs.
 - Reserved zones `0x02`–`0xFE` must be documented as requiring mutual prefix-freedom for any future category.
 
 ## References
@@ -53,4 +53,4 @@ Converge every client team and researcher on the current [EIP-8297](https://eips
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
 - [knowledge-base/05-design-evolution.md](../../knowledge-base/05-design-evolution.md)
-- [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297); requires EIP-4762, EIP-7612.
+- [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297); requires EIP-7612.

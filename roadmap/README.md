@@ -24,9 +24,9 @@ This document is the *when* and *who*.
 | **H\*** | **Summer 2027** (≈ 2027-06) | **EIP-8297 spec frozen**; **shadow-commitment period opens** (builders publish per-block PBT roots while consensus stays on the MPT). PBT is *implemented and observable* but **not yet canonical**. |
 | **I\*** | **Summer 2028** (≈ 2028-06) | **Fork `S` — the swap.** PBT becomes the canonical state commitment. MPT retained until finality, then sunset. |
 
-> PBT-native gas improvements (chunk-granular code access, stem warm/cold semantics) are
-> **deliberately decoupled** from the swap and previewed for a *later* fork — they are not on
-> the critical path to I\* and are out of scope for this roadmap.
+> PBT-native gas repricing (benchmark-based state-access costs and chunk-granular code
+> access) is **deliberately decoupled** from the swap and previewed for a *later* fork — it is
+> not on the critical path to I\* and is out of scope for this roadmap.
 >
 > Protocol prerequisites — **BAL (EIP-7928)** and the **64 KiB code-size limit (EIP-7954)** —
 > ship in **Glamsterdam (≈ 2026-09)**, before this roadmap's window, so they are treated as
