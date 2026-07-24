@@ -10,10 +10,10 @@ file records what changed so agents don't propagate outdated specifics.
 EIP-7864 (flat unified binary tree)
    │  add zones, content-addressed code, per-account storage buckets
    ▼
-EIP-8297 — published draft   ← the eips.ethereum.org page & pbt-spec site render THIS
-   │  PR #11978: rework keys & node types
+EIP-8297 — early draft   ← the third-party pbt-spec site may still render THIS
+   │  rework keys & node types
    ▼
-EIP-8297 — PR #11978 design  ← CURRENT source of truth in this KB
+EIP-8297 — current        ← CURRENT source of truth (published at eips.ethereum.org)
 ```
 
 ## From EIP-7864 → EIP-8297
@@ -34,13 +34,13 @@ EIP-8297 adds:
 The account header layout, code chunkification, and (originally) the four node types
 were kept from EIP-7864.
 
-## From published EIP-8297 → PR #11978 (the big one)
+## From the early EIP-8297 draft → current EIP-8297 (the big one)
 
-⚠️ **The eips.ethereum.org EIP-8297 page and the rendered spec site
-(cperezz.github.io/pbt-spec) still describe the pre-#11978 design.** PR #11978 changes
-the key scheme *and* the node types. Do not mix the two.
+⚠️ **The third-party rendered spec site (cperezz.github.io/pbt-spec) may still describe
+the early EIP-8297 draft.** The current design reworked the key scheme *and* the node
+types; the table below is the diff. Do not mix the two.
 
-| Aspect | Published EIP-8297 (OLD) | PR #11978 (CURRENT) |
+| Aspect | Early EIP-8297 draft (OLD) | Current EIP-8297 |
 |--------|--------------------------|---------------------|
 | Keys | Fixed **32-byte** (31-byte stem + 1 sub-index) | **Variable-length, prefix-free** (≤ `MAX_KEY_LENGTH = 8192`) |
 | Zone identifier | High **4 bits** of the stem | The **first byte** of the key |
@@ -55,7 +55,7 @@ the key scheme *and* the node types. Do not mix the two.
 | Structural boundaries | Fixed **depths** (storage@1, zones@4, bucket@61, stem@248, leaf@256) | Fixed **key-space regions** (prefix compression means no fixed depth, but the region a boundary owns is exact) |
 | Security bounds | Truncated widths: acct 244-bit (2¹²²), storage prefix 60-bit (~43 colliding pairs @10¹⁰ accts), suffix 187-bit (2⁹³·⁵) | **Full 256-bit** digests everywhere → ~2¹²⁸ birthday work; storage bucket collisions negligible |
 
-### Why the rework (per the PR)
+### Why the rework
 
 - **Full digests** remove the truncated-width collision analysis and the ~43
   colliding-pairs storage caveat: every hash-derived component is a full 256-bit digest
@@ -68,21 +68,21 @@ the key scheme *and* the node types. Do not mix the two.
 - **Variable-length + prefix-free** keys with one fixed length per zone keep the tree
   canonical (exactly one valid tree per key/value set).
 
-### PR #11978 metadata
+### EIP-8297 metadata
 
-- Updates `requires:` from `7612` to **`4762, 7612`**.
-- Notes the diagram (`assets/eip-8297/diagram.png`) still depicts the old stem-node
-  model and needs redrawing.
-- Marked **Draft**; still under assessment at time of sync.
+- `requires:` is **`4762, 7612`** (widened from `7612` when the keys/node types were reworked).
+- The diagram (`assets/eip-8297/diagram.png`) may still depict the old stem-node
+  model and need redrawing.
+- Marked **Draft**, Standards Track: Core.
 
 ## Even-earlier variant note
 
 The rendered spec site summary (cperezz.github.io/pbt-spec) additionally describes a
 **3-bit** zone prefix variant (zones `000` accounts, `001` code, `1` storage) with a
 248-bit key structure. Treat the 3-bit and 4-bit descriptions as **superseded** by the
-first-byte (1-byte) zone identifier in PR #11978.
+first-byte (1-byte) zone identifier in the current EIP-8297.
 
 **Bottom line for agents:** cite [02-tree-structure.md](02-tree-structure.md) and
-[03-key-derivation.md](03-key-derivation.md) (PR #11978 design) for current specifics.
-If you read the live EIP page or spec site and it disagrees, the page is likely
-pre-#11978 — verify against the PR.
+[03-key-derivation.md](03-key-derivation.md) (current EIP-8297 design) for current
+specifics. If you read the third-party spec site and it disagrees, it is likely showing
+the early draft — verify against [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297).

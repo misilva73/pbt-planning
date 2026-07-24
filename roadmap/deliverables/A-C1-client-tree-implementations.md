@@ -73,4 +73,4 @@ foundation every later devnet, sync, and migration deliverable builds on.
 - [open-questions.md](../../open-questions.md)
 - [jsign/binary-tree-spec](https://github.com/jsign/binary-tree-spec) — candidate Python reference
   implementation clients can check tree code against (currently EIP-7864 — must be adapted to PBT's
-  prefix-free keys, two node types, and zone partitioning before roots match PR #11978).
+  prefix-free keys, two node types, and zone partitioning before roots match EIP-8297).

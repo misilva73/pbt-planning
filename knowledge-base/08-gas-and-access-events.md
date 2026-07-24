@@ -2,8 +2,8 @@
 
 > **Status: starting point, not final.** [EIP-4762](https://eips.ethereum.org/EIPS/eip-4762)
 > ("Statelessness gas cost changes") was written for the **Verkle** fork. PBT
-> (EIP-8297) **adopts its access-event / gas framework** — PR #11978 adds `4762` to
-> EIP-8297's `requires:` — but with modifications, and the numeric constants below are
+> (EIP-8297) **adopts its access-event / gas framework** — `4762` is in EIP-8297's
+> `requires:` — but with modifications, and the numeric constants below are
 > **not yet recalibrated** for PBT. Treat this file as the baseline the PBT gas model
 > starts from, not a pinned spec. See [03-key-derivation.md](03-key-derivation.md#L138)
 > (§ Access events) and [../open-questions.md](../open-questions.md) for the PBT deltas.
@@ -188,4 +188,4 @@ own DB/witness recalibration builds on exactly this requirement.
 
 See [07-sources.md](07-sources.md) to re-fetch. The published EIP text (allowed host
 `eips.ethereum.org`) is authoritative for the Verkle-era framework; PBT's adaptations
-live in EIP-8297 / PR #11978.
+live in EIP-8297.

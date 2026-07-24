@@ -1,9 +1,9 @@
 # 02 — Tree Structure & Merkelization
 
-> This documents the **current design per [EIP PR #11978](https://github.com/ethereum/EIPs/pull/11978)**.
-> The published EIP-8297 page and the rendered spec site still describe an earlier
-> variant (fixed 32-byte keys, `StemNode`/`InternalNode`, truncated storage prefix).
-> See [05-design-evolution.md](05-design-evolution.md) for the diff.
+> This documents the **current design per [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297)**.
+> The third-party rendered spec site (cperezz.github.io/pbt-spec) may still describe an
+> earlier variant (fixed 32-byte keys, `StemNode`/`InternalNode`, truncated storage prefix).
+> See [05-design-evolution.md](05-design-evolution.md) for how the design evolved.
 
 ## Keys
 

@@ -9,7 +9,7 @@
 
 # PBT Roadmap — Trie Design & Migration (2026-07 → 2028-08)
 
-A month-by-month plan to ship **PBT (Partitioned Binary Tree, [EIP-8297](https://github.com/ethereum/EIPs/pull/11978))**
+A month-by-month plan to ship **PBT (Partitioned Binary Tree, [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297))**
 as Ethereum's canonical state commitment, and to **migrate mainnet state from the MPT to PBT**.
 
 For the *what* and *why* of PBT itself, start at the [knowledge base](../knowledge-base/README.md).

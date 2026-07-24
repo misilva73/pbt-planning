@@ -13,7 +13,7 @@
 
 ## Objective
 Produce canonical, machine-checkable test vectors for PBT's tree structure and key
-derivation per PR #11978: merkelization, insertion/split into canonical form, bit-prefix
+derivation per EIP-8297: merkelization, insertion/split into canonical form, bit-prefix
 encoding, and the full zone/stem/sub-index embedding of Ethereum state. These vectors are
 the first concrete evidence artifact and the reference clients ([A-C1](A-C1-client-tree-implementations.md))
 check their tree code against. Because the tree hash function is not yet chosen, the initial
@@ -40,7 +40,7 @@ defer digest/root values until the hash is fixed by the [hash-function dependenc
 
 ## Dependencies
 - **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) — vectors track the
-  converged PR #11978 constants and algorithms. Hash outputs additionally need
+  converged EIP-8297 constants and algorithms. Hash outputs additionally need
   the [hash-function dependency](../README.md) before they can be pinned.
 - **Downstream (this blocks):** [A-C1](A-C1-client-tree-implementations.md) — client tree
   implementations validate key derivation and merkelization against these vectors.
@@ -55,7 +55,7 @@ defer digest/root values until the hash is fixed by the [hash-function dependenc
 - [ ] Reference implementation and at least one client agree on every structure-only vector.
 - [ ] Hash-parameterized layer defined so digest/root values drop in mechanically once
       the [hash-function dependency](../README.md) fixes the hash.
-- [ ] Vectors are versioned against the PR #11978 constant set and flagged if constants change.
+- [ ] Vectors are versioned against the EIP-8297 constant set and flagged if constants change.
 
 ## Risks & open questions
 - Hash function not final — the dominant open parameter. Digests and roots stay unpinned
@@ -72,5 +72,5 @@ defer digest/root values until the hash is fixed by the [hash-function dependenc
 - [open-questions.md](../../open-questions.md)
 - [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md)
 - [jsign/binary-tree-spec](https://github.com/jsign/binary-tree-spec) — candidate Python reference
-  implementation to adapt for vector generation (currently EIP-7864, not yet PR #11978; `tree.py`
+  implementation to adapt for vector generation (currently EIP-7864, not yet EIP-8297; `tree.py`
   merkelization + `embedding.py` key derivation with existing `test_*` suites).

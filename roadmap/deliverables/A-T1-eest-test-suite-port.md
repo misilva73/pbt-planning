@@ -22,7 +22,7 @@ green client implementations run against.
 ## Scope — what ships
 - EEST state-test and blockchain-test fillers adapted to emit PBT key/value state and PBT
   roots, replacing MPT trie construction with the two-node-type tree (LeafNode/BranchNode,
-  canonical prefix-compressed form) from PR #11978.
+  canonical prefix-compressed form) from EIP-8297.
 - Key-embedding hooks so fillers derive tree keys via the zone/stem/sub-index scheme
   (account header stem, storage buckets, content-addressed code overflow).
 - Access-event fixtures on the EIP-4762 framework carrying PBT's two required modifications:

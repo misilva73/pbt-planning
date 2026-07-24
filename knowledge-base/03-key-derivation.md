@@ -1,6 +1,6 @@
 # 03 — Key Derivation & Tree Embedding
 
-> Current design per [EIP PR #11978](https://github.com/ethereum/EIPs/pull/11978).
+> Current design per [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297).
 > All hash outputs are unpinned (hash function not final; BLAKE3 in the reference impl).
 
 All Ethereum state is embedded into the single key/value space. Data accessed together
@@ -67,9 +67,9 @@ lowering gas and simplifying witness generation. Setting any header field also s
 
 ### BASIC_DATA layout
 
-Fields packed into the `BASIC_DATA` leaf. **In PR #11978, `code_size` widened from 3
-bytes (at offset 5) to 4 bytes (at offset 4)**, taking one reserved byte; every other
-field keeps its position:
+Fields packed into the `BASIC_DATA` leaf. **`code_size` is 4 bytes at offset 4** (widened
+from the earlier 3 bytes at offset 5, taking one reserved byte); every other field keeps
+its position:
 
 - `version` (1 byte)
 - reserved bytes

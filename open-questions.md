@@ -9,8 +9,7 @@ Each item notes where it is tracked or resolved. Fold resolved questions back in
 knowledge base (and delete them here) as they settle. Roadmap deliverables that close a
 given parameter are linked inline.
 
-- **Trie:** [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) (Draft; latest direction
-  in [PR #11978](https://github.com/ethereum/EIPs/pull/11978)).
+- **Trie:** [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) (Draft).
 - **Migration:** the offline MPT→PBT migration EIP, **EIP-8347**
   ([PR #12006](https://github.com/ethereum/EIPs/pull/12006)). The migration items below
   are the "**§14 open parameters**" referenced throughout the roadmap deliverables.

@@ -5,7 +5,7 @@
 > knowledge base). This file keeps the **settled security analysis** and the older,
 > **superseded** questions for historical context.
 
-## Security considerations (current, PR #11978)
+## Security considerations (current EIP-8297)
 
 A **collision** = two distinct items deriving the same key. Keys contain three
 hash-derived components, each a **full 256-bit digest** (≈ `2^128` birthday work — far
@@ -32,10 +32,10 @@ Keys of different zones differ in their first byte and cannot collide at all.
 - **Preimage injectivity** — every node preimage starts with a one-byte tag; branch
   prefixes carry an explicit bit count → the logical-node→preimage mapping is injective.
 
-## Superseded / historical open questions (pre-#11978)
+## Superseded / historical open questions (early EIP-8297 draft)
 
-Several open questions from the rendered spec site are **superseded** by PR #11978's
-full-digest keys — kept here for historical context:
+Several open questions from the rendered spec site are **superseded** by the current
+EIP-8297 full-digest keys — kept here for historical context:
 - Prefix length `P` (was 60 bits → ~43 colliding pairs @10¹⁰ accounts); full digest now.
 - Bucket-collision handling (joint vs independent expiry) — largely moot at full width.
 - Header stem constants (`0x40` storage onset, `0x80` code onset) — still

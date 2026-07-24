@@ -26,7 +26,7 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 | [02-tree-structure.md](02-tree-structure.md) | The data structure itself: node types, key format, zones, merkelization, insertion. The core spec. |
 | [03-key-derivation.md](03-key-derivation.md) | How account / code / storage keys are derived, header layout, constants, worked test vectors. |
 | [04-migration.md](04-migration.md) | The MPT → PBT migration roadmap: offline conversion, phases, converter, BAL-replay, snapshot, verification. |
-| [05-design-evolution.md](05-design-evolution.md) | How the design got here: EIP-7864 → published EIP-8297 → PR #11978. **Read this to avoid citing stale details.** |
+| [05-design-evolution.md](05-design-evolution.md) | How the design got here: EIP-7864 → early EIP-8297 draft → current EIP-8297. **Read this to avoid citing stale details.** |
 | [06-open-questions.md](06-open-questions.md) | Settled **security considerations** (collision resistance, grinding, preimage injectivity) and superseded/historical questions. **Live open questions moved to [../open-questions.md](../open-questions.md).** |
 | [08-gas-and-access-events.md](08-gas-and-access-events.md) | The gas / access-event framework (EIP-4762) PBT adopts as a starting point, and the PBT-specific deltas. |
 | [07-sources.md](07-sources.md) | Primary sources, related EIPs, and how to re-fetch them. |
@@ -35,9 +35,9 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 
 - **PBT is an active, evolving draft.** EIP-8297 is `Draft`, Standards Track: Core.
 - The design has changed materially over time. This knowledge base documents the
-  **latest design direction from [EIP PR #11978](https://github.com/ethereum/EIPs/pull/11978)**
-  as the current source of truth, and flags where the published EIP page and the
-  rendered spec site still describe an **earlier** design.
+  **current design as specified in [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297)**
+  as the source of truth, and flags where the third-party rendered spec site
+  (cperezz.github.io/pbt-spec) may still describe an **earlier** design.
   See [05-design-evolution.md](05-design-evolution.md) before trusting any specific
   numeric detail (key widths, node types, storage prefix bits) you find elsewhere.
 - The **hash function is not final.** Reference implementations use BLAKE3; Poseidon2
