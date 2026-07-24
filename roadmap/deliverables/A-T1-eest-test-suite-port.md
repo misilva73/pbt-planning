@@ -55,7 +55,7 @@ green client implementations run against.
 ## Risks & open questions
 - Hash function is not final (BLAKE3 in the reference impl only): root-bearing fixtures must
   stay hash-parameterized until the [hash-function dependency](../README.md) resolves — see
-  [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md) (hash-function
+  [open-questions.md](../../open-questions.md) (hash-function
   selection).
 - `WITNESS_BRANCH_COST` and the rest of the witness-gas constants are not yet fixed for PBT's
   deeper branches; access-event fixtures must treat them as parameters pending
@@ -64,7 +64,7 @@ green client implementations run against.
 ## References
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)
 - [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md)
 - [jsign/binary-tree-spec](https://github.com/jsign/binary-tree-spec) — existing Python binary-tree
   reference impl (EIP-7864, BLAKE3) that the ported fillers can cross-check against once adapted to PBT.

@@ -37,7 +37,7 @@ This document is the *when* and *who*.
 > Keccak), used for both merkelization and `key_hash` — is treated as an **external dependency**,
 > **planned to be completed by the end of 2026**. It is no longer scheduled as a roadmap deliverable;
 > the spec-freeze ([A-S3](deliverables/A-S3-eip8297-spec-freeze.md)) and all root-bearing test vectors
-> consume the decided `H`. See [knowledge-base/06-open-questions.md](../knowledge-base/06-open-questions.md).
+> consume the decided `H`. See [open-questions.md](../open-questions.md).
 
 ---
 

@@ -75,7 +75,7 @@ A new EIP (draft) specifying **offline** (not in-consensus) MPT→PBT conversion
 - [ ] Reviewed and signed off by all EL client teams as the basis for the converter prototype.
 
 ## Risks & open questions
-- Shadow-root **carrier mechanism** (how per-block PBT roots are published) is an open §14 parameter — see [04-migration.md §Parameters](../../knowledge-base/04-migration.md) and [06-open-questions.md](../../knowledge-base/06-open-questions.md); this deliverable defines the *concept*, its wire mechanism is fixed in [B-S2](B-S2-readiness-gate-activation-params.md).
+- Shadow-root **carrier mechanism** (how per-block PBT roots are published) is an open §14 parameter — see [04-migration.md §Parameters](../../knowledge-base/04-migration.md) and [open-questions.md](../../open-questions.md); this deliverable defines the *concept*, its wire mechanism is fixed in [B-S2](B-S2-readiness-gate-activation-params.md).
 - **Unvalidated-flip** weak point: `S` activates the pre-fork block's PBT root without consensus validation ([04-migration.md §Known weak points](../../knowledge-base/04-migration.md)); mitigation is specified downstream in [B-S2](B-S2-readiness-gate-activation-params.md).
 - **Preimage byte-level format** and **snapshot chunk encoding** are §14 parameters this EIP must close; chunk sizing trades verification granularity against overhead at ~100+ GB scale and must be validated at scale by [A-C4](A-C4-snapshot-serving-verification.md) and [B-T3](B-T3-dual-check-verification-scale.md).
 - **External dependency on EIP-7928** — any late change to the shipped BAL format would ripple into the translation rules; replay correctness depends on BALs recording *all* writes needed for state transition, validated by [B-T1](B-T1-conversion-replay-vectors.md) vectors.
@@ -86,4 +86,4 @@ A new EIP (draft) specifying **offline** (not in-consensus) MPT→PBT conversion
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)
 - [knowledge-base/01-overview.md](../../knowledge-base/01-overview.md)
 - [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)

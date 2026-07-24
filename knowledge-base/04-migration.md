@@ -101,7 +101,7 @@ replay to catch up), refined with modern tooling and a safety-first framing:
   tree begins; see [05-design-evolution.md](05-design-evolution.md)) — but commits to a
   bounded, anchored conversion at block `N` and a definite fork `S`, rather than an
   open-ended research dependency. State expiry proper is left to a **separate future
-  EIP** ([06-open-questions.md](06-open-questions.md)).
+  EIP** ([../open-questions.md](../open-questions.md)).
 
 **Net:** the four options traded off disk, client complexity, network resilience, and
 duration; the PBT roadmap picks the offline/snapshot branch and spends engineering

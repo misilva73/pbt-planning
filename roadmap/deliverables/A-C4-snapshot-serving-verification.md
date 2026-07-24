@@ -53,7 +53,7 @@ plumbing the migration snapshot pipeline depends on.
 ## Risks & open questions
 - Snapshot chunk encoding and the preimage byte-level format are still open
   parameters (§14); serving/verification code must track the B-S1 manifest spec
-  as it settles. See [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+  as it settles. See [open-questions.md](../../open-questions.md).
 - Consensus-anchoring (rehash under MPT schema vs block `N` `stateRoot`) is a
   migration-context check owned by the B thread; A-C4 covers internal
   PBT-consistency and manifest authentication of the artifact itself.
@@ -62,4 +62,4 @@ plumbing the migration snapshot pipeline depends on.
 - [knowledge-base/01-overview.md](../../knowledge-base/01-overview.md)
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)

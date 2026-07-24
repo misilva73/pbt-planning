@@ -40,7 +40,7 @@ Freeze the final EIP-8297 as the H\* Considered-for-Inclusion (CFI) spec: keys, 
 - [ ] Change-control process for any post-freeze amendment documented.
 
 ## Risks & open questions
-- Freeze depends on the [hash-function dependency](../README.md) (hash `H`, the dominant open parameter) resolving by end 2026; slippage there pushes the freeze. Gas cost recalibration ([A-S2](A-S2-gas-cost-recalibration.md)) is deliberately decoupled and does **not** block the freeze — gas constants are out of scope for the freeze and handled entirely in A-S2. See [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+- Freeze depends on the [hash-function dependency](../README.md) (hash `H`, the dominant open parameter) resolving by end 2026; slippage there pushes the freeze. Gas cost recalibration ([A-S2](A-S2-gas-cost-recalibration.md)) is deliberately decoupled and does **not** block the freeze — gas constants are out of scope for the freeze and handled entirely in A-S2. See [open-questions.md](../../open-questions.md).
 - State-expiry / resurrection mechanics are deferred to a separate EIP and are explicitly **out of scope** for this freeze; the frozen spec must not embed assumptions that block a later expiry EIP (e.g. reserved zones, reference counting for shared code).
 - Diagram and rendered spec-site content must be brought in line with the frozen design so the CFI artifact is internally consistent (the old stem-node diagram must already be redrawn per [A-S1](A-S1-eip8297-spec-convergence.md)).
 
@@ -48,5 +48,5 @@ Freeze the final EIP-8297 as the H\* Considered-for-Inclusion (CFI) spec: keys, 
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
 - [knowledge-base/05-design-evolution.md](../../knowledge-base/05-design-evolution.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)
 - EIP-8297 (requires EIP-4762, EIP-7612); H\* CFI process.

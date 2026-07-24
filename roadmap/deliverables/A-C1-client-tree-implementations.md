@@ -61,7 +61,7 @@ foundation every later devnet, sync, and migration deliverable builds on.
 ## Risks & open questions
 - Witness gas constants (recalibrated `WITNESS_BRANCH_COST` for PBT's deeper
   branches) and the final hash `H` are not yet fixed; implementations must keep
-  both pluggable. See [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+  both pluggable. See [open-questions.md](../../open-questions.md).
 - Divergent DB engines across clients (hash-keyed vs raw-keyed) make a single
   canonical zone layout non-trivial; a correlated all-client merkelization bug
   would be hard to detect before cross-client agreement testing.
@@ -70,7 +70,7 @@ foundation every later devnet, sync, and migration deliverable builds on.
 - [knowledge-base/01-overview.md](../../knowledge-base/01-overview.md)
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)
 - [jsign/binary-tree-spec](https://github.com/jsign/binary-tree-spec) — candidate Python reference
   implementation clients can check tree code against (currently EIP-7864 — must be adapted to PBT's
   prefix-free keys, two node types, and zone partitioning before roots match PR #11978).

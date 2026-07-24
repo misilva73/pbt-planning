@@ -60,7 +60,7 @@ defer digest/root values until the hash is fixed by the [hash-function dependenc
 ## Risks & open questions
 - Hash function not final — the dominant open parameter. Digests and roots stay unpinned
   until the [hash-function dependency](../README.md) resolves; see
-  [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+  [open-questions.md](../../open-questions.md)
   (hash-function selection: BLAKE3 / Poseidon2 / Keccak).
 - Header stem constants (`0x40` storage onset, `0x80` code onset) remain protocol-embedded;
   a change would require regenerating all embedding vectors — see the older open questions in
@@ -69,7 +69,7 @@ defer digest/root values until the hash is fixed by the [hash-function dependenc
 ## References
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)
 - [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md)
 - [jsign/binary-tree-spec](https://github.com/jsign/binary-tree-spec) — candidate Python reference
   implementation to adapt for vector generation (currently EIP-7864, not yet PR #11978; `tree.py`

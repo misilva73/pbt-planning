@@ -70,4 +70,4 @@ determinism before it hardens into the production pipeline.
 ## References
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)
 - [knowledge-base/01-overview.md](../../knowledge-base/01-overview.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)

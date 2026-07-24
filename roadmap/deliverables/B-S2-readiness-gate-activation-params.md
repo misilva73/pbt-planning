@@ -44,11 +44,11 @@ point.
 - [ ] Select-`N` / activate-`S` procedure documented and unvalidated-flip mitigation chosen and specified.
 
 ## Risks & open questions
-- This deliverable closes multiple §14 open parameters at once (readiness thresholds X/Y/D, shadow-root carrier, `N′` cadence, MPT disposal timing) — see [04-migration.md §Parameters](../../knowledge-base/04-migration.md) and [06-open-questions.md](../../knowledge-base/06-open-questions.md).
+- This deliverable closes multiple §14 open parameters at once (readiness thresholds X/Y/D, shadow-root carrier, `N′` cadence, MPT disposal timing) — see [04-migration.md §Parameters](../../knowledge-base/04-migration.md) and [open-questions.md](../../open-questions.md).
 - **Unvalidated flip:** `S` activates the pre-fork block's PBT root without consensus validation; a correlated all-client bug would be undetectable either way ([04-migration.md §Known weak points](../../knowledge-base/04-migration.md)).
 - **Validator observability gap:** the builder stream measures producers, not the validating majority — coverage thresholds must account for this; proposer-signed post-import sidecar is the designed fallback.
 
 ## References
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)
 - [knowledge-base/01-overview.md](../../knowledge-base/01-overview.md)

@@ -45,5 +45,5 @@ turning the offline-migration EIP (B-S1) into executable conformance checks.
 
 ## References
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)
 - [knowledge-base/01-overview.md](../../knowledge-base/01-overview.md)

@@ -34,7 +34,7 @@ Recalibrate the EIP-4762 access-event gas schedule for PBT's tree geometry and s
 - [ ] Recalibrated values packaged for a later gas-focused fork (superseding the provisional constants in place through the swap).
 
 ## Risks & open questions
-- **The recalibrated values are not yet fixed** in the current draft — this deliverable is what fixes them. Until then, gas constants in the spec are marked pending. See [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md) (Access events) and [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+- **The recalibrated values are not yet fixed** in the current draft — this deliverable is what fixes them. Until then, gas constants in the spec are marked pending. See [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md) (Access events) and [open-questions.md](../../open-questions.md).
 - Because **provisional** gas constants are in place through the swap while this recalibration waits on [A-T4](A-T4-hardware-matrix-benchmarks.md) data (2027-07→2027-12), the network runs on provisional gas pricing until the later gas-focused fork adopts the recalibrated values; the provisional constants must therefore be conservative enough to be safe in the interim.
 - Branch depth depends on grinding resistance and prefix compression; mispricing could under-charge grinded deep subtrees. See the "Grinding" note in [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
 - Reference-counting for shared code leaves (state-expiry interaction) is deferred to a separate EIP but touches access accounting assumptions.
@@ -42,5 +42,6 @@ Recalibrate the EIP-4762 access-event gas schedule for PBT's tree geometry and s
 ## References
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md) (Access events / gas)
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md) (arity-2 branch depth)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md) (witness gas recalibration; grinding)
+- [open-questions.md](../../open-questions.md) (witness gas recalibration)
+- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md) (grinding note)
 - EIP-4762 (access events); EIP-8297.

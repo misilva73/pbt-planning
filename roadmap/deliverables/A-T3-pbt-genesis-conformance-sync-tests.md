@@ -52,13 +52,13 @@ implemented and observable at H\*.
 ## Risks & open questions
 - Readiness thresholds are undefined — cross-client agreement **X%**, coverage **Y%**, sustained
   **D** days are still placeholders; see the migration open questions in
-  [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+  [open-questions.md](../../open-questions.md).
 - Hash function still not final until the [hash-function dependency](../README.md) resolves; conformance on a
   provisional hash must be re-confirmed if the choice changes — see
-  [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+  [open-questions.md](../../open-questions.md).
 
 ## References
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)
 - [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md)

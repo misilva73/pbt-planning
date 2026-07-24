@@ -152,7 +152,7 @@ a zero-valued leaf is **distinct from an absent key** (it commits to a different
 EVM execution never removes entries — insertion and in-place update are the only
 mutations, so clients never need delete logic that re-canonicalizes by merging a lone
 surviving child back into its parent. Removing entries is reserved for a future
-**state-expiry** mechanism (see [06-open-questions.md](06-open-questions.md)).
+**state-expiry** mechanism (see [../open-questions.md](../open-questions.md)).
 
 ## Merkelization
 

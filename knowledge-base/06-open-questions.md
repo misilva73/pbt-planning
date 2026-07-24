@@ -1,4 +1,9 @@
-# 06 — Open Questions & Security Considerations
+# 06 — Security Considerations & Historical Notes
+
+> **Live open questions moved out.** The tracker of unresolved trie and migration design
+> questions now lives at [../open-questions.md](../open-questions.md) (outside the
+> knowledge base). This file keeps the **settled security analysis** and the older,
+> **superseded** questions for historical context.
 
 ## Security considerations (current, PR #11978)
 
@@ -27,30 +32,7 @@ Keys of different zones differ in their first byte and cannot collide at all.
 - **Preimage injectivity** — every node preimage starts with a one-byte tag; branch
   prefixes carry an explicit bit count → the logical-node→preimage mapping is injective.
 
-## Open questions — the tree (EIP-8297)
-
-- **Hash function selection** *(dominant open parameter).* Candidates:
-  - **BLAKE3** — good native perf, reasonable in-circuit, well-studied, used in the
-    reference impl.
-  - **Poseidon2** — SNARK-friendly; needs extra spec for field encoding; under EF
-    cryptography-initiative review.
-  - **Keccak** — native ubiquity, weaker in-circuit.
-- **Witness gas recalibration** — `WITNESS_BRANCH_COST` (EIP-4762's 1900) must be
-  recalibrated for PBT's deeper branches; **values not yet fixed**. The full EIP-4762
-  framework PBT starts from is documented in
-  [08-gas-and-access-events.md](08-gas-and-access-events.md).
-- **State expiry & resurrection** — per-account (header stem) and per-bucket
-  (`key_hash(address)` bucket) expiry is natural on the zone topology (record the
-  subtree hash, prune below it). Open issues: content-addressed **code needs reference
-  counting** (shared leaves) or deferral to a state sweep; **resurrection** must
-  re-attach a subtree consistent with the recorded commitment. Mechanism deferred to a
-  separate EIP.
-- **Multi-proof compression** — compact formats that exploit shared proof branches when
-  proving both account headers and storage for the same account.
-- **Reserved zones** `0x02–0xFE` — future categories (e.g. nullifiers) must stay
-  mutually prefix-free.
-
-### Older open questions (pre-#11978, may be resolved by full-digest design)
+## Superseded / historical open questions (pre-#11978)
 
 Several open questions from the rendered spec site are **superseded** by PR #11978's
 full-digest keys — kept here for historical context:
@@ -59,15 +41,9 @@ full-digest keys — kept here for historical context:
 - Header stem constants (`0x40` storage onset, `0x80` code onset) — still
   protocol-embedded; changing them requires migrating all header stems.
 
-## Open questions — the migration (§14 of the roadmap)
-
-- Readiness thresholds: cross-client agreement **X%**, coverage **Y%**, sustained **D** days.
-- Preimage file byte-level format.
-- Snapshot chunk encoding details.
-- Shadow-root carrier mechanism (how per-block PBT roots are published).
-- Post-swap MPT disposal timing.
-- `N′` re-anchoring cadence for late joiners.
-- Proof-consumer dependencies: verification precompiles, `eth_getProof` successors.
+The **live** trie and migration open questions (hash-function selection, witness-gas
+recalibration, state expiry, readiness thresholds, artifact formats, shadow-root carrier,
+etc.) now live in [../open-questions.md](../open-questions.md).
 
 ## Privacy note — "wormholes" (from the spec site)
 

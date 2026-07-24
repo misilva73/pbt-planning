@@ -44,7 +44,7 @@ Land [EIP PR #11978](https://github.com/ethereum/EIPs/pull/11978) as the agreed 
 
 ## Risks & open questions
 - The published EIP page and rendered spec site (cperezz.github.io/pbt-spec) still describe the pre-#11978 design (fixed 32-byte keys, 4-bit/3-bit zone prefixes, `StemNode`); reviewers may cite stale specifics. See [knowledge-base/05-design-evolution.md](../../knowledge-base/05-design-evolution.md).
-- The **hash function `H`** (== `key_hash`) is intentionally left open here and resolved by the [hash-function dependency](../README.md) (external, due end 2026); convergence must not accidentally pin BLAKE3 as final just because it is the reference-impl choice. See [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+- The **hash function `H`** (== `key_hash`) is intentionally left open here and resolved by the [hash-function dependency](../README.md) (external, due end 2026); convergence must not accidentally pin BLAKE3 as final just because it is the reference-impl choice. See [open-questions.md](../../open-questions.md).
 - **Witness gas constants** remain unfixed at this stage (handled in [A-S2](A-S2-gas-cost-recalibration.md)); the EIP text should mark them as pending recalibration, not final.
 - Reserved zones `0x02`–`0xFE` must be documented as requiring mutual prefix-freedom for any future category.
 

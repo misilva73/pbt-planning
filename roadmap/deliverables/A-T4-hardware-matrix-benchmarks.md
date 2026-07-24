@@ -56,13 +56,13 @@ the throughput/resource numbers size the production rehearsals ([B-C4](B-C4-prod
 - The hash function is unresolved and directly drives native performance — BLAKE3 (good native
   perf) vs Poseidon2 (SNARK-friendly, slower native) vs Keccak; benchmarks may need re-running
   once the [hash-function dependency](../README.md) resolves. See
-  [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+  [open-questions.md](../../open-questions.md).
 - Witness-gas constants are not yet fixed; these benchmarks are the evidence that fixes them via
   [A-S2](A-S2-gas-cost-recalibration.md) — see
-  [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md).
+  [open-questions.md](../../open-questions.md).
 
 ## References
 - [knowledge-base/02-tree-structure.md](../../knowledge-base/02-tree-structure.md)
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
-- [knowledge-base/06-open-questions.md](../../knowledge-base/06-open-questions.md)
+- [open-questions.md](../../open-questions.md)
 - [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md)

@@ -6,7 +6,7 @@
 > EIP-8297's `requires:` — but with modifications, and the numeric constants below are
 > **not yet recalibrated** for PBT. Treat this file as the baseline the PBT gas model
 > starts from, not a pinned spec. See [03-key-derivation.md](03-key-derivation.md#L138)
-> (§ Access events) and [06-open-questions.md](06-open-questions.md) for the PBT deltas.
+> (§ Access events) and [../open-questions.md](../open-questions.md) for the PBT deltas.
 
 ## What this EIP does, in one paragraph
 
@@ -182,7 +182,7 @@ own DB/witness recalibration builds on exactly this requirement.
 2. **Branch-cost recalibration** — `WITNESS_BRANCH_COST = 1900` was calibrated for
    shallow Verkle branches; PBT's branches are deeper, so all witness gas constants MUST
    be recalibrated. **Values not yet fixed in the draft.**
-   *(see [06-open-questions.md](06-open-questions.md))*
+   *(see [../open-questions.md](../open-questions.md))*
 3. **No `MAIN_STORAGE_OFFSET`** — the `0xFF` storage zone + per-account bucket replace the
    numeric offset. *(see [03-key-derivation.md](03-key-derivation.md#L107))*
 

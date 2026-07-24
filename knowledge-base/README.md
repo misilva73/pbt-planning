@@ -27,7 +27,7 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 | [03-key-derivation.md](03-key-derivation.md) | How account / code / storage keys are derived, header layout, constants, worked test vectors. |
 | [04-migration.md](04-migration.md) | The MPT → PBT migration roadmap: offline conversion, phases, converter, BAL-replay, snapshot, verification. |
 | [05-design-evolution.md](05-design-evolution.md) | How the design got here: EIP-7864 → published EIP-8297 → PR #11978. **Read this to avoid citing stale details.** |
-| [06-open-questions.md](06-open-questions.md) | Unresolved parameters, security considerations, and open design decisions. |
+| [06-open-questions.md](06-open-questions.md) | Settled **security considerations** (collision resistance, grinding, preimage injectivity) and superseded/historical questions. **Live open questions moved to [../open-questions.md](../open-questions.md).** |
 | [08-gas-and-access-events.md](08-gas-and-access-events.md) | The gas / access-event framework (EIP-4762) PBT adopts as a starting point, and the PBT-specific deltas. |
 | [07-sources.md](07-sources.md) | Primary sources, related EIPs, and how to re-fetch them. |
 
