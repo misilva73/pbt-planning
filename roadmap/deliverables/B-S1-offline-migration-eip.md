@@ -7,9 +7,22 @@
 | **Timeline** | 2026-07 → 2026-12 (6 months) |
 | **Migration phase** | Phase 1 — Prototypes & Evidence |
 | **Milestone alignment** | feeds H\* (2027-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | In progress — **EIP-8347** drafted and opened as [PR #12006](https://github.com/ethereum/EIPs/pull/12006) (2026-07-23, awaiting editor consensus; not yet merged) |
 
 ← [Back to roadmap](../README.md)
+
+> **Update (2026-07).** This EIP now exists as a draft: **EIP-8347 — Offline State Migration
+> to the PBT** ([PR #12006](https://github.com/ethereum/EIPs/pull/12006), authors Perez /
+> Silva / Wedderburn; `requires: 7928, 8297`). The draft already specifies the conversion
+> model (`ANCHOR_BLOCK` / `SWAP_FORK`), the preimage and snapshot byte formats, BAL-replay,
+> the dual-check, and the shadow-root concept. **One scope divergence to reconcile:** this
+> deliverable assumed the EIP would freeze a fixed-size stem-aligned **chunk encoding** and a
+> **release-anchored manifest** as the verification anchor. EIP-8347 instead leaves transport
+> chunking to the distribution layer, makes the chunk-hash index **optional / non-normative**,
+> and makes the **dual-check against `ANCHOR_BLOCK`'s `stateRoot`** the root of trust (a
+> release-pinned `pbtRoot` is optional hardening only). The chunk/manifest exit criteria below
+> are updated accordingly. See
+> [04-migration.md § Source discrepancies](../../knowledge-base/04-migration.md#source-discrepancies-to-reconcile).
 
 ## Objective
 Author a **single new EIP** that specifies PBT's **offline-conversion** migration from the MPT to
@@ -40,9 +53,14 @@ A new EIP (draft) specifying **offline** (not in-consensus) MPT→PBT conversion
 - **Preimage file byte-level format** — the layout of MPT-key preimages required by (a) self-converters
   on hash-keyed clients (geth, Nethermind, Besu) and (b) verifiers doing the consensus-anchoring check.
 - **Snapshot serialization** — byte-canonical (bit-identical across independent producers), sorted in
-  **PBT-key order**, split into fixed-size **stem-aligned chunks**; per-chunk leaf/framing encoding.
-- **Manifest format** — release-anchored manifest hashes giving per-chunk verification, so a downloader
-  can validate each chunk independently against a digest anchored in the activation client release.
+  **PBT-key order**. The artifact is a header (`pbtRoot | leafCount`) plus a self-delimiting leaf-record
+  stream (zone byte fixes key length); it carries **only leaves**, no inner nodes. **Transport chunking
+  is left to the distribution layer** (snap-sync-style P2P, era files, CDNs, torrents), not frozen in the
+  EIP — a change from this deliverable's original assumption (see the update note above).
+- **Manifest / chunk index** — **optional, non-normative** download accelerator only. The root of trust is
+  the **dual-check against `ANCHOR_BLOCK`'s `stateRoot`**, not a release-anchored manifest; a client release
+  MAY additionally pin the swap anchor's `pbtRoot` as optional hardening, but that cannot cover the
+  after-release re-anchor snapshots.
 - **BAL-replay** — per-entry translation rules ([EIP-7928](../../knowledge-base/07-sources.md) →
   PBT leaf mutations), zero-writes-delete-leaves / no-deletion-marker semantics, batching bounds, and
   the **`(E, N]` BAL-completion** procedure that closes the preimage-completeness gap and catches a
@@ -65,10 +83,10 @@ A new EIP (draft) specifying **offline** (not in-consensus) MPT→PBT conversion
 - EF DevOps / distribution (torrent + mirror packaging) for manifest-anchoring review.
 
 ## Exit criteria (definition of done)
-- [ ] New EIP assigned a number and merged as a draft, with the offline-conversion model and the rejection of the online overlay documented in the rationale.
-- [ ] `N` and `S` semantics precisely defined (finalization requirement, hash identification, commitment-only swap).
-- [ ] Preimage byte-level format and snapshot chunk-encoding / byte-canonical serialization specified and frozen, resolving the §14 open parameters.
-- [ ] Manifest format defined with per-chunk hashes anchored to a client release; two independent implementations produce a **bit-identical** small-scale snapshot and matching manifest.
+- [x] New EIP assigned a number and drafted, with the offline-conversion model and the rejection of the online overlay documented in the rationale — **EIP-8347, [PR #12006](https://github.com/ethereum/EIPs/pull/12006)** (draft open; merge pending editor consensus).
+- [x] `ANCHOR_BLOCK` (`N`) and `SWAP_FORK` (`S`) semantics precisely defined (finalization requirement, hash identification, commitment-only swap) — in the draft.
+- [ ] Preimage byte-level format and snapshot **artifact** serialization specified and frozen — **drafted** (preimage record + `pbtRoot | leafCount | leafRecord*` layouts); transport chunk encoding intentionally **out of scope** (distribution layer), so the §14 chunk-encoding item is *narrowed*, not closed here.
+- [ ] Two independent implementations produce a **bit-identical** small-scale snapshot from the byte-canonical serialization. *(Manifest/chunk index is optional and non-normative — no longer an exit criterion; the dual-check is the verification anchor.)*
 - [ ] BAL-replay translation rules for all four entry types, zero-write/no-marker semantics, batching bounds, and the `(E, N]` BAL-completion procedure specified and reviewed.
 - [ ] Dual-check verification (internal consistency + consensus anchoring) specified.
 - [ ] Shadow-root concept specified sufficiently for the carrier-mechanism work in [B-S2](B-S2-readiness-gate-activation-params.md).

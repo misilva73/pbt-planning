@@ -1,20 +1,48 @@
 # 04 — MPT → PBT Migration Roadmap
 
-> Source: **"MPT → PBT: Ethereum State Migration Roadmap"**
-> ([hackmd.io/@CPerezz/H1Q2zt8NMe](https://hackmd.io/@CPerezz/H1Q2zt8NMe)).
+> **Primary source (this doc):** *"MPT → PBT: Ethereum State Migration Roadmap"*
+> ([hackmd.io/@CPerezz/H1Q2zt8NMe](https://hackmd.io/@CPerezz/H1Q2zt8NMe)) — the
+> strategy-and-operator roadmap, and the document with the most context (program phases,
+> node-operator playbook, trust tiers, testing).
+>
+> **Formal write-up:** **EIP-8347 — Offline State Migration to the PBT**
+> ([PR #12006](https://github.com/ethereum/EIPs/pull/12006), Draft; authors Perez,
+> Silva, Wedderburn; `requires: 7928, 8297`). The EIP is the normative rendering of this
+> roadmap: it pins the byte-level artifact formats, the parameter values, and the
+> RFC-2119 requirements. Where this doc needs an exact format or a concrete constant, it
+> cites the EIP.
+>
 > This is a *strategy* document; specific tree constants may lag the latest EIP design
 > (see [05-design-evolution.md](05-design-evolution.md)). The migration approach itself
 > is largely design-agnostic.
+
+## Source discrepancies to reconcile
+
+The roadmap and its formal EIP write-up do **not yet agree** on the following. They are
+flagged here rather than silently resolved; the fix lands when the EIP and roadmap are
+re-synced. Downstream trackers: [../open-questions.md](../open-questions.md).
+
+| # | Point | HackMD roadmap | EIP-8347 (PR #12006) | Note |
+| --- | --- | --- | --- | --- |
+| D1 | **Re-anchor cadence / dual-state window** | Targets a **2–3 week** per-node dual-state holding window; re-anchor cadence `N′` left generic. | `REANCHOR_CADENCE = 50400` blocks (**~1 week**). Its "transition window" is a *distinct* concept: `SWAP_FORK` activation → finality, **not** the dual-state holding period. | Two different clocks are being conflated across the docs. Reconcile the terminology: is the "2–3 week" figure the re-anchor cadence, the catch-up budget, or the hold window? |
+| D2 | **Hash domains** | Names **BLAKE3** explicitly for PBT key derivation and internal-node hashing (and BLAKE3/keccak256 for artifact hashing). | Defers entirely to [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) for key derivation; never names a hash. | The hash `H` is still an **open parameter** (BLAKE3 / Poseidon2 / Keccak candidates — see [../open-questions.md](../open-questions.md#hash-function-selection--the-dominant-open-parameter)). The EIP's deferral is the safer framing; the roadmap's BLAKE3 naming is ahead of the decision. |
+| D3 | **Phase model** | **Six** program phases (P0–P6): a project schedule from spec convergence to aftermath. | **Five** lifecycle phases: conversion → distribution/verification → catch-up → shadow → swap+window. | Not a contradiction (program schedule vs protocol lifecycle) but the two "phase" numberings must not be conflated. |
+| D4 | **Disk figure** | **300–500 GB** headroom for the PBT database (self-migrators). | Snapshot artifact is **~100+ GB**; ~300–500 GB is what MPT disposal *reclaims* after finality. | Three different quantities (PBT DB, snapshot file, extra-tree overhead ≈300 GB in [09](09-online-vs-offline-migration.md)). Pin a single definition. |
 
 ## The core decision: offline conversion (not online overlay)
 
 The roadmap explicitly chooses **offline conversion** over an online overlay approach.
 
+> For the full argued comparison — the online/offline debate worked through point by point
+> and re-decided for the post-H\* world (BALs, ePBS, zkEVM proofs, 400M gas limit), including
+> the conversion-pointer / two-tree-read question — see
+> [09-online-vs-offline-migration.md](09-online-vs-offline-migration.md).
+
 The shape of it:
-1. Convert the full state at a **fixed anchor block `N`**.
+1. Convert the full state at a **fixed anchor block `ANCHOR_BLOCK`** (`N`).
 2. Distribute the result as a **verifiable snapshot**.
 3. Maintain **both trees** during a transition window.
-4. Activate the PBT at **fork `S`**, making it canonical.
+4. Activate the PBT at **fork `SWAP_FORK`** (`S`), making it canonical.
 
 **Why offline wins** (the document acknowledges online's advantages — inherent
 observability, gentler disk usage, no distribution event — but judges those "engineering
@@ -109,7 +137,11 @@ effort (BAL-replay, canonical snapshots, dual verification, shadow-root observab
 to neutralize that branch's classic downsides — distribution trust and catch-up
 correctness — in exchange for keeping conversion entirely off the consensus-critical path.
 
-## Six-phase timeline
+## Six-phase program timeline
+
+The roadmap's project schedule (P0–P6). This is a *program* view; do not conflate it
+with the EIP's five-phase protocol lifecycle (discrepancy [D3](#source-discrepancies-to-reconcile),
+and the lifecycle is summarized under [Migration lifecycle](#migration-lifecycle-the-eip-view) below).
 
 | Phase | Name | Key work |
 |-------|------|----------|
@@ -118,87 +150,228 @@ correctness — in exchange for keeping conversion entirely off the consensus-cr
 | **2** | Devnets | Multi-client PBT-genesis networks; PBT-native state sync; snapshot serving & verification; end-to-end distribution plumbing. |
 | **3** | Migration Machinery | Converter across clients; BAL-replay engine; snapshot production pipeline; full-cycle devnet including the swap. |
 | **4** | Rehearsals | Production runs on mainnet state; hardware-matrix testing (EIP-7870); public testnet migrations with swaps; mainnet shadow fork; performance metrics. |
-| **5** | Mainnet Window | Select finalized block `N`; produce & cross-verify snapshot; distribute via torrent + mirrors; BAL-replay to chain tip; shadow commitment period (builders publish roots); pass readiness gate. |
+| **5** | Mainnet Window | Select finalized block `N`; produce & cross-verify snapshot; distribute via torrent + mirrors; BAL-replay to chain tip; shadow commitment period (builders publish roots); pass readiness gate. `N` is announced **only after Phase 4** completes. |
 | **6** | Swap & Aftermath | Fork `S` makes PBT canonical; keep MPT until finality; sunset snapshot & dispose MPT; restore fresh-node sync. |
+
+### Migration lifecycle (the EIP view)
+
+The EIP frames the same process as **five protocol-lifecycle phases**, each a pure
+function of the state committed by `ANCHOR_BLOCK`'s `stateRoot`, none touching the
+consensus-critical path:
+
+1. **Conversion (off-chain)** — extract [preimages](#preimages) at `ANCHOR_BLOCK`, then
+   run the [converter](#the-converter) to produce the [PBT snapshot](#snapshot-distribution).
+2. **Distribution and verification** — publish artifacts; every node runs the
+   [dual-check](#verification--dual-check-authentication).
+3. **Catch-up** — [BAL-replay](#bal-replay) from `ANCHOR_BLOCK` to the tip; distributors
+   [re-anchor](#re-anchoring--late-joiners) on a fixed cadence to bound the replay gap.
+4. **Shadow-commitment period** — builders publish [shadow roots](#shadow-commitment--observability)
+   while consensus still runs on the MPT.
+5. **Swap and transition window** — at `SWAP_FORK` the PBT becomes canonical; both trees
+   are held until finality, after which the MPT may be disposed.
+
+## Two migration paths for node operators
+
+Every node reaches a verified, tip-tracking PBT by one of two paths. Most operators take
+Option B; expert operators and distribution sources take Option A.
+
+### Option A — Self-migrate (expert path)
+
+**Prerequisites:** a client release with passing vector suites; **300–500 GB** disk
+headroom for the PBT DB (discrepancy [D4](#source-discrepancies-to-reconcile)); the
+keccak-preimage file (**hash-keyed clients only** — geth/Nethermind/Besu; reth/erigon
+skip it); BAL retention from the conversion base through the swap plus margin; and a
+recent locally finalized block to anchor on.
+
+**Two modes:**
+- **STOPPED** — node offline; fastest conversion (hours to days).
+- **ALONGSIDE** — live node keeps following the chain; considerably slower under IO/CPU
+  contention. Hardware that can only just keep up (`k ≤ 1`) **cannot** use this mode.
+
+**Procedure (12 steps):** choose a finalized starting point → pin the state view →
+create an isolated PBT store → assemble preimage coverage (hash-keyed only) → scan and
+bind (`keccak256(preimage) == path` for every leaf) → derive PBT keys → zone-sharded
+external merge-sort → single sequential bottom-up build → seal with an atomic watermark →
+resume node operation → BAL-replay from the watermark → checkpoint-compare against
+published roots.
+
+### Option B — Download snapshot (majority path)
+
+Distribution at scale: **~10⁴ nodes × ~150 GB ≈ 1–2 PB** to move within the
+release-adoption window.
+
+**Both dual-checks are mandatory** (see [Verification](#verification--dual-check-authentication)).
+**Procedure (9 steps):** obtain release-baked expectations (`N` hash, PBT root, manifest
+digest) → anchor `N` in the local canonical header chain → fetch and verify the manifest
+digest → chunked download with per-chunk hash verification on arrival → assemble/stream
+verified chunks → run Check 1 while ingesting → run Check 2 (MPT rebuild from the same
+stream) → diagnostic report on any failure → BAL-replay from `N` to tip.
+
+**Trust tiers** (decreasing artifact trust, increasing cost):
+
+| Tier | What it trusts | Cost |
+|------|----------------|------|
+| **Full verification** (Checks 1+2) | Nothing beyond `N`'s `stateRoot` from its own header chain | ~one full conversion |
+| **Manifest tier** | Release-baked root; skips Check 2 | Requires explicit opt-out flag |
+| **Self-convert at `M`** | Nothing (own state) | Conversion cost |
+| **Archive audit-at-`N`** | Nothing (independent rebuild from own history) | Archive rebuild |
 
 ## Key machinery
 
 ### The Converter
 
-A deterministic function translating MPT state to PBT:
-1. Scan source (MPT) leaves.
-2. Validate `keccak(preimage)` matches trie paths.
-3. Derive PBT keys.
-4. **External merge-sort** by PBT key order.
-5. Sequential **bottom-up** tree construction.
+A deterministic function translating MPT state to PBT. Given the state at `ANCHOR_BLOCK`
+(MPT snapshot + preimages), it:
+1. Scans source (MPT) leaves.
+2. Validates `keccak256(preimage)` matches trie paths.
+3. Derives PBT keys per [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297).
+4. For each account with code, fetches bytecode by `code_hash`, chunks it, and emits the
+   code leaves (the `0x01` code zone).
+5. **External merge-sort** by PBT key order.
+6. Sequential **bottom-up** tree construction (single pass).
 
-Includes security checkpoints and resumability markers. The PBT-key sort order lets
-ingestion be a sequential **bulk-load** rather than random inserts.
+Independent, correct converters on the same `ANCHOR_BLOCK` state **MUST produce a
+bit-identical PBT root and snapshot**. The PBT-key sort order lets ingestion be a
+sequential **bulk-load** rather than random inserts. A self-converter's input needs no
+separate provenance check — its correctness is already established by having executed the
+chain to `ANCHOR_BLOCK` and matched the header `stateRoot`.
 
 ### BAL-replay
 
 **Block-Level Access Lists (EIP-7928)** enable state transition **without
-re-execution**. It applies per-block state writes using translation rules per entry
-type (balance/nonce changes, storage writes, code deployments):
-- **Zero-writes delete leaves** (zeros encoded as absence, in the migration context).
+re-execution**. Per-entry translation rules apply each block's writes to the PBT
+(balance/nonce changes, storage writes, code deployments):
+- **Zero-writes delete leaves** — a value of zero is encoded as leaf *absence*, so a
+  replayed zero-write deletes an existing leaf or is a no-op, never inserts. This matches
+  MPT semantics and keeps independently converged PBTs bit-identical.
 - **Account deletion needs no special BAL marker.**
-- Batching bounds replay cost while keeping convergence below steady-state block
-  production rate.
+- Batching bounds replay cost while keeping the replay rate **below** steady-state block
+  production, so the snapshot converges to and then tracks the tip.
 
-Used to catch a converted snapshot up from anchor `N` to chain tip, and to close the
-gap when preimages are extracted at an earlier height `E`: BAL-completion over `(E, N]`
+The EIP distinguishes **two regimes**: *finalized-only* (installation → shadow period; no
+journal, batching unconstrained) and *tip-following* (shadow period on; a pre-value
+journal ~2 epochs deep handles reorgs within the journal horizon). A **batch-boundary
+alignment rule** applies when comparing at a checkpoint height `h` (a re-anchor or a
+shadow-covered block): close the batch exactly at `h` before continuing to `h+1`.
+
+Used to catch a converted snapshot up from anchor `N` to chain tip, and to close the gap
+when preimages are extracted at an earlier height `E`: BAL-completion over `(E, N]`
 ensures completeness.
 
 ### Snapshot distribution
 
 - Artifact is **~100+ GB**, **byte-canonical** serialization → bit-identical output
   across independent producers.
-- Chunked distribution with **release-anchored manifest hashes** → per-chunk
-  verification.
-- Sorted in **PBT-key order** for bulk ingestion.
+- Formal layout (EIP-8347): a small header `pbtRoot[32] | leafCount[8, big-endian]`
+  followed by the sorted `leafRecord` stream. Each leaf record is `key[keyLen] |
+  value[32]`, self-delimiting because the leading **zone byte** of the key fixes `keyLen`
+  (`0x00` account header → 34, `0x01` code → 34, `0xFF` storage → 66).
+- The snapshot carries **only leaves — no intermediate nodes**. Every node reconstructs
+  the inner nodes locally during verification; the only inner value shipped is the single
+  claimed `pbtRoot`, which is recomputed and checked, never trusted.
+- Sorted in **PBT-key order** for bulk ingestion. How the artifact is split for transport
+  is left to the distribution layer (snap-sync-style P2P, era files, CDNs, torrents),
+  which already provide partial-download integrity and resumption; a chunk-hash index is
+  an optional, non-normative accelerator.
 
 ### Preimages — why they're needed
 
-MPT state **cannot be iterated backward into raw keys** (it's hash-keyed). Preimages
-serve (a) self-converters on hash-keyed clients (geth, Nethermind, Besu) and
-(b) verifiers doing the consensus-anchoring check. Extraction at height `E` from
-raw-keyed nodes + BAL-completion over `(E, N]` gives completeness.
+MPT state **cannot be iterated backward into raw keys** (it's hash-keyed, and most
+clients don't persist plain addresses/slot keys). Preimages serve (a) self-converters on
+hash-keyed clients (geth, Nethermind, Besu) and (b) verifiers doing the consensus-anchoring
+check. They **MUST** be extracted at `ANCHOR_BLOCK`. Extraction at an earlier height `E`
+from raw-keyed nodes + BAL-completion over `(E, N]` gives completeness.
+
+Formal file layout (EIP-8347): a concatenation of self-delimiting per-account records,
+`address[20] | slotCount[4, big-endian] | slotKey[32] * slotCount`, sorted by `address`
+ascending (byte-lexicographic, each address once) and slot keys sorted ascending within a
+record (no duplicates). A verifier recovers MPT paths as `keccak256(address)` and
+`keccak256(slotKey)`.
 
 ## Verification — dual-check authentication
 
 Any node — **including a fresh one with no prior state** — can verify a downloaded
-snapshot without trusting the distribution source:
+snapshot without trusting the distribution source. Both checks are mandatory; a snapshot
+failing either **MUST** be rejected:
 
 1. **Internal PBT consistency** — rebuild the PBT from snapshot leaves, derive keys,
-   hash bottom-up, verify the claimed PBT root.
+   hash bottom-up, verify the claimed PBT root. (This step is also where each node
+   *derives the full tree for itself*, since inner nodes are not shipped.)
 2. **Consensus anchoring** — rehash snapshot leaves under the **MPT schema** using
-   distributed preimages, verify against block `N`'s header `stateRoot`.
+   distributed preimages, verify against block `N`'s header `stateRoot` (taken from the
+   node's own header chain). A fabricated but internally self-consistent package still
+   fails here.
+
+## Hash domains
+
+Which hash function operates in each domain. **Caveat:** the roadmap names BLAKE3, but the
+hash `H` is still an **open parameter** (BLAKE3 / Poseidon2 / Keccak) and the EIP defers
+to EIP-8297 rather than naming it — see discrepancy
+[D2](#source-discrepancies-to-reconcile) and
+[../open-questions.md](../open-questions.md#hash-function-selection--the-dominant-open-parameter).
+Treat the BLAKE3 entries below as *reference-implementation, not final*.
+
+| Domain | Hash function |
+|--------|--------------|
+| MPT paths, `codeHash` | Keccak256 (unchanged forever) |
+| PBT key derivation, internal-node hashing | BLAKE3 *(unpinned — see caveat)* |
+| Artifact / preimage / manifest hashes | BLAKE3 (snapshots) or keccak256 (self-migration) |
+
+Raw keys (addresses, storage slots) are the **shared preimage of both tree domains**.
 
 ## Shadow commitment & observability
 
-During the pre-swap period, **builders compute and publish per-block PBT roots** while
-consensus still runs on the MPT. Conversion correctness thus becomes visible per block,
-publicly and attributably. Omissions count against **coverage** metrics rather than
-divergence (preserving interpretability).
+During the pre-swap period, **builders compute and publish per-block PBT roots** (shadow
+roots) while consensus still runs on the MPT. Conversion correctness thus becomes visible
+per block, publicly and attributably. Omissions count against **coverage** metrics rather
+than divergence (preserving interpretability). Publication stays a `SHOULD`, deliberately
+**out of consensus** — enforcing it would put PBT construction back on the
+consensus-critical path (the exact property offline exists to avoid); the intended carrier
+is a proposer-signed sidecar on a dedicated gossip topic (wire mechanism open — see
+[../open-questions.md](../open-questions.md#shadow-root-publication-carrier--builder-identity)).
 
 **Readiness gates** before the activation release:
 - Cross-client agreement **≥ X%** sustained **D** days.
 - Coverage **≥ Y%**.
 - Builder / relay ecosystem readiness.
 
+## Testing framework (EEST coverage)
+
+The roadmap enumerates the test surface (built out in Phase 1):
+- Ported execution-spec-tests (root representation only).
+- PBT-structural unit tests (zones, stems, key derivation).
+- Adversarial / structural-cost suites (spam patterns, chunk floods).
+- Code-chunking suite (chunk boundaries, padding, dedup).
+- BAL-replay vector suite (pre-state + BAL → expected post-root).
+- State-op benchmarks (PBT vs MPT under current gas).
+- Dual-DB performance suites (concurrent MPT load; batched / per-block).
+- Devnet adversarial workloads (sustained hostile traffic).
+- Rehearsal acceptance runs (byte-identical snapshots; convergence `k > 1`).
+
 ## Parameters
 
 | Symbol | Meaning | When fixed |
 |--------|---------|-----------|
-| `N` | Anchor block whose state is converted (finalized, identified by hash) | Chosen after Phase 4 |
-| `S` | EL+CL hard fork where PBT becomes canonical | Post-shadow period |
+| `ANCHOR_BLOCK` (`N`) | Anchor block whose state is converted (finalized, identified by hash) | Chosen after Phase 4 |
+| `SWAP_FORK` (`S`) | EL+CL hard fork where PBT becomes canonical | Post-shadow period |
 | `M` | A node's local conversion height (any block it has finalized) | Per-node |
-| `N′` | Re-anchoring cadence for late joiners | Open (§14) |
+| `REANCHOR_CADENCE` (`N′`) | Re-anchoring cadence for late joiners | EIP proposes **50400 blocks (~1 week)**; roadmap leaves generic ([D1](#source-discrepancies-to-reconcile)) |
 
-**Open parameters (§14):** readiness thresholds (X, Y, D); preimage byte-level format;
-snapshot chunk encoding; shadow-root carrier mechanism; post-swap MPT disposal timing;
-`N′` re-anchoring cadence; proof-consumer dependencies (verification precompiles,
-`eth_getProof` successors).
+**Open parameters (§14):** readiness thresholds (X, Y, D); preimage byte-level format
+*(now specified in the EIP-8347 draft)*; snapshot chunk/transport encoding; shadow-root
+carrier mechanism; post-swap MPT disposal timing; `N′` re-anchoring cadence;
+proof-consumer dependencies (verification precompiles, `eth_getProof` successors).
+
+### Re-anchoring & late joiners
+
+The BAL-replay gap grows without bound as the chain advances, so a distributor re-runs
+conversion at successive finalized anchors `ANCHOR_BLOCK + n · REANCHOR_CADENCE` and
+publishes a fresh snapshot + preimage set for each. Each re-anchored snapshot is
+self-contained (anchored to its own `stateRoot`, verified by the same dual-check, no
+dependency on earlier anchors). A late joiner selects the most recent re-anchor at or
+below finality and BAL-replays only from there. Re-anchor cadence **must** stay newer than
+the BAL expiry window, or a late joiner won't have the BALs to replay from the chosen
+anchor (see [../open-questions.md](../open-questions.md#re-anchor-cadence--bal-expiry)).
 
 ## Known weak points & mitigations
 
@@ -206,16 +379,33 @@ snapshot chunk encoding; shadow-root carrier mechanism; post-swap MPT disposal t
   consensus validation*. Mitigation: hard-enforce the shadow root for the final blocks
   before `S`, or accept it given sustained cross-client agreement (a correlated
   all-client bug would be similarly undetectable anyway).
+- **Fork-boundary reorg procedure.** A post-`S` head reorging to a pre-`S` fork point
+  needs a concrete step-by-step specification before the swap EIP is finalized. Open in
+  both the roadmap and the EIP (see
+  [../open-questions.md](../open-questions.md#reorg-behavior-around-the-swap)).
 - **Validator observability gap.** The builder stream measures block *producers*, not
   the validating majority. Mitigation: pre-swap divergence is harmless and
   self-detectable; a proposer-signed post-import sidecar is the designed fallback.
+- **Distribution trust.** The ~100+ GB artifact is served off-chain. Neutralized by the
+  dual-check: consensus anchoring against `ANCHOR_BLOCK`'s `stateRoot` means a fabricated
+  package fails even if internally self-consistent. Transport-level integrity (torrent
+  piece hashes, TLS, CDN checksums) drops bad segments on arrival.
+- **Recoverability.** Both trees are held until `SWAP_FORK` is finalized; a fault at or
+  just after the swap recovers by falling back to the MPT until the activation release
+  deploys.
 
 ## Ecosystem impact
 
-- **Contracts:** none — standard operations unchanged.
+- **Contracts:** none — standard operations unchanged. Contracts still address storage by
+  256-bit slot via `SLOAD`/`SSTORE`; PBT key derivation runs below the EVM.
+- **Execution semantics / gas:** `SWAP_FORK` changes the state commitment **only** — gas,
+  opcodes, tx validity unchanged across the swap. PBT-native gas repricing (chunk-granular
+  code access, stem warm/cold semantics) is a **separate gas-repricing EIP**, deliberately
+  decoupled from `S`. Direction matters for timing: a **price *increase*** (if PBT access
+  is costlier) **MUST** activate at a fork *before* `S` to close the DoS window; a **price
+  *decrease*** may activate *after* `S` (overcharging carries no DoS risk).
 - **On-chain proof consumers:** significant — the eliminated `storage_root` in account
-  headers and the new tree hash mean these systems need coordinated upgrades. Tracked
-  in the outreach workstream (longest lead time → started in Phase 1).
-- **Post-swap gas:** PBT-native gas improvements (chunk-granular code access, stem
-  warm/cold semantics) are previewed separately and **deliberately decoupled** from the
-  state-commitment fork `S`.
+  headers and the new tree hash mean bridges, light-client verifiers, and `eth_getProof`
+  consumers need coordinated upgrades. Longest lead time → started in Phase 1; tracked in
+  the outreach workstream.
+- **Fresh sync (interim):** `N′` snapshot + BAL-replay until PBT-native snap-sync ships.

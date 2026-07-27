@@ -26,6 +26,7 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 | [02-tree-structure.md](02-tree-structure.md) | The data structure itself: node types, key format, zones, merkelization, insertion. The core spec. |
 | [03-key-derivation.md](03-key-derivation.md) | How account / code / storage keys are derived, header layout, constants, worked test vectors. |
 | [04-migration.md](04-migration.md) | The MPT → PBT migration roadmap: offline conversion, phases, converter, BAL-replay, snapshot, verification. |
+| [09-online-vs-offline-migration.md](09-online-vs-offline-migration.md) | Deep-dive comparison of the **online overlay** vs the chosen **offline snapshot** migration, argued through the live objections and re-decided for the post-H\* world (BALs, ePBS, zkEVM proofs, 400M gas). |
 | [05-design-evolution.md](05-design-evolution.md) | How the design got here: EIP-7864 → early EIP-8297 draft → current EIP-8297. **Read this to avoid citing stale details.** |
 | [06-open-questions.md](06-open-questions.md) | Settled **security considerations** (collision resistance, grinding, preimage injectivity) and superseded/historical questions. **Live open questions moved to [../open-questions.md](../open-questions.md).** |
 | [08-gas-and-access-events.md](08-gas-and-access-events.md) | PBT's gas model: benchmark-based state-access repricing (EIP-8038 lineage) plus chunk-based code access (EIP-2926), grounded in measured PBT read/write performance. |

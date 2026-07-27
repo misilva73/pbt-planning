@@ -26,7 +26,10 @@ This document is the *when* and *who*.
 
 > PBT-native gas repricing (benchmark-based state-access costs and chunk-granular code
 > access) is **deliberately decoupled** from the swap and previewed for a *later* fork — it is
-> not on the critical path to I\* and is out of scope for this roadmap.
+> not on the critical path to I\* and is out of scope for this roadmap. **Caveat:** per
+> EIP-8347's direction rule, this holds unconditionally only for a price *decrease*; if PBT
+> access proves *more expensive* than the MPT, that increase must land at a fork **before** `S`
+> (see [A-S2](deliverables/A-S2-gas-cost-recalibration.md)).
 >
 > Protocol prerequisites — **BAL (EIP-7928)** and the **64 KiB code-size limit (EIP-7954)** —
 > ship in **Glamsterdam (≈ 2026-09)**, before this roadmap's window, so they are treated as
@@ -49,7 +52,7 @@ Colour = workstream throughout the Gantt below.
 | Thread | Focus |
 |--------|-------|
 | **A · Trie Design** | The tree itself ([EIP-8297](../knowledge-base/02-tree-structure.md)): spec finalisation, gas recalibration, client tree implementations, conformance tests, devnets. Consumes the hash function `H` decided by the external hash-function dependency (see above). Must be *frozen & implemented* by **H\***. |
-| **B · Migration** | The MPT→PBT offline conversion ([roadmap doc](../knowledge-base/04-migration.md), specified in a new offline-migration EIP): converter, BAL-replay, snapshot distribution, dual-check verification, rehearsals, mainnet window. Culminates in the swap at **I\***. |
+| **B · Migration** | The MPT→PBT offline conversion ([roadmap doc](../knowledge-base/04-migration.md), specified in **EIP-8347** — the offline-migration EIP, [PR #12006](https://github.com/ethereum/EIPs/pull/12006)): converter, BAL-replay, snapshot distribution, dual-check verification, rehearsals, mainnet window. Culminates in the swap at **I\***. |
 
 | Workstream | Colour | Meaning |
 |------------|:------:|---------|
@@ -126,4 +129,4 @@ and **◆ I\*** (fork S, the swap).
 *Assumptions: H\* summer 2027, I\* summer 2028, monthly granularity. Dates and parameters
 (`N`, `S`, readiness thresholds) are placeholders until fixed by the processes in the
 deliverables above. The hash function `H` is an external dependency due end of 2026 (see top).
-Last updated 2026-07-22.*
+Last updated 2026-07-27.*

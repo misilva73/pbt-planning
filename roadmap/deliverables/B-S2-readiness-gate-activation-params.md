@@ -22,7 +22,7 @@ point.
 ## Scope — what ships
 - **Readiness thresholds:** cross-client agreement **≥ X%**, coverage **≥ Y%**, sustained **D** days — concrete values fixed and justified.
 - **Shadow-root carrier mechanism:** the concrete wire/publication mechanism for per-block PBT roots (the concept comes from [B-S1](B-S1-offline-migration-eip.md)).
-- **`N′` re-anchoring cadence** for late joiners.
+- **`N′` re-anchoring cadence** for late joiners. The EIP-8347 draft ([PR #12006](https://github.com/ethereum/EIPs/pull/12006)) proposes a starting value **`REANCHOR_CADENCE = 50400` blocks (~1 week)**; this deliverable confirms or refines it against rehearsal data, and must keep it **newer than the BAL expiry window**.
 - **Post-swap MPT disposal timing** (retain until finality, then sunset).
 - **Select-`N` / activate-`S` procedure:** how the finalized anchor block is chosen and how the fork is scheduled.
 - **Unvalidated-flip mitigation:** specify hard-enforcing the shadow root for the final blocks before `S`, or the documented conditions under which sustained cross-client agreement is accepted instead.

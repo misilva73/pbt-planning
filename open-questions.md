@@ -109,12 +109,17 @@ correlated all-client bug can't pass agreement undetected.
 ### Artifact formats & compression
 
 - **Preimage file byte-level format** — the MPT is hash-keyed and can't be walked back to
-  raw keys, so the extracted preimage set must be exhaustive; the on-disk format is still
-  open. Fixed by [B-S1](roadmap/deliverables/B-S1-offline-migration-eip.md), consumed by
+  raw keys, so the extracted preimage set must be exhaustive. **Now specified in the
+  EIP-8347 draft** ([PR #12006](https://github.com/ethereum/EIPs/pull/12006)): per-account
+  records `address[20] | slotCount[4, BE] | slotKey[32] * slotCount`, sorted
+  byte-lexicographically by address then slot key. Pending review; consumed by
   [B-C1](roadmap/deliverables/B-C1-converter-prototype.md).
-- **Snapshot chunk encoding** — chunk boundaries / byte-canonical serialization; chunk
-  sizing trades verification granularity against overhead at ~100+ GB scale. Validated at
-  scale by [A-C4](roadmap/deliverables/A-C4-snapshot-serving-verification.md) and
+- **Snapshot chunk encoding** — the byte-canonical *artifact* serialization is **now
+  specified in the EIP-8347 draft** (`pbtRoot[32] | leafCount[8, BE] | leafRecord*`, leaf
+  records self-delimited by a zone byte). What remains open is the **transport chunking**:
+  chunk boundaries / sizing trade verification granularity against overhead at ~100+ GB
+  scale and are left to the distribution layer. Validated at scale by
+  [A-C4](roadmap/deliverables/A-C4-snapshot-serving-verification.md) and
   [B-T3](roadmap/deliverables/B-T3-dual-check-verification-scale.md).
 - **Compression** — the leaf record format is somewhat wasteful and should compress well.
   Start with naive compression on transport; a **stem-aware** format (many keys share a
@@ -124,7 +129,12 @@ correlated all-client bug can't pass agreement undetected.
 
 BALs expire, so re-anchor snapshots must be **newer than the BAL expiry window** or a late
 joiner won't have the BALs needed to replay from the chosen anchor. `REANCHOR_CADENCE`
-(`N′`) must be chosen with the BAL expiry period and observed catch-up speed in mind.
+(`N′`) must be chosen with the BAL expiry period and observed catch-up speed in mind. The
+EIP-8347 draft ([PR #12006](https://github.com/ethereum/EIPs/pull/12006)) currently
+proposes **`REANCHOR_CADENCE = 50400` blocks (~1 week)**; the roadmap leaves it generic and
+targets a longer per-node dual-state window, so the two must be reconciled (see
+[knowledge-base/04-migration.md](knowledge-base/04-migration.md#source-discrepancies-to-reconcile),
+D1).
 Possible optimization: **merge consecutive BALs** (collapse slot `1→2→3` into `1→3`) to
 cut redundant IO during replay, and likely avoid recomputing the state root on every block
 insertion into the PBT. `N′` fixed by
