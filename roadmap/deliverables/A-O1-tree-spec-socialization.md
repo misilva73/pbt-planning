@@ -41,7 +41,7 @@ Drive EIP-8297 through the community governance process — ACDE (All Core Devs 
 - Divergence between published material and the current design is a live source of confusion; outreach must actively counter it. See [knowledge-base/05-design-evolution.md](../../knowledge-base/05-design-evolution.md).
 - The unresolved hash-function choice (the [hash-function dependency](../README.md)) means outreach cannot promise a fully pinned spec during this window; messaging must frame `H` as an open decision with a clear path, not a gap.
 - Fork-scoping competition: H\* is a shared agenda and PBT must win a CFI slot against other candidates. (Its protocol prerequisites — BAL EIP-7928, 64 KiB code EIP-7954 — already ship in Glamsterdam ~2026-09, so they are not competing for H\* scope.)
-- Migration-parameter open questions (readiness thresholds, shadow-root carrier) are outreach-adjacent but owned by the B thread; A-O1 scope is the tree spec itself. See [open-questions.md](../../open-questions.md).
+- Migration-parameter open questions (readiness thresholds X/Y/D, and the companion telemetry specification for shadow-root publication) are outreach-adjacent but owned by the B thread; A-O1 scope is the tree spec itself. See [open-questions.md](../../open-questions.md).
 
 ## References
 - [knowledge-base/01-overview.md](../../knowledge-base/01-overview.md) (design goals / rationale)

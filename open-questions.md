@@ -140,17 +140,35 @@ cut redundant IO during replay, and likely avoid recomputing the state root on e
 insertion into the PBT. `N′` fixed by
 [B-S2](roadmap/deliverables/B-S2-readiness-gate-activation-params.md).
 
-### Shadow-root publication (carrier + builder identity)
+### Shadow-root publication — the companion specification
 
-- **Carrier mechanism** — how per-block PBT roots are published during the shadow period.
-  Concept defined in [B-S1](roadmap/deliverables/B-S1-offline-migration-eip.md); wire
-  mechanism fixed in [B-S2](roadmap/deliverables/B-S2-readiness-gate-activation-params.md)
-  and first exercised at scale in
+The **carrier architecture is settled** and agreed across the roadmap, EIP-8347 and the
+knowledge base: shadow roots travel on an **out-of-consensus telemetry sidecar** —
+attesters compute the PBT root of each block's post-state and publish it **signed with their
+validator key**. It is never a block-validity condition; a missing or late root counts
+against a **coverage** metric, not as a divergence. The sidecar is **expected to ship
+enabled by default in CL clients**, so coverage comes from ordinary validator operation
+rather than an opt-in program. Documented in
+[knowledge-base/04-migration.md](knowledge-base/04-migration.md#shadow-commitment--observability).
+
+Two earlier questions here are **closed** by that decision and have been removed: *builder
+identification* — attesters are identified by the validator registry and their reports are
+signed, so there is no builder-identity problem and **no ePBS dependency** for
+observability; and *widening observability to attesters* — that is now the adopted design,
+not a proposal.
+
+What genuinely remains:
+
+- **The companion specification** — wire format, aggregation scheme, publication timing, and
+  any EL→CL plumbing. Deliberately **out of scope for EIP-8347**. The concept is defined in
+  [B-S1](roadmap/deliverables/B-S1-offline-migration-eip.md); the companion spec lands
+  alongside [B-S2](roadmap/deliverables/B-S2-readiness-gate-activation-params.md) and is
+  first exercised at scale in
   [B-C5](roadmap/deliverables/B-C5-testnet-migrations-shadow-fork.md).
-- **Builder identification** — publication currently leans on "block builders." How do we
-  distinguish builders from arbitrary nodes? This may imply a **dependency on ePBS**.
-- **Widen observability** — consider having attestors publish the PBT root they compute per
-  block, not just proposers/builders.
+- **Default-on delivery** — because publication is an operational commitment rather than a
+  protocol requirement, the coverage **Y%** gate (see [Readiness / activation
+  thresholds](#readiness--activation-thresholds)) depends on CL client teams shipping the
+  sidecar enabled. Track it as a delivery item, not a spec question.
 
 ### Reorg behavior around the swap
 

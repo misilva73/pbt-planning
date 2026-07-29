@@ -77,6 +77,9 @@ This design has several properties that hurt future scaling, especially
   converted; `S` is the hard fork at which PBT becomes canonical.
 - **Shadow root / shadow commitment** — a PBT root published per block *before* the
   swap, while consensus still runs on the MPT, to make conversion correctness visible.
+  Computed by **attesters** over each block's post-state and published signed with their
+  validator key on an out-of-consensus telemetry sidecar — never a block-validity condition
+  (see [04-migration.md](04-migration.md#shadow-commitment--observability)).
 
 See [02-tree-structure.md](02-tree-structure.md) for the data structure and
 [03-key-derivation.md](03-key-derivation.md) for how keys are computed.

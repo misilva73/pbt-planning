@@ -15,8 +15,8 @@
 Execute the real migration on mainnet, up to (but not including) the swap. Select
 a **finalized anchor block `N` (identified by hash)**, produce and cross-verify
 its snapshot, distribute it via **torrent + mirrors**, BAL-replay every node to
-the chain tip, and run the **shadow-commitment period** in which builders publish
-per-block PBT roots while consensus stays on the MPT. The window closes by
+the chain tip, and run the **shadow-commitment period** in which attesters publish
+signed per-block PBT roots while consensus stays on the MPT. The window closes by
 **passing the readiness gate** — the go/no-go for fork `S` at I\*.
 
 ## Scope — what ships
@@ -26,11 +26,12 @@ per-block PBT roots while consensus stays on the MPT. The window closes by
 - **Distribution via torrent + mirrors** so any node can fetch and verify the
   artifact without trusting the source.
 - **BAL-replay to chain tip** so nodes hold a live PBT alongside the canonical MPT.
-- A **shadow-commitment period**: builders compute and publish per-block PBT roots
-  while consensus still runs on the MPT, making conversion correctness visible,
-  public, and attributable per block.
+- A **shadow-commitment period**: attesters compute the PBT root of each block's
+  post-state and publish it signed with their validator key, over the out-of-consensus
+  telemetry sidecar, while consensus still runs on the MPT — making conversion
+  correctness visible, public, and attributable per block.
 - **Passing the readiness gate**: cross-client agreement ≥ X% sustained D days,
-  coverage ≥ Y%, builder/relay readiness.
+  coverage ≥ Y% of the attester stream, and builder/relay PBT capability.
 
 ## Client coverage
 - EL: geth, Nethermind, Besu, Reth, Erigon (note hash-keyed vs raw-keyed DB
@@ -48,19 +49,25 @@ per-block PBT roots while consensus stays on the MPT. The window closes by
 - [ ] Snapshot distributed via torrent + mirrors; nodes verify it via dual-check
       (internal PBT consistency + consensus-anchoring to `N`'s `stateRoot`).
 - [ ] BAL-replay brings nodes to chain tip and holds there.
-- [ ] Shadow-commitment period runs: builders publish per-block PBT roots;
-      omissions counted against **coverage**, disagreements against **divergence**.
+- [ ] Shadow-commitment period runs: attesters publish signed per-block PBT roots;
+      missing or late roots counted against **coverage**, disagreements against
+      **divergence** — never as a block-validity failure.
 - [ ] Readiness gate **passed**: cross-client agreement ≥ X% sustained D days,
-      coverage ≥ Y%, builder/relay ecosystem ready — a documented go decision for S.
+      coverage ≥ Y% of the attester stream, builders/relays PBT-capable — a documented
+      go decision for S.
 
 ## Risks & open questions
 - **Readiness thresholds (X, Y, D) are open (§14)** and must be fixed by B-S2
   before the gate can be evaluated.
-- **Validator observability gap.** The builder stream measures block *producers*,
-  not the validating majority; pre-swap divergence is harmless and self-detectable,
-  with a proposer-signed post-import sidecar as the designed fallback.
-- **Shadow-root carrier mechanism** and **`N′` re-anchoring cadence** for late
-  joiners are still open (§14).
+- **Coverage depends on default-on sidecars, not on enforcement.** Publication is
+  out of consensus and a `SHOULD`, so the window's coverage figure reflects how
+  widely CL clients ship the telemetry sidecar enabled by default
+  ([B-O3](B-O3-shadow-root-ecosystem-readiness.md)). Pre-swap divergence is harmless
+  and self-detectable.
+- **Builder/relay PBT capability** is a separate hard prerequisite for `S`: post-swap,
+  whoever builds a block computes the PBT root as consensus, so an MPT-only builder
+  produces invalid blocks from the first post-fork slot.
+- **`N′` re-anchoring cadence** for late joiners is still open (§14).
 
 ## References
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)

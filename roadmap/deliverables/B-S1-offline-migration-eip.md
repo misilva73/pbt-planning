@@ -48,8 +48,18 @@ A new EIP (draft) specifying **offline** (not in-consensus) MPT→PBT conversion
   target; **fork `S`** semantics where PBT becomes canonical and the swap changes the state commitment
   *only* (no gas/opcode semantics move; `EXTCODEHASH` stays byte-identical because
   `code_hash = keccak256(bytecode)`); a **transition window** keeping both trees until finality after `S`.
-- **Shadow-root** concept — per-block PBT roots published while consensus still runs on the MPT,
-  making conversion correctness observable pre-swap.
+- **Shadow-root** concept — **attesters** compute the PBT root of each block's post-state and
+  publish it **signed with their validator key** while consensus still runs on the MPT, making
+  conversion correctness observable and attributable pre-swap. The roots are carried by an
+  **out-of-consensus telemetry sidecar**: publication is a `SHOULD`, never a block-validity
+  condition (enforcing it would put PBT construction back on the consensus-critical path), and a
+  missing or late root counts against a **coverage** metric rather than as a divergence. The
+  sidecar is **expected to ship enabled by default in CL clients** — an operational expectation,
+  not a protocol requirement — so coverage comes from ordinary validator operation rather than an
+  opt-in program. The **wire format, aggregation scheme, publication timing and any EL→CL
+  plumbing are explicitly out of scope for this EIP** and are fixed in a **companion
+  specification** (tracked alongside the readiness gate in
+  [B-S2](B-S2-readiness-gate-activation-params.md)).
 - **Preimage file byte-level format** — the layout of MPT-key preimages required by (a) self-converters
   on hash-keyed clients (geth, Nethermind, Besu) and (b) verifiers doing the consensus-anchoring check.
 - **Snapshot serialization** — byte-canonical (bit-identical across independent producers), sorted in
@@ -80,6 +90,7 @@ A new EIP (draft) specifying **offline** (not in-consensus) MPT→PBT conversion
 - EF protocol support (fork-mechanism review, `N`/`S` semantics, EIP editorial process).
 - EIP-7928 authors for BAL-format alignment (BAL already shipped in Glamsterdam).
 - EL client migration leads (geth, Nethermind, Besu, Reth, Erigon) as spec + format reviewers.
+- CL client teams as reviewers of the shadow-commitment section, and as the authors of the companion telemetry specification the attester-side sidecar is built from.
 - EF DevOps / distribution (torrent + mirror packaging) for manifest-anchoring review.
 
 ## Exit criteria (definition of done)
@@ -89,11 +100,11 @@ A new EIP (draft) specifying **offline** (not in-consensus) MPT→PBT conversion
 - [ ] Two independent implementations produce a **bit-identical** small-scale snapshot from the byte-canonical serialization. *(Manifest/chunk index is optional and non-normative — no longer an exit criterion; the dual-check is the verification anchor.)*
 - [ ] BAL-replay translation rules for all four entry types, zero-write/no-marker semantics, batching bounds, and the `(E, N]` BAL-completion procedure specified and reviewed.
 - [ ] Dual-check verification (internal consistency + consensus anchoring) specified.
-- [ ] Shadow-root concept specified sufficiently for the carrier-mechanism work in [B-S2](B-S2-readiness-gate-activation-params.md).
+- [ ] Shadow-root concept specified: attester-published, validator-key-signed per-block PBT roots on an out-of-consensus telemetry sidecar, with coverage (not validity) semantics — and the wire-level details explicitly deferred to the companion specification.
 - [ ] Reviewed and signed off by all EL client teams as the basis for the converter prototype.
 
 ## Risks & open questions
-- Shadow-root **carrier mechanism** (how per-block PBT roots are published) is an open §14 parameter — see [04-migration.md §Parameters](../../knowledge-base/04-migration.md) and [open-questions.md](../../open-questions.md); this deliverable defines the *concept*, its wire mechanism is fixed in [B-S2](B-S2-readiness-gate-activation-params.md).
+- Shadow-root **carrier architecture is settled** (out-of-consensus telemetry sidecar, attester-signed, coverage-not-validity, default-on in CL clients) and this EIP states it. What remains is the **companion specification** for the wire format, aggregation scheme, publication timing and any EL→CL plumbing — authored outside this EIP and a dependency for CL implementation ahead of the shadow period; see [04-migration.md](../../knowledge-base/04-migration.md), [open-questions.md](../../open-questions.md) and [B-S2](B-S2-readiness-gate-activation-params.md).
 - **Unvalidated-flip** weak point: `S` activates the pre-fork block's PBT root without consensus validation ([04-migration.md §Known weak points](../../knowledge-base/04-migration.md)); mitigation is specified downstream in [B-S2](B-S2-readiness-gate-activation-params.md).
 - **Preimage byte-level format** and **snapshot chunk encoding** are §14 parameters this EIP must close; chunk sizing trades verification granularity against overhead at ~100+ GB scale and must be validated at scale by [A-C4](A-C4-snapshot-serving-verification.md) and [B-T3](B-T3-dual-check-verification-scale.md).
 - **External dependency on EIP-7928** — any late change to the shipped BAL format would ripple into the translation rules; replay correctness depends on BALs recording *all* writes needed for state transition, validated by [B-T1](B-T1-conversion-replay-vectors.md) vectors.

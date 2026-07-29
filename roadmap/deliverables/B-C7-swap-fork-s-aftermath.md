@@ -28,9 +28,16 @@ the MPT, and restore fresh-node sync onto the PBT.
   retire the distributed snapshot artifact.
 - **Fresh-node sync restored**: new nodes sync directly onto the PBT (no longer
   via the migration snapshot).
-- **Unvalidated-flip-input hardening**: hard-enforce the **shadow root** for the
-  final blocks before `S`, so `S` does not activate the pre-fork block's PBT root
-  without a validated commitment.
+- **Unvalidated-flip-input hardening**: apply the mitigation chosen in
+  [B-S2](B-S2-readiness-gate-activation-params.md) — either hard-enforce the **shadow
+  root** for the final blocks before `S` (the one narrow case where enforcement is on
+  the table; routine shadow-root publication stays out of consensus), or document
+  reliance on the sustained cross-client agreement accumulated over the shadow period.
+- **Builder / relay PBT capability at the fork boundary**: from the first post-fork
+  slot, whoever builds a block computes the PBT root as consensus, so every builder and
+  relay in the block-production path must be PBT-capable *before* `S` — an MPT-only
+  builder produces invalid blocks. Readiness is driven by
+  [B-O3](B-O3-shadow-root-ecosystem-readiness.md) and confirmed at the gate.
 
 ## Client coverage
 - EL: geth, Nethermind, Besu, Reth, Erigon (note hash-keyed vs raw-keyed DB
@@ -50,17 +57,25 @@ the MPT, and restore fresh-node sync onto the PBT.
 - [ ] MPT retained until the activation block finalizes, then disposed; snapshot
       artifact sunset.
 - [ ] Fresh-node sync onto the PBT works without the migration snapshot.
-- [ ] The final pre-`S` blocks have a **hard-enforced shadow root**, closing the
-      unvalidated-flip-input weak point.
+- [ ] The unvalidated-flip-input weak point is closed by the mitigation chosen in
+      [B-S2](B-S2-readiness-gate-activation-params.md) — a hard-enforced shadow root for
+      the final pre-`S` blocks, or documented reliance on sustained cross-client agreement.
+- [ ] Builders and relays in the block-production path are **PBT-capable** at the fork
+      boundary, so post-fork blocks are valid from the first slot.
 
 ## Risks & open questions
 - **Unvalidated flip input.** `S` activates the pre-fork block's PBT root *without
   consensus validation*. Mitigation: hard-enforce the shadow root for the final
   blocks before `S` (or accept it given sustained cross-client agreement — a
-  correlated all-client bug would be similarly undetectable).
-- **Validator observability gap.** The builder stream measures block *producers*,
-  not the validating majority; the designed fallback is a proposer-signed
-  post-import sidecar. Pre-swap divergence is harmless and self-detectable.
+  correlated all-client bug would be similarly undetectable). This is the one narrow
+  case where enforcing a shadow root is on the table; routine publication during the
+  shadow period stays out of consensus, since enforcing it generally would put PBT
+  construction back on the consensus-critical path.
+- **Builder / relay PBT capability.** Post-swap the PBT root is consensus for whoever
+  builds the block, so an MPT-only builder or relay produces invalid blocks from the
+  first post-fork slot. This readiness must be confirmed before `S`
+  ([B-O3](B-O3-shadow-root-ecosystem-readiness.md)) and is independent of shadow-root
+  coverage, which is sourced from attesters.
 - **Post-swap MPT disposal timing (§14)** is open — dispose too early and
   recoverability is lost; too late and disk cost lingers.
 

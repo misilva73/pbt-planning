@@ -70,10 +70,10 @@ and they do not all cut the same way:
    free by construction. **Bears on: offline's feasibility.**
 2. **ePBS** — separates the proposer from the builder, so block *builders* get more
    wall-clock to produce a block. This softens the online case's "there's no time in the slot
-   to also convert" worry. It also bears on the offline path's **shadow-root** publication,
-   where identifying *builders* (vs arbitrary nodes) is an open question that may itself lean
-   on ePBS
-   ([open-questions.md § Shadow-root publication](../open-questions.md#shadow-root-publication-carrier--builder-identity)).
+   to also convert" worry. It does **not** bear on the offline path's **shadow-root**
+   publication: shadow roots are signed **attester** telemetry, and attesters are already
+   identified by the validator registry, so observability carries no ePBS dependency
+   ([04-migration.md § Shadow commitment](04-migration.md#shadow-commitment--observability)).
    **Bears on: online (more in-slot headroom).**
 3. **zkEVM optional proofs** — blocks carry validity proofs. With an overlay, provers must
    prove the **conversion steps for every block** in the window, on top of normal execution.
@@ -107,17 +107,21 @@ neutral read of **what the argument actually turns on** — without declaring a 
 - **Offline view:** a header field only carries the **builder's** PBT root. It gives
   no view of what the *network* thinks the PBT root is — no cross-client agreement signal,
   which is exactly the thing the pre-swap period exists to measure.
-- **What it turns on:** the concern is symmetric — a single carried root, header or sidecar,
-  is one producer's opinion. The offline design's answer is the **shadow-commitment period**:
-  builders publish per-block PBT roots while consensus still runs on the MPT, so conversion
-  correctness becomes visible and attributable *before* consensus depends on it, and
-  omissions degrade a **coverage** metric rather than causing divergence
+- **What it turns on:** for a *single carried* root the concern is symmetric — header or
+  sidecar, one root is one producer's opinion. The designs differ in **what they sample**.
+  The offline design's answer is the **shadow-commitment period**: attesters compute the PBT
+  root of each block's post-state and publish it signed with their validator key, out of
+  consensus, while the chain still runs on the MPT — so the signal is sourced from the
+  **validating majority** rather than from block producers, conversion correctness becomes
+  visible and attributable *before* consensus depends on it, and omissions degrade a
+  **coverage** metric rather than causing divergence
   ([04-migration.md § Shadow commitment](04-migration.md#shadow-commitment--observability)).
-  A header field is a fine *carrier* for such a root under either design; the open question is
-  whether you also want a cross-client agreement gate before the swap, and if so how to source
-  it. Note the shadow-commitment approach is not free for offline either — it only measures
-  block *producers*, not the validating majority (a known weak point, with a proposer-signed
-  sidecar as the designed fallback).
+  A header field is a fine *carrier* for a producer's root under either design, and nothing
+  stops an overlay from adding the same attester-sourced signal; the question is whether you
+  want a cross-client agreement gate before the swap at all, and if so how to source it. The
+  offline answer is not free either: because publication is never a validity condition, its
+  reach depends on the sidecar shipping **enabled by default** in CL clients rather than on
+  the protocol compelling it.
 
 ### Consensus surface: "it's the same for every change"
 
@@ -244,8 +248,8 @@ MPT. Worked through in [§ The conversion-pointer question](#the-conversion-poin
 
 ## The conversion-pointer question: can online avoid the two-tree read?
 
-This deserves a careful treatment because it is where the debate is genuinely unresolved in
-the thread, and because the answer determines whether the **consensus-surface** and
+This deserves a careful treatment because it is where the debate is genuinely unresolved,
+and because the answer determines whether the **consensus-surface** and
 **repricing** arguments above have any force.
 
 ### The objection
@@ -457,4 +461,4 @@ converter, BAL-replay, snapshot, verification),
 [08-gas-and-access-events.md](08-gas-and-access-events.md) (why any repricing is
 benchmark-based and decoupled from `S`), and
 [open-questions.md](../open-questions.md) (the §14 migration parameters, failure modes, and
-shadow-root / ePBS dependencies).
+the shadow-root companion specification).

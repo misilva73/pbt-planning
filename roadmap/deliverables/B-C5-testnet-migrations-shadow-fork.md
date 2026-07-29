@@ -46,17 +46,25 @@ networks with real validators, clients, and tooling.
 - [ ] Snapshot distribution (chunked, manifest-verified) works with independent
       operators pulling and verifying the artifact.
 - [ ] BAL-replay reaches tip on each network and the shadow-commitment /
-      activation flow behaves as designed.
+      activation flow behaves as designed — attesters publish signed per-block PBT
+      roots via the telemetry sidecar, and coverage / agreement metrics are computed
+      from that stream.
 - [ ] Any divergence or failure is surfaced pre-consensus (offline-conversion
       safety property) and root-caused before the mainnet window opens.
 
 ## Risks & open questions
 - Public testnets have smaller, less diverse state than mainnet; the **shadow
   fork** is what closes the realism gap, so its fidelity to mainnet matters.
-- Coordinating independent operators and tooling (builders/relays) surfaces
+- Coordinating independent operators and tooling (including builder/relay PBT
+  capability, a hard prerequisite for a post-swap network) surfaces
   ecosystem-readiness gaps that outreach (B-O3) must then close before I\*.
-- **Shadow-root carrier mechanism (§14)** is exercised here for the first time at
-  scale; its final form is still open.
+- The **attester telemetry sidecar** carrying shadow roots is exercised here for the
+  first time at scale: this is where default-on behaviour, coverage measurement and
+  cross-client agreement reporting are validated on networks with real validators
+  ([B-O3](B-O3-shadow-root-ecosystem-readiness.md)). Publication is out of consensus,
+  so a shortfall shows up as low coverage rather than as consensus failure — which is
+  exactly the signal the readiness thresholds in
+  [B-S2](B-S2-readiness-gate-activation-params.md) are calibrated against here.
 
 ## References
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)

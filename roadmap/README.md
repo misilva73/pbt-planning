@@ -21,7 +21,7 @@ This document is the *when* and *who*.
 
 | Fork | Date (assumed) | What it carries |
 |------|----------------|-----------------|
-| **H\*** | **Summer 2027** (≈ 2027-06) | **EIP-8297 spec frozen**; **shadow-commitment period opens** (builders publish per-block PBT roots while consensus stays on the MPT). PBT is *implemented and observable* but **not yet canonical**. |
+| **H\*** | **Summer 2027** (≈ 2027-06) | **EIP-8297 spec frozen**; **shadow-commitment period opens** (attesters publish per-block PBT roots, signed with their validator key, while consensus stays on the MPT — out of consensus, carried by a telemetry sidecar expected to be enabled by default in CL clients). PBT is *implemented and observable* but **not yet canonical**. |
 | **I\*** | **Summer 2028** (≈ 2028-06) | **Fork `S` — the swap.** PBT becomes the canonical state commitment. MPT retained until finality, then sunset. |
 
 > PBT-native gas repricing (benchmark-based state-access costs and chunk-granular code
@@ -59,9 +59,9 @@ Colour = workstream throughout the Gantt below.
 | **Specs** | 🟪 purple | EIPs, formal parameters, spec text |
 | **Tests** | 🟦 cyan | EEST ports, test vectors, conformance, verification harnesses |
 | **Client impl.** | 🟩 green | EL/CL client code: tree, converter, sync, snapshot, replay |
-| **Ecosystem outreach** | 🟧 orange | Proof consumers, builders/relays, activation comms |
+| **Ecosystem outreach** | 🟧 orange | Proof consumers, CL-client sidecar adoption & attester coverage, builder/relay PBT readiness, activation comms |
 
-Each thread tracks the migration's **6 phases** ([04-migration.md](../knowledge-base/04-migration.md#six-phase-timeline)):
+Each thread tracks the migration's **6 phases** ([04-migration.md](../knowledge-base/04-migration.md#six-phase-program-timeline)):
 Phase 0 Spec Convergence · 1 Prototypes & Evidence · 2 Devnets · 3 Migration Machinery ·
 4 Rehearsals · 5 Mainnet Window · 6 Swap & Aftermath.
 

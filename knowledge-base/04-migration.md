@@ -6,8 +6,8 @@
 > node-operator playbook, trust tiers, testing).
 >
 > **Formal write-up:** **EIP-8347 — Offline State Migration to the PBT**
-> ([PR #12006](https://github.com/ethereum/EIPs/pull/12006), Draft; authors Perez,
-> Silva, Wedderburn; `requires: 7928, 8297`). The EIP is the normative rendering of this
+> ([PR #12006](https://github.com/ethereum/EIPs/pull/12006), Draft;
+> `requires: 7928, 8297`). The EIP is the normative rendering of this
 > roadmap: it pins the byte-level artifact formats, the parameter values, and the
 > RFC-2119 requirements. Where this doc needs an exact format or a concrete constant, it
 > cites the EIP.
@@ -61,8 +61,8 @@ it. `EXTCODEHASH` and similar stay byte-identical across `S` because
 
 The "offline conversion" choice is best understood against the **earlier Verkle-era
 survey** of migration options
-([notes.ethereum.org/@parithosh/verkle-transition](https://notes.ethereum.org/@parithosh/verkle-transition),
-Parithosh Jayanthi). It predates PBT and targeted the Verkle tree, but the transition
+([notes.ethereum.org/@parithosh/verkle-transition](https://notes.ethereum.org/@parithosh/verkle-transition)).
+It predates PBT and targeted the Verkle tree, but the transition
 problem — moving live mainnet state from the MPT to a new commitment without splitting
 the chain — is the same, so it's the direct ancestor of today's roadmap. It compared
 four approaches:
@@ -150,7 +150,7 @@ and the lifecycle is summarized under [Migration lifecycle](#migration-lifecycle
 | **2** | Devnets | Multi-client PBT-genesis networks; PBT-native state sync; snapshot serving & verification; end-to-end distribution plumbing. |
 | **3** | Migration Machinery | Converter across clients; BAL-replay engine; snapshot production pipeline; full-cycle devnet including the swap. |
 | **4** | Rehearsals | Production runs on mainnet state; hardware-matrix testing (EIP-7870); public testnet migrations with swaps; mainnet shadow fork; performance metrics. |
-| **5** | Mainnet Window | Select finalized block `N`; produce & cross-verify snapshot; distribute via torrent + mirrors; BAL-replay to chain tip; shadow commitment period (builders publish roots); pass readiness gate. `N` is announced **only after Phase 4** completes. |
+| **5** | Mainnet Window | Select finalized block `N`; produce & cross-verify snapshot; distribute via torrent + mirrors; BAL-replay to chain tip; shadow commitment period (attesters publish signed roots); pass readiness gate. `N` is announced **only after Phase 4** completes. |
 | **6** | Swap & Aftermath | Fork `S` makes PBT canonical; keep MPT until finality; sunset snapshot & dispose MPT; restore fresh-node sync. |
 
 ### Migration lifecycle (the EIP view)
@@ -159,14 +159,14 @@ The EIP frames the same process as **five protocol-lifecycle phases**, each a pu
 function of the state committed by `ANCHOR_BLOCK`'s `stateRoot`, none touching the
 consensus-critical path:
 
-1. **Conversion (off-chain)** — extract [preimages](#preimages) at `ANCHOR_BLOCK`, then
+1. **Conversion (off-chain)** — extract [preimages](#preimages--why-theyre-needed) at `ANCHOR_BLOCK`, then
    run the [converter](#the-converter) to produce the [PBT snapshot](#snapshot-distribution).
 2. **Distribution and verification** — publish artifacts; every node runs the
    [dual-check](#verification--dual-check-authentication).
 3. **Catch-up** — [BAL-replay](#bal-replay) from `ANCHOR_BLOCK` to the tip; distributors
    [re-anchor](#re-anchoring--late-joiners) on a fixed cadence to bound the replay gap.
-4. **Shadow-commitment period** — builders publish [shadow roots](#shadow-commitment--observability)
-   while consensus still runs on the MPT.
+4. **Shadow-commitment period** — attesters publish signed
+   [shadow roots](#shadow-commitment--observability) while consensus still runs on the MPT.
 5. **Swap and transition window** — at `SWAP_FORK` the PBT becomes canonical; both trees
    are held until finality, after which the MPT may be disposed.
 
@@ -321,19 +321,34 @@ Raw keys (addresses, storage slots) are the **shared preimage of both tree domai
 
 ## Shadow commitment & observability
 
-During the pre-swap period, **builders compute and publish per-block PBT roots** (shadow
-roots) while consensus still runs on the MPT. Conversion correctness thus becomes visible
-per block, publicly and attributably. Omissions count against **coverage** metrics rather
-than divergence (preserving interpretability). Publication stays a `SHOULD`, deliberately
-**out of consensus** — enforcing it would put PBT construction back on the
-consensus-critical path (the exact property offline exists to avoid); the intended carrier
-is a proposer-signed sidecar on a dedicated gossip topic (wire mechanism open — see
-[../open-questions.md](../open-questions.md#shadow-root-publication-carrier--builder-identity)).
+During the pre-swap period, **attesters compute the PBT root of each block's post-state and
+publish it, signed with their validator key** (shadow roots), while consensus still runs on
+the MPT. Conversion correctness thus becomes visible per block, publicly and attributably:
+signing makes every report attributable and verifiable, and sourcing reports from
+*attesters* rather than from block producers measures the **validating majority**. A missing
+or late root counts against a **coverage** metric, never as a divergence (preserving
+interpretability).
 
-**Readiness gates** before the activation release:
+The carrier is an **out-of-consensus telemetry sidecar**. Publication stays a `SHOULD` and
+is **never a block-validity condition** — enforcing it would force every validator to
+compute the PBT post-state root per block, putting PBT construction back on the
+consensus-critical path, the exact property the offline design exists to avoid. The sidecar
+is **expected to ship enabled by default in CL clients**, so coverage comes from ordinary
+validator operation rather than an opt-in program; that default-on posture is an
+*operational commitment* of the client teams, not a protocol requirement. The wire format,
+aggregation scheme, publication timing, and any EL→CL plumbing are **out of scope here and
+fixed in a companion specification** (see
+[../open-questions.md](../open-questions.md#shadow-root-publication--the-companion-specification)).
+This architecture is **settled and agreed** across the roadmap, EIP-8347, and this
+knowledge base.
+
+**Readiness gates** before the activation release (the thresholds themselves remain open
+parameters):
 - Cross-client agreement **≥ X%** sustained **D** days.
 - Coverage **≥ Y%**.
-- Builder / relay ecosystem readiness.
+- Builder / relay ecosystem readiness — PBT capability is a **hard prerequisite for
+  `SWAP_FORK`**, since post-swap an MPT-only builder produces invalid blocks. This is a
+  separate readiness concern from observability, not a publication role.
 
 ## Testing framework (EEST coverage)
 
@@ -358,8 +373,10 @@ The roadmap enumerates the test surface (built out in Phase 1):
 | `REANCHOR_CADENCE` (`N′`) | Re-anchoring cadence for late joiners | EIP proposes **50400 blocks (~1 week)**; roadmap leaves generic ([D1](#source-discrepancies-to-reconcile)) |
 
 **Open parameters (§14):** readiness thresholds (X, Y, D); preimage byte-level format
-*(now specified in the EIP-8347 draft)*; snapshot chunk/transport encoding; shadow-root
-carrier mechanism; post-swap MPT disposal timing; `N′` re-anchoring cadence;
+*(now specified in the EIP-8347 draft)*; snapshot chunk/transport encoding; the shadow-root
+**companion specification** *(the carrier architecture is settled — only its wire format,
+aggregation, timing and EL→CL plumbing remain)*; post-swap MPT disposal timing; `N′`
+re-anchoring cadence;
 proof-consumer dependencies (verification precompiles, `eth_getProof` successors).
 
 ### Re-anchoring & late joiners
@@ -378,14 +395,20 @@ anchor (see [../open-questions.md](../open-questions.md#re-anchor-cadence--bal-e
 - **Unvalidated flip input.** `S` activates the pre-fork block's PBT root *without
   consensus validation*. Mitigation: hard-enforce the shadow root for the final blocks
   before `S`, or accept it given sustained cross-client agreement (a correlated
-  all-client bug would be similarly undetectable anyway).
+  all-client bug would be similarly undetectable anyway). Note the first option sits in
+  tension with publication being out of consensus
+  ([above](#shadow-commitment--observability)) and would need its own justification.
 - **Fork-boundary reorg procedure.** A post-`S` head reorging to a pre-`S` fork point
   needs a concrete step-by-step specification before the swap EIP is finalized. Open in
   both the roadmap and the EIP (see
   [../open-questions.md](../open-questions.md#reorg-behavior-around-the-swap)).
-- **Validator observability gap.** The builder stream measures block *producers*, not
-  the validating majority. Mitigation: pre-swap divergence is harmless and
-  self-detectable; a proposer-signed post-import sidecar is the designed fallback.
+- **Coverage rests on adoption, not enforcement.** Sourcing shadow roots from attesters
+  means the signal already reflects the validating majority — there is no
+  producers-only sampling gap. What remains is narrower: because publication is never a
+  validity condition, the coverage metric is only as good as CL clients shipping the
+  telemetry sidecar **enabled by default**. Mitigation: pre-swap divergence is harmless and
+  self-detectable, and the coverage **≥ Y%** gate makes under-reporting hold back the
+  activation release rather than pass unnoticed.
 - **Distribution trust.** The ~100+ GB artifact is served off-chain. Neutralized by the
   dual-check: consensus anchoring against `ANCHOR_BLOCK`'s `stateRoot` means a fabricated
   package fails even if internally self-consistent. Transport-level integrity (torrent
