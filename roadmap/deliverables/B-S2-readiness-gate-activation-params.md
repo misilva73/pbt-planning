@@ -61,6 +61,7 @@ for the unvalidated-flip weak point.
 - **Coverage is a metric, not a rule:** shadow-root publication stays out of consensus and a `SHOULD`, so the coverage threshold is measured over voluntary reports. It depends on CL clients shipping the sidecar enabled by default; **Y** must be set against realistic default-on adoption, not against enforcement.
 
 ## References
+- [knowledge-base/11-attester-telemetry-transport.md](../../knowledge-base/11-attester-telemetry-transport.md) — the companion specification's design space. Note the coupling: the publisher-selection period `N` fixes how long a full sweep of the validator set takes, so it cannot be chosen independently of the **D** sustained-observation window this deliverable fixes.
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md)
 - [open-questions.md](../../open-questions.md)
 - [knowledge-base/01-overview.md](../../knowledge-base/01-overview.md)

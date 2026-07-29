@@ -173,6 +173,17 @@ signed, so there is no builder-identity problem and **no ePBS dependency** for
 observability; and *widening observability to attesters* — that is now the adopted design,
 not a proposal.
 
+A CL-side design discussion (2026-07-27 → 2026-07-29) has since narrowed the carrier
+further: it should be a **temporary, publisher-rate-limited global gossip topic** in the
+consensus-networking spec, built on clients' existing libp2p/gossipsub stack, deployable
+**without a hard fork** and retired at `SWAP_FORK`. Alternatives were considered and
+rejected — many subnets (1k+ subnet concerns), req/resp scraping and ENR advertisement
+(node-level, non-exhaustive, don't identify validators), a beacon-state field (modifies
+consensus state for temporary bookkeeping), and extending `AttestationData` (no spare field
+post-ePBS; broad blast radius on slashing detection, aggregatability and fast-finality work).
+Full analysis in
+[knowledge-base/11-attester-telemetry-transport.md](knowledge-base/11-attester-telemetry-transport.md).
+
 What genuinely remains:
 
 - **The companion specification** — wire format, aggregation scheme, publication timing, and
@@ -181,6 +192,22 @@ What genuinely remains:
   alongside [B-S2](roadmap/deliverables/B-S2-readiness-gate-activation-params.md) and is
   first exercised at scale in
   [B-C5](roadmap/deliverables/B-C5-testnet-migrations-shadow-fork.md).
+- **Publisher-selection rule and its period `N`** — `validator_index % N == current_epoch % N`
+  (stateless, so eligibility is checkable before signature verification) vs committee-gated
+  every `N` epochs. `N` fixes how long a full sweep of the validator set takes, so it
+  **cannot be chosen independently of the gate's `D` sustained-observation window**.
+- **Spam / signature-verification DoS** — the one technical objection left open: a BLS verify
+  per unauthenticated message is an amplification target. Mitigations are all
+  application-level (cheap eligibility check before signature verification, dedup at one
+  message per validator per epoch, per-peer rate limits, de-peer on a single bad signature), but
+  they need specifying rather than leaving to clients.
+- **Networking-team review** — a global topic with validator-eligibility filtering and a
+  novel bandwidth profile may hit implementation-specific limits across Lighthouse, Prysm,
+  Teku, Nimbus and Lodestar. An unscheduled dependency for
+  [B-O3](roadmap/deliverables/B-O3-shadow-root-ecosystem-readiness.md).
+- **The payload must be the root, not a readiness bit** — a bit supports the coverage leg
+  only; the cross-client **agreement** leg exists to catch two correct-looking clients
+  converging on different trees, which needs the root itself.
 - **Default-on delivery** — because publication is an operational commitment rather than a
   protocol requirement, the coverage **Y%** gate (see [Readiness / activation
   thresholds](#readiness--activation-thresholds)) depends on CL client teams shipping the

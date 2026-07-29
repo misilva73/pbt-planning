@@ -329,7 +329,11 @@ signing makes every report attributable and verifiable, and sourcing reports fro
 or late root counts against a **coverage** metric, never as a divergence (preserving
 interpretability).
 
-The carrier is an **out-of-consensus telemetry sidecar**. Publication stays a `SHOULD` and
+The carrier is an **out-of-consensus telemetry sidecar** — concretely, a temporary
+consensus-networking **gossip topic** on the CL's existing libp2p stack, carrying signed
+per-validator reports from a protocol-selected subset of validators each epoch. The design
+space behind that shape, and what is still open in it, is worked through in
+[11-attester-telemetry-transport.md](11-attester-telemetry-transport.md). Publication stays a `SHOULD` and
 is **never a block-validity condition** — enforcing it would force every validator to
 compute the PBT post-state root per block, putting PBT construction back on the
 consensus-critical path, the exact property the offline design exists to avoid. The sidecar

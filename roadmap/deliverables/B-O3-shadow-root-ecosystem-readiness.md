@@ -94,6 +94,7 @@ PBT construction back on the consensus-critical path.
   majority; earlier framing that measured only block producers no longer applies.
 
 ## References
+- [knowledge-base/11-attester-telemetry-transport.md](../../knowledge-base/11-attester-telemetry-transport.md) (the carrier design space: rate-limited global gossip topic, spam mitigation, networking-team dependency)
 - [knowledge-base/04-migration.md](../../knowledge-base/04-migration.md) (Shadow commitment & observability; Readiness gates; Known weak points)
 - [knowledge-base/01-overview.md](../../knowledge-base/01-overview.md) (Shadow root / shadow commitment glossary)
 - [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md)
