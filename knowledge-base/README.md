@@ -28,6 +28,7 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 | [04-migration.md](04-migration.md) | The MPT → PBT migration roadmap: offline conversion, phases, converter, BAL-replay, snapshot, verification. |
 | [09-online-vs-offline-migration.md](09-online-vs-offline-migration.md) | Deep-dive comparison of the **online overlay** vs the chosen **offline snapshot** migration, argued through the live objections and re-decided for the post-H\* world (BALs, ePBS, zkEVM proofs, 400M gas). |
 | [05-design-evolution.md](05-design-evolution.md) | How the design got here: EIP-7864 → early EIP-8297 draft → current EIP-8297. **Read this to avoid citing stale details.** |
+| [10-zero-value-leaves-and-deletion.md](10-zero-value-leaves-and-deletion.md) | The **zero-value leaf vs. delete-on-zeroization** decision: why EIP-8297 and EIP-8347 currently contradict each other, where the no-deletion rule came from, the full pros/cons, and a recommendation. |
 | [06-open-questions.md](06-open-questions.md) | Settled **security considerations** (collision resistance, grinding, preimage injectivity) and superseded/historical questions. **Live open questions moved to [../open-questions.md](../open-questions.md).** |
 | [08-gas-and-access-events.md](08-gas-and-access-events.md) | PBT's gas model: benchmark-based state-access repricing (EIP-8038 lineage) plus chunk-based code access (EIP-2926), grounded in measured PBT read/write performance. |
 | [07-sources.md](07-sources.md) | Primary sources, related EIPs, and how to re-fetch them. |

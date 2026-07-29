@@ -39,6 +39,22 @@ The spec-freeze ([A-S3](roadmap/deliverables/A-S3-eip8297-spec-freeze.md)) and a
 root-bearing test vectors consume the decided `H`; fixtures stay hash-parameterized until
 it resolves.
 
+### Zero-value leaves vs. deletion on zeroization
+
+Does an `SSTORE` of zero **keep the leaf** (present, value zero, distinct from an absent
+key — EIP-8297 as written, inherited from Verkle) or **remove it** (MPT semantics, what
+`ethereum.state_pbt` does)? The two commit to **different state roots for the same
+execution**, so it must land before the spec freeze
+([A-S3](roadmap/deliverables/A-S3-eip8297-spec-freeze.md)) and no EIP-8297 fixture is a
+state-root conformance vector until it does. Note that the spec set currently **decides it
+both ways**: EIP-8297 § *Zero values and deletion* is normative for keeping, while
+EIP-8347's BAL-replay rules require deleting (forced by conversion/replay determinism).
+Tracked at [misilva73/pbt-planning#3](https://github.com/misilva73/pbt-planning/issues/3)
+and [execution-specs#3254](https://github.com/ethereum/execution-specs/issues/3254).
+Full analysis and recommendation (**delete on zeroization**, with the churn-pricing
+problem handed to [A-S2](roadmap/deliverables/A-S2-gas-cost-recalibration.md)) in
+[knowledge-base/10-zero-value-leaves-and-deletion.md](knowledge-base/10-zero-value-leaves-and-deletion.md).
+
 ### State-access gas repricing
 
 PBT changes the real cost of touching state, so gas must be repriced for it. The repricing

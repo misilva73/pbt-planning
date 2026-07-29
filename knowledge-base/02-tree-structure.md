@@ -147,6 +147,13 @@ def _insert(self, node, bits, key, value, depth):
 
 ## Zero values and deletion
 
+> **Contested — do not treat as settled.** The rule below is EIP-8297 as written, but
+> EIP-8347's BAL-replay rules require the opposite (zero-writes *delete* leaves, see
+> [04-migration.md](04-migration.md#bal-replay)) and `ethereum.state_pbt` implements the
+> opposite too. The two options commit to **different state roots for the same
+> execution**. Analysis and recommendation:
+> [10-zero-value-leaves-and-deletion.md](10-zero-value-leaves-and-deletion.md).
+
 Writing 32 zero bytes **stores that value like any other**: the leaf stays present, and
 a zero-valued leaf is **distinct from an absent key** (it commits to a different root).
 EVM execution never removes entries — insertion and in-place update are the only
