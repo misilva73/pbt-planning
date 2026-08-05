@@ -1,42 +1,52 @@
 # 10 — Zero-Value Leaves vs. Deletion on Zeroization
 
-> **Status: open, and currently self-contradictory across the spec set.** Tracked at
-> [misilva73/pbt-planning#3](https://github.com/misilva73/pbt-planning/issues/3) and
-> [ethereum/execution-specs#3254](https://github.com/ethereum/execution-specs/issues/3254),
-> surfaced by the EIP-8297 test work in
-> [execution-specs#3246](https://github.com/ethereum/execution-specs/pull/3246).
-> This file is the argued analysis; the one-line tracker entry lives in
-> [../open-questions.md](../open-questions.md).
+> **Status: RESOLVED.** EIP-8297 has been revised to require **(B) delete on
+> zeroization**, matching EIP-8347's BAL-replay rules and closing the contradiction this
+> file was written to analyze. The tracking issue,
+> [misilva73/pbt-planning#3](https://github.com/misilva73/pbt-planning/issues/3), is
+> **closed**. This file is kept as the **decision record** — the axis-by-axis analysis
+> below is why (B) was the right call, not an open debate. The live, settled rule is
+> documented normatively in
+> [02-tree-structure.md § Zero values and deletion](02-tree-structure.md#zero-values-and-deletion).
+> See also [execution-specs#3254](https://github.com/ethereum/execution-specs/issues/3254)
+> (the fixture-conformance issue this unblocks) and
+> [execution-specs#3246](https://github.com/ethereum/execution-specs/pull/3246) (the test
+> work that originally surfaced the contradiction).
 
-## The question
+## The question that was open
 
 When an `SSTORE` writes 32 zero bytes to a slot that held a non-zero value, does the PBT
 
 - **(A) keep the leaf**, present with value zero and distinct from an absent key
-  (*no-deletion*, EIP-8297 as written, inherited from Verkle); or
+  (*no-deletion* — an earlier EIP-8297 draft, inherited from Verkle); or
 - **(B) remove the leaf**, so zero and absent are the same thing
-  (*delete-on-zeroization*, MPT semantics, what `ethereum.state_pbt` actually does)?
+  (*delete-on-zeroization* — MPT semantics, what `ethereum.state_pbt` actually did, and
+  what the **current, adopted** EIP-8297 text now requires)?
 
-It is not a cosmetic question. The two options commit to **different state roots for the
-same execution**, so it must be settled before the spec freeze
-([A-S3](../roadmap/deliverables/A-S3-eip8297-spec-freeze.md)) and before any fixture is
-treated as a conformance vector.
+It was not a cosmetic question — the two options commit to **different state roots for
+the same execution**. It has since been settled in favour of (B), ahead of the spec
+freeze ([A-S3](../roadmap/deliverables/A-S3-eip8297-spec-freeze.md)).
 
-## The spec set disagrees with itself today
+## The spec set used to disagree with itself
 
-This is the single most important fact about the current state of the question: it is not
-"undecided", it is **decided both ways in two EIPs that `require` each other**.
+This section is kept for record: at the time this file was first written, the question
+was not "undecided" — it was **decided both ways in two EIPs that `require` each other**.
 
-| Source | Says |
+| Source | Said (at the time) |
 |---|---|
-| [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) § *Zero values and deletion* (**normative**, not Rationale) | "the leaf stays present, and a zero-valued leaf is distinct from an absent key"; "implementations never need delete logic"; "Removing entries is reserved for a future state-expiry mechanism." |
-| **EIP-8347** ([PR #12006](https://github.com/ethereum/EIPs/pull/12006)) BAL-replay rules — and it `requires: 8297` | "**Zero-writes delete leaves** — a value of zero is encoded as leaf *absence* … This matches MPT semantics and keeps independently converged PBTs bit-identical." ([04-migration.md](04-migration.md#bal-replay)) |
-| `ethereum.state_pbt` reference implementation | Removes zeroed slots; drops an account's storage on account deletion. The *raw tree layer* is conformant (`test_zero_value_is_not_absence` pins it); only the provider layer removes. |
-| This repo's own roadmap | Asserts **(A)** in [A-C1](../roadmap/deliverables/A-C1-client-tree-implementations.md), [A-C2](../roadmap/deliverables/A-C2-pbt-native-state-sync.md), [A-T2](../roadmap/deliverables/A-T2-tree-key-derivation-vectors.md); asserts **(B)** in [B-C2](../roadmap/deliverables/B-C2-bal-replay-engine.md), [B-T1](../roadmap/deliverables/B-T1-conversion-replay-vectors.md), [B-S1](../roadmap/deliverables/B-S1-offline-migration-eip.md). |
+| EIP-8297 § *Zero values and deletion* (**normative**, not Rationale) — earlier draft | "the leaf stays present, and a zero-valued leaf is distinct from an absent key"; "implementations never need delete logic"; "Removing entries is reserved for a future state-expiry mechanism." |
+| **EIP-8347** BAL-replay rules — `requires: 8297` | "**Zero-writes delete leaves** — a value of zero is encoded as leaf *absence* … This matches MPT semantics and keeps independently converged PBTs bit-identical." ([04-migration.md](04-migration.md#bal-replay)) |
+| `ethereum.state_pbt` reference implementation | Removes zeroed slots; drops an account's storage on account deletion. The *raw tree layer* was conformant to the old text (`test_zero_value_is_not_absence` pinned it); only the provider layer removed. |
+| This repo's own roadmap | Asserted **(A)** in [A-C1](../roadmap/deliverables/A-C1-client-tree-implementations.md), [A-C2](../roadmap/deliverables/A-C2-pbt-native-state-sync.md), [A-T2](../roadmap/deliverables/A-T2-tree-key-derivation-vectors.md); asserted **(B)** in [B-C2](../roadmap/deliverables/B-C2-bal-replay-engine.md), [B-T1](../roadmap/deliverables/B-T1-conversion-replay-vectors.md), [B-S1](../roadmap/deliverables/B-S1-offline-migration-eip.md). |
 
-EIP-8347 is not being sloppy — its rule is **forced** (see
-[Migration determinism](#1--migration-determinism--the-forcing-constraint)). So option (A)
-does not mean "one behaviour"; it means **(B) until `SWAP_FORK`, then (A) after**.
+**Current EIP-8297 text now normatively requires (B)** — see the "Zero Values and
+Deletion" and "Collapsing Zero and Absent" quotes in
+[02-tree-structure.md](02-tree-structure.md#zero-values-and-deletion). The roadmap
+deliverables above that asserted (A) should be treated as **stale** and updated to (B).
+
+EIP-8347's rule was never sloppy — it was **forced** (see
+[Migration determinism](#1--migration-determinism--the-forcing-constraint)) — and
+EIP-8297 has now been brought into line with it rather than the other way around.
 
 ## Where the no-deletion rule actually came from
 
@@ -100,7 +110,7 @@ cannot have, and independently-derived roots diverge. There is no fix that keeps
 during the shadow period. Hence:
 
 > Option (A) **requires two tree semantics** — delete-on-zero for the whole pre-swap
-> period, keep-at-zero from `SWAP_FORK` — with a semantic discontinuity at exactly the
+> period, keep-at-zero from `PBT_ACTIVATION_FORK` — with a semantic discontinuity at exactly the
 > most consensus-critical block in the programme.
 
 *Fair counter, and it should be stated:* the two behaviours live in **different
@@ -183,7 +193,7 @@ explicit-zero plumbing in every client's flat state (§2).
 
 - **Both options get a free one-time GC at the swap.** Conversion reads the MPT, which
   contains no historically-deleted slots, so the post-swap PBT starts clean either way.
-  Every zero leaf ever accumulated in today's MPT is dropped at `SWAP_FORK` regardless.
+  Every zero leaf ever accumulated in today's MPT is dropped at `PBT_ACTIVATION_FORK` regardless.
   The cost of (A) is therefore **entirely forward-looking**.
 - **Per retained zero slot:** a storage leaf record is `66 + 32 = 98` bytes in the
   snapshot format; on disk with index and branch-node overhead call it ~100–150 bytes.
@@ -325,11 +335,14 @@ and the test work already caught it:
   or zeroed. Under (A), a self-destructed account leaves zeroed header leaves and the
   client must map "all-zero `BASIC_DATA`" back to "account does not exist" — another place
   for a consensus bug.
-- **The code zone never deletes either way.** Overflow chunks (`chunk_id ≥ 128`) are
-  content-addressed and shared, and reference counting is deferred
-  ([../open-questions.md](../open-questions.md)). So `0x01`-zone garbage accumulates
-  regardless; adopting (B) does not clean it. Deletion semantics apply to storage leaves
-  and per-account header leaves only, and the spec must say so.
+- **The code zone deletes on a reference-count check, not on zeroing.** *(Updated: an
+  earlier version of this point said code deletion was deferred/never happened; the
+  current EIP-8297 text specifies it directly.)* All code chunks are content-addressed
+  and shared by `code_hash`, so `CODE_ZONE` leaves are removed on account deletion or a
+  `code_hash` change **only if no resulting-state account still shares that `code_hash`**
+  — this is orthogonal to the (A)/(B) storage-slot question. Adopting (B) does not by
+  itself clean the code zone; the refcount check does. Storage-slot deletion semantics
+  (this file's subject) apply to storage leaves and per-account header leaves only.
 
 ### 9 · Storage layer
 
@@ -362,13 +375,14 @@ and the test work already caught it:
 | EVM edges (§8) | ✗ cleared accounts leave zeroed headers; 7610 interaction | ~ 7610 interaction too; both need explicit rules |
 | Storage layer (§9) | ~ monotone key set | ~ tombstones, but reclaims |
 
-## Recommendation
+## Recommendation (adopted)
 
-**Adopt (B) — delete on zeroization — and revise EIP-8297's "Zero values and deletion"
-section**, treating the churn-pricing problem as a tracked gas-EIP item rather than a
-reason to keep the leaves.
+**(B) — delete on zeroization — was adopted, and EIP-8297's "Zero Values and Deletion"
+section has been revised accordingly.** The churn-pricing problem is tracked as a gas-EIP
+item ([A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md)) rather than a
+reason to keep the leaves — this remains open and is not resolved by the trie decision.
 
-The ranked reasoning:
+The reasoning that carried the decision:
 
 1. EIP-8347 **already normatively requires** (B) for the entire pre-swap period, and that
    requirement is forced by conversion/replay determinism. (A) therefore does not buy one
@@ -387,20 +401,27 @@ The ranked reasoning:
    change, whereas removing accumulated zero leaves later requires a second migration
    event (§7).
 
-**The strongest counter-argument, stated honestly:** under 8037-era state-creation pricing
-(~98k gas), (B) plus a 4,800-gas clear refund makes clearing irrational, so (B) may
-reclaim far less state than §4 suggests while imposing a real tax and a real devex
-regression on `0→1→0→1` patterns. **This should not block the trie decision, but it must
-not be dropped either** — it belongs in
+**The strongest counter-argument, stated honestly, and still live:** under 8037-era
+state-creation pricing (~98k gas), (B) plus a 4,800-gas clear refund makes clearing
+irrational, so (B) may reclaim far less state than §4 suggests while imposing a real tax
+and a real devex regression on `0→1→0→1` patterns. **This did not block the trie
+decision, and it is not resolved by it** — it belongs in
 [A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md) as an explicit requirement,
 with the state-gas-refill and per-account-HWM options in §6 as the starting candidates.
 
-**Specify alongside the decision, whichever way it goes:**
+**Specified alongside the decision, per the now-current EIP-8297 text** (see
+[02-tree-structure.md](02-tree-structure.md#zero-values-and-deletion)):
 
 - `account_has_storage` / EIP-7610 in representation-independent terms ("any non-zero
   value") — closes [execution-specs#3253](https://github.com/ethereum/execution-specs/issues/3253).
 - Account-level deletion scope: header stem leaves and storage leaves, explicitly.
-- That the `0x01` code zone is never deleted (content-addressed, refcounting deferred).
+- **Code-leaf deletion is reference-counted, not deferred:** `CODE_ZONE` leaves are
+  removed on account/code-hash change **only if no resulting-state account shares the
+  same `code_hash`**, and persist otherwise. This is now normative — an earlier version
+  of this file (and the roadmap) treated code refcounting as future/deferred work; the
+  published EIP specifies it directly, and it applies to *all* code chunks now that code
+  is uniformly content-addressed (see
+  [05-design-evolution.md](05-design-evolution.md)).
 - That intra-transaction `0 → x → 0` remains a same-tx state-gas refill (EIP-8037
   behaviour), independent of the trie rule.
 
@@ -425,8 +446,9 @@ with the state-gas-refill and per-account-HWM options in §6 as the starting can
 
 - [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) — PBT, § *Zero values and deletion*
   (normative).
-- EIP-8347 — offline migration ([PR #12006](https://github.com/ethereum/EIPs/pull/12006)),
-  BAL-replay translation rules.
+- [EIP-8347](https://eips.ethereum.org/EIPS/eip-8347) — offline migration (published;
+  originated as [PR #12006](https://github.com/ethereum/EIPs/pull/12006)), BAL-replay
+  translation rules.
 - [*State expiry EIP* note](https://notes.ethereum.org/@vbuterin/state_expiry_eip) — the
   origin of the zero-vs-absent rule ("check older trees first").
 - [EIP-6800](https://eips.ethereum.org/EIPS/eip-6800) — Verkle, the leaf marker at bit 128.

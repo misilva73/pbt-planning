@@ -10,8 +10,9 @@ knowledge base (and delete them here) as they settle. Roadmap deliverables that 
 given parameter are linked inline.
 
 - **Trie:** [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) (Draft).
-- **Migration:** the offline MPT→PBT migration EIP, **EIP-8347**
-  ([PR #12006](https://github.com/ethereum/EIPs/pull/12006)). The migration items below
+- **Migration:** the offline MPT→PBT migration EIP, **[EIP-8347](https://eips.ethereum.org/EIPS/eip-8347)**
+  (Draft, published; originated as
+  [PR #12006](https://github.com/ethereum/EIPs/pull/12006)). The migration items below
   are the "**§14 open parameters**" referenced throughout the roadmap deliverables.
 
 Background and the settled security analysis (collision resistance, grinding, preimage
@@ -39,22 +40,6 @@ The spec-freeze ([A-S3](roadmap/deliverables/A-S3-eip8297-spec-freeze.md)) and a
 root-bearing test vectors consume the decided `H`; fixtures stay hash-parameterized until
 it resolves.
 
-### Zero-value leaves vs. deletion on zeroization
-
-Does an `SSTORE` of zero **keep the leaf** (present, value zero, distinct from an absent
-key — EIP-8297 as written, inherited from Verkle) or **remove it** (MPT semantics, what
-`ethereum.state_pbt` does)? The two commit to **different state roots for the same
-execution**, so it must land before the spec freeze
-([A-S3](roadmap/deliverables/A-S3-eip8297-spec-freeze.md)) and no EIP-8297 fixture is a
-state-root conformance vector until it does. Note that the spec set currently **decides it
-both ways**: EIP-8297 § *Zero values and deletion* is normative for keeping, while
-EIP-8347's BAL-replay rules require deleting (forced by conversion/replay determinism).
-Tracked at [misilva73/pbt-planning#3](https://github.com/misilva73/pbt-planning/issues/3)
-and [execution-specs#3254](https://github.com/ethereum/execution-specs/issues/3254).
-Full analysis and recommendation (**delete on zeroization**, with the churn-pricing
-problem handed to [A-S2](roadmap/deliverables/A-S2-gas-cost-recalibration.md)) in
-[knowledge-base/10-zero-value-leaves-and-deletion.md](knowledge-base/10-zero-value-leaves-and-deletion.md).
-
 ### State-access gas repricing
 
 PBT changes the real cost of touching state, so gas must be repriced for it. The repricing
@@ -71,10 +56,15 @@ PBT gas model is documented in
 ### State expiry & resurrection
 
 Per-account (header stem) and per-bucket (`key_hash(address)` bucket) expiry is natural on
-the zone topology (record the subtree hash, prune below it). Open issues:
-content-addressed **code needs reference counting** (shared leaves) or deferral to a state
-sweep; **resurrection** must re-attach a subtree consistent with the recorded commitment.
-Mechanism deferred to a **separate future EIP**.
+the zone topology (record the subtree hash, prune below it). Note: ordinary
+**deletion-time** code refcounting (remove a `CODE_ZONE` leaf only if no live account
+shares its `code_hash`) is now specified directly in EIP-8297 — see
+[knowledge-base/02-tree-structure.md](knowledge-base/02-tree-structure.md#zero-values-and-deletion).
+What remains open here is narrower: whether an **expiry** pass (pruning a still-referenced
+but dormant subtree, as opposed to deleting on account/code-hash change) needs its own
+refcounting or sweep pass, since expiry and deletion are different triggers over the same
+shared leaves; and **resurrection** must re-attach a subtree consistent with the recorded
+commitment. The expiry mechanism itself is deferred to a **separate future EIP**.
 
 ### State tiering (EIP-8188)
 
@@ -107,9 +97,9 @@ account-header / code / storage zones.
 
 ## Migration (EIP-8347, offline MPT→PBT — the §14 open parameters)
 
-Provenance: several items below were raised in review of
-[PR #12006](https://github.com/ethereum/EIPs/pull/12006) (@kevaundray) and are **not** yet
-specified in the EIP. Most are fixed by
+Provenance: several items below were raised in review of EIP-8347 while it was still
+[PR #12006](https://github.com/ethereum/EIPs/pull/12006) (@kevaundray) and remain **not**
+specified in the now-published EIP. Most are fixed by
 [B-S1](roadmap/deliverables/B-S1-offline-migration-eip.md) (the EIP itself) and
 [B-S2](roadmap/deliverables/B-S2-readiness-gate-activation-params.md) (activation
 parameters).
@@ -125,29 +115,31 @@ correlated all-client bug can't pass agreement undetected.
 ### Artifact formats & compression
 
 - **Preimage file byte-level format** — the MPT is hash-keyed and can't be walked back to
-  raw keys, so the extracted preimage set must be exhaustive. **Now specified in the
-  EIP-8347 draft** ([PR #12006](https://github.com/ethereum/EIPs/pull/12006)): per-account
-  records `address[20] | slotCount[4, BE] | slotKey[32] * slotCount`, sorted
-  byte-lexicographically by address then slot key. Pending review; consumed by
+  raw keys, so the extracted preimage set must be exhaustive. **Specified in the
+  published EIP-8347**: an RLP-encoded concatenation of per-account records
+  `[address, [slotKey, slotKey, ...]]` (`address` exactly 20 bytes, each `slotKey` a
+  canonical RLP integer), sorted byte-lexicographically by address then slot key. This
+  supersedes an earlier fixed-width layout once assumed here
+  (`address[20] | slotCount[4, BE] | slotKey[32] * slotCount`). Consumed by
   [B-C1](roadmap/deliverables/B-C1-converter-prototype.md).
-- **Snapshot chunk encoding** — the byte-canonical *artifact* serialization is **now
-  specified in the EIP-8347 draft** (`pbtRoot[32] | leafCount[8, BE] | leafRecord*`, leaf
-  records self-delimited by a zone byte). What remains open is the **transport chunking**:
-  chunk boundaries / sizing trade verification granularity against overhead at ~100+ GB
-  scale and are left to the distribution layer. Validated at scale by
+- **Snapshot chunk encoding** — the byte-canonical *artifact* serialization is **specified
+  in the published EIP-8347**: `pbtRoot[32] | leafCount[8, BE]` followed by `leafCount`
+  RLP-encoded `[key, value]` leaf records (key at full zone-determined length, value as a
+  canonical RLP integer with leading zeros stripped). What remains open is the **transport
+  chunking**: chunk boundaries / sizing trade verification granularity against overhead at
+  ~100+ GB scale and are left to the distribution layer. Validated at scale by
   [A-C4](roadmap/deliverables/A-C4-snapshot-serving-verification.md) and
   [B-T3](roadmap/deliverables/B-T3-dual-check-verification-scale.md).
-- **Compression** — the leaf record format is somewhat wasteful and should compress well.
-  Start with naive compression on transport; a **stem-aware** format (many keys share a
-  stem) is a possible later optimization.
+- **Compression** — the RLP leaf record format is somewhat wasteful and should compress
+  well. Start with naive compression on transport; a **stem-aware** format (many keys
+  share a stem) is a possible later optimization.
 
 ### Re-anchor cadence & BAL expiry
 
 BALs expire, so re-anchor snapshots must be **newer than the BAL expiry window** or a late
 joiner won't have the BALs needed to replay from the chosen anchor. `REANCHOR_CADENCE`
 (`N′`) must be chosen with the BAL expiry period and observed catch-up speed in mind. The
-EIP-8347 draft ([PR #12006](https://github.com/ethereum/EIPs/pull/12006)) currently
-proposes **`REANCHOR_CADENCE = 50400` blocks (~1 week)**; the roadmap leaves it generic and
+published EIP-8347 fixes **`REANCHOR_CADENCE = 50400` blocks (~1 week)**; the roadmap leaves it generic and
 targets a longer per-node dual-state window, so the two must be reconciled (see
 [knowledge-base/04-migration.md](knowledge-base/04-migration.md#source-discrepancies-to-reconcile),
 D1).
@@ -176,7 +168,7 @@ not a proposal.
 A CL-side design discussion (2026-07-27 → 2026-07-29) has since narrowed the carrier
 further: it should be a **temporary, publisher-rate-limited global gossip topic** in the
 consensus-networking spec, built on clients' existing libp2p/gossipsub stack, deployable
-**without a hard fork** and retired at `SWAP_FORK`. Alternatives were considered and
+**without a hard fork** and retired at `PBT_ACTIVATION_FORK`. Alternatives were considered and
 rejected — many subnets (1k+ subnet concerns), req/resp scraping and ENR advertisement
 (node-level, non-exhaustive, don't identify validators), a beacon-state field (modifies
 consensus state for temporary bookkeeping), and extending `AttestationData` (no spare field
@@ -215,18 +207,27 @@ What genuinely remains:
 
 ### Reorg behavior around the swap
 
-- What happens if the chain reorgs back to an MPT-committed block near `SWAP_FORK`? The
-  most consensus-critical point is the block just before the swap.
-- Behavior under both **short and long reorgs** during the transition window must be
-  defined (recovery to the MPT is asserted, but the reorg mechanics are not).
+- **Partially specified.** The published EIP-8347 now gives a general BAL-replay reorg
+  rule: rollback is performed by **discarding state, never reversing writes** (BALs
+  record post-values only), so a reorged branch's replayed state is simply thrown away
+  and replay resumes from the new canonical chain. See
+  [knowledge-base/04-migration.md § BAL-replay](knowledge-base/04-migration.md#bal-replay).
+- **Still open:** the specific fork-boundary case — what happens if the chain reorgs back
+  to an MPT-committed block near `PBT_ACTIVATION_FORK` itself, i.e. across the swap. The
+  most consensus-critical point is the block just before the swap, and the general
+  discard-and-replay rule above does not by itself say what a client does when the
+  canonical PBT root it just adopted needs to be un-adopted.
+- Behavior under both **short and long reorgs** during the transition window, at that
+  specific boundary, must still be defined (recovery to the MPT is asserted, but the
+  reorg mechanics there are not).
 
 ### Late joiners who can't finish catch-up in time
 
-- A node joining shortly before `SWAP_FORK` may be unable to verify + BAL-replay to the tip
+- A node joining shortly before `PBT_ACTIVATION_FORK` may be unable to verify + BAL-replay to the tip
   before the fork.
 - Naive fallback: let such a node snap-sync the PBT directly instead of converting.
 - Possible mitigation: run PBT snap-sync "in the shadow" during the shadow period as an
-  additional distribution mechanism, so nodes joining near `SWAP_FORK` see no observable
+  additional distribution mechanism, so nodes joining near `PBT_ACTIVATION_FORK` see no observable
   difference. Downside: extra bandwidth.
 
 ### Failure modes to enumerate
@@ -234,7 +235,7 @@ What genuinely remains:
 - **Nodes lacking the extra storage.** Retaining both the MPT and the PBT through the
   transition window costs on the order of an extra ~300 GB. Define what a node does if it
   cannot meet that (refuse to enter the window? fall back to snap-syncing the PBT at
-  `SWAP_FORK`?).
+  `PBT_ACTIVATION_FORK`?).
 - For contrast, the online overlay's analogous failure is nodes that can't keep up writing
   both trees and fall behind — not this design's problem, but worth stating so the
   trade-off is explicit.
@@ -243,7 +244,7 @@ What genuinely remains:
 ### Sync-mode behavior across the transition
 
 - Define snap-sync behavior for blocks *before* the transition point — likely only allow
-  snap-syncing the PBT from `SWAP_FORK` onward.
+  snap-syncing the PBT from `PBT_ACTIVATION_FORK` onward.
 - Define checkpoint-sync behavior from a block before the transition point.
 - **Post-swap MPT disposal timing** — only validators can dispose of the MPT after
   finality; RPC and archive nodes may retain it well past finality. Dispose too early and

@@ -70,10 +70,43 @@ types; the table below is the diff. Do not mix the two.
 
 ### EIP-8297 metadata
 
-- `requires:` is **`7612`** (the overlay-tree transition mechanism); PBT's gas repricing is a separate benchmark-based EIP, not part of the base spec's `requires`.
+- **No `requires:` field** as of the current text. An earlier note here recorded
+  `requires: 7612` (the Verkle-era overlay-tree transition mechanism); that dependency
+  has since been **dropped** — migration is no longer coupled to the online-overlay
+  approach and is instead specified independently in
+  [EIP-8347](https://eips.ethereum.org/EIPS/eip-8347) (offline conversion), which PBT's
+  own "Fork" section points to by name without a formal `requires`. PBT's gas repricing
+  remains a separate, not-yet-drafted benchmark-based EIP.
 - The diagram (`assets/eip-8297/diagram.png`) may still depict the old stem-node
   model and need redrawing.
 - Marked **Draft**, Standards Track: Core.
+
+## Further rework: code is now uniformly content-addressed (post-July-2026)
+
+A design step **after** the key/node-type rework above, so it is not yet reflected in
+older renderings of file 05's table: the account header stem no longer holds *any* code
+chunks. An earlier version of EIP-8297 (matching [03-key-derivation.md](03-key-derivation.md)'s
+older `CODE_OFFSET = 128` split) kept the first 128 chunks (~4 KB) of a contract's code
+per-account in the header stem, sub-indices 128–255, and only "overflow" chunks beyond
+that were content-addressed by `code_hash` in `CODE_ZONE`. The current text removes that
+split entirely: **every** code chunk, from chunk 0, is content-addressed in `CODE_ZONE`
+via `get_tree_key_for_code_chunk(code_hash, chunk_id)` — no `address` parameter, no
+`CODE_OFFSET` constant. The header's sub-indices in use are now exactly
+`BASIC_DATA_LEAF_KEY`, `CODE_HASH_LEAF_KEY`, and the `HEADER_STORAGE_OFFSET` range; no
+other sub-index is defined. One consequence: because *all* code is now shared rather than
+only an overflow tail, the account/code-hash deletion rule ("remove a `CODE_ZONE` leaf
+only if no resulting-state account shares the same `code_hash`") applies universally, not
+just to overflow chunks — see
+[02-tree-structure.md § Zero values and deletion](02-tree-structure.md#zero-values-and-deletion).
+
+## Further rework: zero-value leaves now delete (post-July-2026)
+
+Also **after** the key/node-type rework: an earlier EIP-8297 text kept a zero-valued leaf
+present and distinct from an absent key (inherited from Verkle, motivated by multi-tree
+state expiry). This directly contradicted EIP-8347's BAL-replay rules, which require
+deletion. EIP-8297 has since been revised to require deletion on zeroization, matching
+EIP-8347 and `ethereum.state_pbt`. Full history and the case for this outcome:
+[10-zero-value-leaves-and-deletion.md](10-zero-value-leaves-and-deletion.md).
 
 ## Even-earlier variant note
 

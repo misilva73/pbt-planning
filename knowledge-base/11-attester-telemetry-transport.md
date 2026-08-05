@@ -17,7 +17,7 @@
 ## The problem being solved
 
 The offline migration's defining property is that the swap is a **discrete event**: at
-`SWAP_FORK` the network stops committing to the MPT root and starts committing to the PBT
+`PBT_ACTIVATION_FORK` the network stops committing to the MPT root and starts committing to the PBT
 root of the same state. The uncomfortable corollary, in the migration lead's framing:
 
 > we "swap roots at height X", but we do not know what the network has as root for the
@@ -214,7 +214,7 @@ listed as a candidate for the companion spec, not a recommendation.
   approach must be **checked with client devs** before it is written up.
 - **Temporary by construction.** The mechanism is intended to be **deprecated at the
   following upgrade**. Ethereum gossip topics are namespaced by fork digest
-  (`/eth2/{fork_digest}/{name}/{encoding}`), so simply not subscribing after `SWAP_FORK`
+  (`/eth2/{fork_digest}/{name}/{encoding}`), so simply not subscribing after `PBT_ACTIVATION_FORK`
   retires the topic without a removal ceremony — a useful property for a mechanism whose
   whole purpose expires at the swap.
 - **Default-on is what makes it work.** Nothing here changes the fact that coverage rests
@@ -273,5 +273,6 @@ with the EL side; item 7 is a coordination item for
   — the tracker entry for the companion specification.
 - [EIP-7549](https://eips.ethereum.org/EIPS/eip-7549) — obsoleted the attestation `index`
   field; that field is now reused by ePBS, which is why no spare attestation field exists.
-- [EIP-8347](https://github.com/ethereum/EIPs/pull/12006) — offline migration; the shadow
+- [EIP-8347](https://eips.ethereum.org/EIPS/eip-8347) — offline migration (now published;
+  originated as [PR #12006](https://github.com/ethereum/EIPs/pull/12006)); the shadow
   period it defines is what this telemetry instruments.

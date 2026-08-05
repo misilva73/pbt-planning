@@ -13,16 +13,23 @@ is **co-located under one shared prefix (stem)** to minimize branch openings.
 | `BASIC_DATA_LEAF_KEY` | 0 | sub-index of the packed header leaf |
 | `CODE_HASH_LEAF_KEY` | 1 | sub-index of the code-hash leaf |
 | `HEADER_STORAGE_OFFSET` | 64 | storage slots 0..63 live in the header at sub-indices 64..127 |
-| `CODE_OFFSET` | 128 | code chunks 0..127 live in the header at sub-indices 128..255 |
+| `HEADER_STORAGE_SLOTS` | 64 | number of storage slots held in the header stem |
 | `STEM_SUBTREE_WIDTH` | 256 | leaves per stem (sub-index range) |
 | `ACCOUNT_ZONE` | `0x00` | account headers |
-| `CODE_ZONE` | `0x01` | overflow code chunks |
+| `CODE_ZONE` | `0x01` | code chunks, content-addressed |
 | `STORAGE_ZONE` | `0xFF` | storage |
 | `ACCOUNT_KEY_LENGTH` | 34 | `1 + 32 + 1` |
 | `CODE_KEY_LENGTH` | 34 | `1 + 32 + 1` |
 | `STORAGE_KEY_LENGTH` | 66 | `1 + 32 + 32 + 1` |
 
-Required invariant: `STEM_SUBTREE_WIDTH > CODE_OFFSET > HEADER_STORAGE_OFFSET`.
+Required invariant: `HEADER_STORAGE_OFFSET + HEADER_STORAGE_SLOTS <= STEM_SUBTREE_WIDTH`.
+
+The header sub-indices in use are exactly `BASIC_DATA_LEAF_KEY`, `CODE_HASH_LEAF_KEY`,
+and `HEADER_STORAGE_OFFSET .. HEADER_STORAGE_OFFSET + HEADER_STORAGE_SLOTS - 1`. **No
+code chunk lives in the header** — there is no `CODE_OFFSET` constant, and code is
+always addressed via `CODE_ZONE` regardless of chunk index (see
+[Code](#code) below; this replaces an earlier design where chunks 0..127 lived
+per-account in the header stem — see [05-design-evolution.md](05-design-evolution.md)).
 
 ## Key construction primitives
 
@@ -59,7 +66,9 @@ The header stem holds, under one shared prefix:
 - **`BASIC_DATA`** (sub-index 0) — packed fields (see below)
 - **`CODE_HASH`** (sub-index 1) — `keccak256(bytecode)`
 - **Storage slots 0..63** — at sub-indices `64..127`
-- **Code chunks 0..127** — at sub-indices `128..255`
+
+No code chunk lives in the header stem — all code is content-addressed in `CODE_ZONE`
+(see [Code](#code)).
 
 Packing basic data into one leaf needs one branch opening instead of three or four,
 lowering gas and simplifying witness generation. Setting any header field also sets
@@ -82,18 +91,21 @@ the Keccak hash of empty bytecode.
 
 ## Code
 
-Chunks 0..127 live in the header stem (sub-indices 128..255). Chunks ≥128 live in
-`CODE_ZONE`, **content-addressed by `code_hash`** so contracts with identical bytecode
-share leaves (only chunks beyond ~4 KB are shared; the first ~4 KB stay per-account and
-need no reference counting).
+**Every** code chunk, from chunk 0 onward, lives in `CODE_ZONE`, **content-addressed by
+`code_hash`** — no chunk lives in the header stem and no chunk is keyed by address.
+Contracts with identical bytecode always share the same leaves for the whole of their
+code, not just an "overflow" tail past some size threshold. Because sharing is now
+universal, deleting an account's code MUST first check whether any other live account
+shares the same `code_hash` before removing the leaves (see
+[02-tree-structure.md § Zero values and deletion](02-tree-structure.md#zero-values-and-deletion)).
+This replaces an earlier design where chunks 0..127 (~4 KB) lived per-account in the
+header stem and only overflow chunks were content-addressed — see
+[05-design-evolution.md](05-design-evolution.md).
 
 ```python
-def get_tree_key_for_code_chunk(address, code_hash, chunk_id):
-    if chunk_id < STEM_SUBTREE_WIDTH - CODE_OFFSET:            # chunk_id < 128 -> header
-        return get_tree_key_for_header(address, CODE_OFFSET + chunk_id)
-    overflow   = chunk_id - (STEM_SUBTREE_WIDTH - CODE_OFFSET)
-    tree_index = overflow // STEM_SUBTREE_WIDTH
-    sub_index  = overflow %  STEM_SUBTREE_WIDTH
+def get_tree_key_for_code_chunk(code_hash, chunk_id):
+    tree_index = chunk_id // STEM_SUBTREE_WIDTH
+    sub_index  = chunk_id %  STEM_SUBTREE_WIDTH
     key = get_tree_key(CODE_ZONE, key_hash(code_hash + tree_index.to_bytes(32, "big")), sub_index)
     assert len(key) == CODE_KEY_LENGTH
     return key
@@ -116,7 +128,7 @@ def storage_tree_position(address: Address32, tree_index: int) -> bytes:
     return prefix + suffix
 
 def get_tree_key_for_storage_slot(address, storage_key):
-    if storage_key < CODE_OFFSET - HEADER_STORAGE_OFFSET:        # storage_key < 64 -> header
+    if storage_key < HEADER_STORAGE_SLOTS:                       # storage_key < 64 -> header
         return get_tree_key_for_header(address, HEADER_STORAGE_OFFSET + storage_key)
     tree_index = storage_key // STEM_SUBTREE_WIDTH
     sub_index  = storage_key %  STEM_SUBTREE_WIDTH
@@ -146,11 +158,11 @@ The full model is documented in
 [A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md). Two points bear directly on
 the key derivation above:
 
-1. **Content-addressed code accounting.** Overflow code chunks (≥128) are shared between
-   contracts, so their access events MUST be keyed by the
-   `(zone, tree_position, sub-index)` tree-key, **not** by `(address, chunk)` — a
-   shared chunk is charged once per block regardless of which contract triggers it. Header
-   chunks (0..127) remain per-account.
+1. **Content-addressed code accounting.** Every code chunk (not just an "overflow" tail)
+   is shared between contracts with identical bytecode, so access events MUST be keyed
+   by the `(zone, tree_position, sub-index)` tree-key, **not** by `(address, chunk)` — a
+   shared chunk is charged once per block regardless of which contract triggers it.
+   There are no per-account header chunks to treat differently.
 2. **Costs derived from PBT read/write benchmarks.** State-access and code-chunk costs are
    recalibrated from measured PBT prototype performance. **The values are not yet fixed in
    this draft.**
@@ -173,13 +185,13 @@ tree_index = 1000 // 256 = 3
 sub_idx    = 1000 %  256 = 232 (0xE8)
 key        = 0xFF || H(A) || H(A || 3) || 0xE8   length = 1 + 32 + 32 + 1 = 66
 
-# Code chunk 5  (in header, since 5 < 128)
-sub_idx = CODE_OFFSET + 5 = 133 (0x85)
-key     = 0x00 || H(A) || 0x85              length = 34
+# Code chunk 5 of bytecode with hash C  (always content-addressed)
+tree_index = 5 // 256 = 0
+sub_idx    = 5 %  256 = 5 (0x05)
+key        = 0x01 || H(C || 0) || 0x05      length = 34
 
-# Code chunk 300 of bytecode with hash C  (overflow, since 300 >= 128)
-overflow   = 300 - 128 = 172
-tree_index = 172 // 256 = 0
-sub_idx    = 172 %  256 = 172 (0xAC)
-key        = 0x01 || H(C || 0) || 0xAC      length = 34
+# Code chunk 300 of the same bytecode
+tree_index = 300 // 256 = 1
+sub_idx    = 300 %  256 = 44 (0x2C)
+key        = 0x01 || H(C || 1) || 0x2C      length = 34
 ```

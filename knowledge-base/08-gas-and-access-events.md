@@ -66,12 +66,14 @@ Each chunk is charged once per transaction on first access, warm afterwards.
 
 ### Content-addressed code accounting
 
-Overflow code chunks (`chunk_id ≥ 128`) live in `CODE_ZONE`, content-addressed by
-`code_hash`, so contracts with identical bytecode **share** the same leaves (see
-[03-key-derivation.md](03-key-derivation.md#L84)). Their access events MUST therefore be
-keyed by the `(zone, tree_position, sub-index)` **tree-key**, *not* by `(address, chunk)`:
-a shared chunk is charged **once per block** regardless of which contract triggers it.
-Header chunks (0..127) stay per-account. This accounting is spec'd alongside the repricing
+**Every** code chunk lives in `CODE_ZONE`, content-addressed by `code_hash`, so contracts
+with identical bytecode **share** the same leaves for the whole of their code — there is
+no per-account "header chunk" tier (see [03-key-derivation.md](03-key-derivation.md#code)
+and [05-design-evolution.md](05-design-evolution.md), which supersede an earlier design
+that kept the first 128 chunks per-account in the header). Access events MUST therefore
+be keyed by the `(zone, tree_position, sub-index)` **tree-key**, *not* by
+`(address, chunk)`: a shared chunk is charged **once per block** regardless of which
+contract triggers it, for every chunk. This accounting is spec'd alongside the repricing
 in [A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md).
 
 ## Co-location is a read-performance property
@@ -90,15 +92,15 @@ property of the PBT layout, not a witness-size concern.
 > ≈1.5% less total gas than a **31-byte** chunker while adding far less contract-size
 > overhead (+0.6% vs +3.7%). It suggests mitigations (lower per-chunk charge, a free-chunk
 > allowance, multi-dimensional gas). Design-agnostic evidence for PBT's code-chunk pricing
-> and the chunk-size trade-off — see [07-sources.md](07-sources.md) #7.
+> and the chunk-size trade-off — see [07-sources.md](07-sources.md) #8.
 
 ## Status & pending constants
 
 - **State-access costs** (cold/warm account and storage access, storage write, code-metadata
   reads) — **pending**, derived from PBT read/write benchmarks.
 - **Code-chunk access cost and chunk size** — **pending**; the 31- vs 32-byte chunker
-  trade-off (source #7) is an open input.
-- **Content-addressed shared-chunk accounting** — overflow chunks keyed by tree-key and
+  trade-off (source #8) is an open input.
+- **Content-addressed shared-chunk accounting** — all code chunks keyed by tree-key and
   charged once per block; spec'd by A-S2.
 
 All of the above are fixed by the benchmark-based gas repricing EIP

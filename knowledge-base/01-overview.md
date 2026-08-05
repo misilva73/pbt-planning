@@ -58,7 +58,8 @@ This design has several properties that hurt future scaling, especially
 - **PBT** — Partitioned Binary Tree; the binary state tree defined by EIP-8297.
 - **MPT** — Merkle Patricia Trie; Ethereum's current hexary state structure.
 - **Zone** — a category of state identified by the **first byte** of a key
-  (`0x00` accounts, `0x01` code overflow, `0xFF` storage; `0x02`–`0xFE` reserved).
+  (`0x00` accounts, `0x01` code — content-addressed, all chunks — `0xFF` storage;
+  `0x02`–`0xFE` reserved).
 - **Stem** — the shared key prefix that groups leaves accessed together (a key's
   zone byte + hash-derived tree position). Up to 256 leaves share a stem, indexed by
   the final **sub-index** byte.
@@ -74,7 +75,7 @@ This design has several properties that hurt future scaling, especially
 - **BASIC_DATA** — the packed header leaf holding version, nonce, balance, code_size.
 - **BAL** — Block-Level Access List (EIP-7928); a per-block list of state accesses/writes.
 - **Anchor block N / Fork S** — migration parameters: `N` is the block whose state is
-  converted; `S` is the hard fork at which PBT becomes canonical.
+  converted; `PBT_ACTIVATION_FORK` is the hard fork at which PBT becomes canonical.
 - **Shadow root / shadow commitment** — a PBT root published per block *before* the
   swap, while consensus still runs on the MPT, to make conversion correctness visible.
   Computed by **attesters** over each block's post-state and published signed with their

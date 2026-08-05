@@ -147,19 +147,40 @@ def _insert(self, node, bits, key, value, depth):
 
 ## Zero values and deletion
 
-> **Contested — do not treat as settled.** The rule below is EIP-8297 as written, but
-> EIP-8347's BAL-replay rules require the opposite (zero-writes *delete* leaves, see
-> [04-migration.md](04-migration.md#bal-replay)) and `ethereum.state_pbt` implements the
-> opposite too. The two options commit to **different state roots for the same
-> execution**. Analysis and recommendation:
+> **Resolved as of the current EIP-8297 text.** An earlier draft kept zero-valued
+> leaves present (distinct from absence), which directly contradicted EIP-8347's
+> BAL-replay rules (zero-writes *delete* leaves) and `ethereum.state_pbt`. EIP-8297 has
+> since been revised to require deletion, matching EIP-8347 and closing the
+> contradiction. History and the case for this outcome:
 > [10-zero-value-leaves-and-deletion.md](10-zero-value-leaves-and-deletion.md).
 
-Writing 32 zero bytes **stores that value like any other**: the leaf stays present, and
-a zero-valued leaf is **distinct from an absent key** (it commits to a different root).
-EVM execution never removes entries — insertion and in-place update are the only
-mutations, so clients never need delete logic that re-canonicalizes by merging a lone
-surviving child back into its parent. Removing entries is reserved for a future
-**state-expiry** mechanism (see [../open-questions.md](../open-questions.md)).
+Mapping zero to absence belongs to the **state transition function**, not the tree
+itself: it **MUST** resolve a write of 32 zero bytes to a deletion rather than an
+insertion.
+
+```python
+def state_write(entries: dict[bytes, bytes], key: bytes, value: bytes) -> None:
+    if value == b"\x00" * 32:
+        entries.pop(key, None)
+    else:
+        entries[key] = value
+```
+
+Writing zero to an already-absent key is a no-op; the tree never contains a key with a
+32-zero-byte value, and reading an absent key yields zero. **Zero and absent commit to
+the same root**, as in the MPT — this keeps the root a function of state alone, not of
+the writes that produced it (see [10](10-zero-value-leaves-and-deletion.md) for why the
+opposite rule, inherited from Verkle's multi-tree state-expiry design, no longer
+applies).
+
+Account deletion (EIP-161 state clearing, or EIP-6780 SELFDESTRUCT-in-creation-tx) MUST
+remove the header and storage leaves. Code leaves in `CODE_ZONE` MUST be removed **only
+if no resulting-state account shares the same `code_hash`**, and MUST persist otherwise
+— the same content-addressing rule that lets identical bytecode share leaves also
+requires reference-counting it on deletion. There is no `storage_root` leaf in this
+tree, so "does this address have non-empty storage" (EIP-7610) is answered by "does any
+leaf exist at a header storage sub-index or in the storage bucket" — i.e. representation
+as "any non-zero value", not by a stored flag.
 
 ## Merkelization
 

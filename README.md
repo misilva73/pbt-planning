@@ -29,7 +29,7 @@ EIP and execution-spec repositories linked below.
 | EIP | Status | Link |
 |-----|--------|------|
 | **Trie (PBT)** — EIP-8297 | Draft | https://eips.ethereum.org/EIPS/eip-8297 |
-| **Migration** — offline MPT→PBT conversion | Draft PR | https://github.com/ethereum/EIPs/pull/12006 |
+| **Migration** — EIP-8347, offline MPT→PBT conversion | Draft (published; originated as [PR #12006](https://github.com/ethereum/EIPs/pull/12006)) | https://eips.ethereum.org/EIPS/eip-8347 |
 | **State pricing** — PBT gas repricing (benchmark-based; EIP-2926 + EIP-8038 lineage) | TBD | *to be drafted* |
 
 ### Specs & tests

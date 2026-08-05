@@ -3,7 +3,7 @@
 > A side-by-side comparison of the two MPT→PBT transition mechanisms — the **online
 > overlay** and the **offline snapshot** — worked through the live objections raised on
 > each side. It is written for the environment PBT actually ships into: **after H\*** (the
-> spec-freeze / shadow fork) and around the swap at **I\*** (fork `S`, ≈ summer 2028), the
+> spec-freeze / shadow fork) and around the swap at **I\*** (fork `PBT_ACTIVATION_FORK`, ≈ summer 2028), the
 > network already runs **BALs (EIP-7928)**, **ePBS**, **zkEVM optional proofs**, and a
 > **~400M gas limit**. [04-migration.md](04-migration.md) works the offline path out in
 > detail (its six phases, converter, BAL-replay, snapshot, verification); this file is the
@@ -43,9 +43,9 @@
 | | **Online (overlay)** | **Offline (snapshot)** |
 |---|---|---|
 | Where conversion runs | *In* consensus, one block at a time, over a ~1-month window | *Off* the consensus path, at converter speed, against a fixed anchor block `N` |
-| State during the window | One logical tree, part binary / part MPT, advanced by a per-block iterator | Both full trees held side by side; MPT canonical until `S`, PBT built offline |
+| State during the window | One logical tree, part binary / part MPT, advanced by a per-block iterator | Both full trees held side by side; MPT canonical until `PBT_ACTIVATION_FORK`, PBT built offline |
 | Catch-up to tip | Inherent (the iterator *is* the chain) | **BAL-replay** from `N` to tip, no re-execution |
-| The fork | Conversion machinery lives in the fork that runs the window | **`SWAP_FORK` swaps the state commitment only** — no execution semantics move |
+| The fork | Conversion machinery lives in the fork that runs the window | **`PBT_ACTIVATION_FORK` swaps the state commitment only** — no execution semantics move |
 | Disk | ~1 tree (old entries deletable in real time) | ~2 trees during the window (extra ≈300 GB) |
 | Distribution | None | ~100+ GB byte-canonical snapshot + manifest |
 
@@ -78,7 +78,7 @@ and they do not all cut the same way:
 3. **zkEVM optional proofs** — blocks carry validity proofs. With an overlay, provers must
    prove the **conversion steps for every block** in the window, on top of normal execution.
    Offline conversion is out of consensus, so it is **never proven** — guests keep proving
-   plain MPT execution until `S`, then commit to the PBT root; there is no window in which the
+   plain MPT execution until `PBT_ACTIVATION_FORK`, then commit to the PBT root; there is no window in which the
    conversion itself is in the proof. **Bears on: offline (no conversion in the proof).** More
    in [§ zkEVM](#zkevm-having-the-code-path-vs-proving-it-every-block).
 4. **~400M gas limit** — bigger blocks touch more state, so (a) online's fixed per-block
@@ -126,7 +126,7 @@ neutral read of **what the argument actually turns on** — without declaring a 
 ### Consensus surface: "it's the same for every change"
 
 - **Offline claim:** the overlay keeps **both trees consensus-live** for the whole window,
-  exposing MPT↔PBT gas-discrepancy attack surface; `SWAP_FORK` instead swaps only the state
+  exposing MPT↔PBT gas-discrepancy attack surface; `PBT_ACTIVATION_FORK` instead swaps only the state
   commitment, so execution semantics (gas, opcodes, tx validity) are unchanged and the fork
   is trivial to reason about.
 - **Online rebuttal:** the consensus-surface argument does not persuade — *every*
@@ -135,7 +135,7 @@ neutral read of **what the argument actually turns on** — without declaring a 
 - **What it turns on:** the rebuttal is right that consensus surface is not disqualifying on
   its own. The offline point is narrower than "there is surface": it is that a
   **commitment-only swap** has *near-zero new execution surface* (nothing in the EVM's hot
-  path changes at `S`), whereas the overlay adds live conversion logic *and* a period where
+  path changes at `PBT_ACTIVATION_FORK`), whereas the overlay adds live conversion logic *and* a period where
   two commitments with potentially different access costs are both authoritative. That extra
   surface largely evaporates **if** the two-tree read is truly avoidable (next section) —
   because then there is no gas-discrepancy surface to speak of. So this argument stands or
@@ -174,7 +174,7 @@ MPT. Worked through in [§ The conversion-pointer question](#the-conversion-poin
   overlay forces provers to **prove the conversion is done correctly at each block** during
   the window. Offline conversion is out of consensus, so there is **no block at which both
   trees are in consensus** and nothing about the conversion ever enters a proof — guests
-  keep proving plain MPT execution, and after `S` they commit to the PBT root.
+  keep proving plain MPT execution, and after `PBT_ACTIVATION_FORK` they commit to the PBT root.
 - **What it turns on:** the two claims are about different things — "the guest has the logic"
   and "the guest must prove the logic ran correctly for every block in a month-long window"
   are distinct costs, and only the online design incurs the second. Whether that recurring
@@ -193,10 +193,10 @@ MPT. Worked through in [§ The conversion-pointer question](#the-conversion-poin
   transition window and to converters/participating nodes**, not permanent.
 - **What it turns on:** the raw number favours online — one tree beats two. Offline treats the
   2× as a bounded, temporary cost against history-expiry headroom, and in exchange keeps the
-  MPT present and canonical until `S` (recoverability if conversion is found wrong). This is a
+  MPT present and canonical until `PBT_ACTIVATION_FORK` (recoverability if conversion is found wrong). This is a
   genuine trade: disk efficiency vs an in-place fallback. A node that *cannot* meet the extra
   ≈300 GB is an enumerated offline failure mode with a fallback — snap-sync the PBT at
-  `SWAP_FORK` instead of converting (see
+  `PBT_ACTIVATION_FORK` instead of converting (see
   [open-questions.md § Failure modes](../open-questions.md#failure-modes-to-enumerate)).
 
 ### Rehearsal: shadow fork vs end-to-end dry run
@@ -241,7 +241,7 @@ MPT. Worked through in [§ The conversion-pointer question](#the-conversion-poin
   consumer upgrades either way (tracked in
   [B-O1](../roadmap/deliverables/B-O1-proof-consumer-coordination.md)). The only divergence is
   narrow: during an overlay window, `eth_getProof` and similar must account for **two roots
-  while conversion is in flight**; offline keeps it to one root until `S`, then one root after.
+  while conversion is in flight**; offline keeps it to one root until `PBT_ACTIVATION_FORK`, then one root after.
   A transient difference, not a structural one.
 
 ---
@@ -411,7 +411,7 @@ trade space, not a tally to be summed.
 | Conversion off consensus-critical path | Off | Structural property; the source of most other offline differences. |
 | zkEVM proving | Off | Online proves conversion every block; offline never proves it. **(new post-H\*)** |
 | Per-block scheduling / lag-and-catch-up | Off | Offline has no per-block conversion floor; online's floor grows with 400M. **(sharper post-H\*)** |
-| Single small swap fork (commitment-only) | Off | No execution semantics move at `S`. |
+| Single small swap fork (commitment-only) | Off | No execution semantics move at `PBT_ACTIVATION_FORK`. |
 | End-to-end rehearsal on real state | Off | A failed offline rehearsal has no consensus consequence. |
 | Disk during the window | On | Online stores ~1 tree; offline ~2 (extra ≈300 GB), bounded and history-expiry-feasible. |
 | ePBS slot headroom | On | More builder wall-clock softens online's conversion-in-slot worry. **(new post-H\*)** |
@@ -459,6 +459,6 @@ Two factual corrections the analysis establishes for either side to build on:
 See also: [04-migration.md](04-migration.md) (the offline path worked out in full: phases,
 converter, BAL-replay, snapshot, verification),
 [08-gas-and-access-events.md](08-gas-and-access-events.md) (why any repricing is
-benchmark-based and decoupled from `S`), and
+benchmark-based and decoupled from `PBT_ACTIVATION_FORK`), and
 [open-questions.md](../open-questions.md) (the §14 migration parameters, failure modes, and
 the shadow-root companion specification).
