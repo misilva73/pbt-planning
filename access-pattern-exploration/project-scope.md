@@ -456,12 +456,7 @@ headline results without undocumented manual steps. Secrets and large raw datase
 outside version control.
 
 Recommendations should separately cover header allocation/capacity and any beyond-one-byte
-encoding. If a structural change is recommended, open a tracked item in
-[open-questions.md](../open-questions.md) under *Trie design (EIP-8297)* referencing this
-report; it must land before
-[A-S3](../roadmap/deliverables/A-S3-eip8297-spec-freeze.md). State exactly which per-zone
-key lengths and vectors the proposed encoding changes rather than implying that every tree
-key necessarily grows.
+encoding. 
 
 ## Limitations to state up front
 
