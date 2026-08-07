@@ -229,7 +229,10 @@ A deterministic function translating MPT state to PBT. Given the state at `ANCHO
 2. Validates `keccak256(preimage)` matches trie paths.
 3. Derives PBT keys per [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297).
 4. For each account with code, fetches bytecode by `code_hash`, chunks it, and emits the
-   code leaves (the `0x01` code zone).
+   code leaves (the `0x01` code zone). An account whose code is an EIP-7702 delegation
+   indicator instead takes a single header leaf at `DELEGATION_LEAF_KEY` and emits
+   **neither** code leaves **nor** a `code_hash` leaf — see
+   [Delegation indicators](#delegation-indicators-eip-7702).
 5. **External merge-sort** by PBT key order.
 6. Sequential **bottom-up** tree construction (single pass).
 
@@ -254,6 +257,10 @@ writes to the PBT (balance/nonce changes, storage writes, code deployments):
   `CODE_ZONE` leaves only if no account has the same `code_hash` (content-addressing
   needs the same reference check on replay as on ordinary deletion — see
   [02-tree-structure.md § Zero values and deletion](02-tree-structure.md#zero-values-and-deletion)).
+  If the code change is a **delegation indicator** (EIP-7702), replay writes the
+  `DELEGATION_LEAF_KEY` leaf instead of a `code_hash` leaf — see
+  [Delegation indicators](#delegation-indicators-eip-7702) below; no reference-counting
+  applies since delegation leaves are never content-addressed.
 - **Account deletion:** if after a block's writes an account holds `nonce == 0`,
   `balance == 0`, and `code_size == 0`, it is deleted. No special BAL marker is needed —
   the rule is evaluated from the post-write state.
@@ -272,6 +279,37 @@ journal, batching unconstrained) and *tip-following* (shadow period on; a pre-va
 journal ~2 epochs deep handles reorgs within the journal horizon). A **batch-boundary
 alignment rule** applies when comparing at a checkpoint height `h` (a re-anchor or a
 shadow-covered block): close the batch exactly at `h` before continuing to `h+1`.
+
+### Delegation indicators (EIP-7702)
+
+**Changed post-August-2026** (EIP-8297 [PR #12114](https://github.com/ethereum/EIPs/pull/12114),
+EIP-8347 [PR #12115](https://github.com/ethereum/EIPs/pull/12115), both merged
+2026-08-06 — see [05-design-evolution.md](05-design-evolution.md)). An account whose
+MPT code is a delegation indicator carries that indicator (followed by nine zero bytes)
+in a `DELEGATION_LEAF_KEY` leaf, with `code_size == 23`, **no** `code_hash` leaf and
+**no** chunk leaves (see [03-key-derivation.md § Delegation
+indicators](03-key-derivation.md#delegation-indicators-eip-7702) for the key/value
+layout). This touches three places in the migration:
+
+- **Converter** (step 4 above): emits the single delegation leaf instead of code leaves
+  and a `code_hash` leaf.
+- **Check 2 (consensus anchoring):** rehashing under the MPT schema recomputes
+  `code_hash` from the delegation leaf's indicator bytes rather than by reassembling and
+  hashing `CODE_ZONE` chunks — this is **required for correctness, not cosmetic**: every
+  mainnet anchor block already contains EIP-7702-delegated accounts, so without this a
+  snapshot's dual-check would fail on essentially every block.
+- **BAL-replay:** setting a delegation MUST also remove the account's `code_hash` leaf,
+  and clearing one MUST write the `code_hash` leaf back (empty-bytecode hash,
+  `code_size = 0`) — EIP-8297 guarantees an account holds exactly one of the two leaves.
+  Clearing a delegation MUST remove the `DELEGATION_LEAF_KEY` leaf. Neither direction
+  touches `CODE_ZONE` reference-counting, since delegation leaves were never
+  content-addressed.
+
+This replaces an earlier design where the delegation indicator was chunked into
+`CODE_ZONE` like ordinary code and shared (content-addressed) across accounts delegating
+to the same target — which required reference-counting on deletion and broke
+block-local locality (a node couldn't tell from block-local data alone whether another
+account still held the same delegation before removing it).
 
 Used to catch a converted snapshot up from anchor `N` to chain tip, and to close the gap
 when preimages are extracted at an earlier height `E`: BAL-completion over `(E, N]`

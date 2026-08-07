@@ -1,12 +1,12 @@
 # 07 — Sources & Re-fetching
 
-## Primary sources (synced 2026-08-05)
+## Primary sources (synced 2026-08-07)
 
 | # | Source | What it covers | Freshness caveat |
 |---|--------|----------------|------------------|
 | 1 | **PBT spec (rendered)** — https://cperezz.github.io/pbt-spec/ | Rationale, zones, security, open questions, wormholes note | Third-party render; may describe an **earlier** design (3-bit/4-bit zone, truncated widths, per-account header code chunks). Superseded by the current EIP-8297 — see [05-design-evolution.md](05-design-evolution.md). |
-| 2 | **EIP-8297 (published)** — https://eips.ethereum.org/EIPS/eip-8297 | The **current** design: variable-length prefix-free keys, 2 node types, full-digest keys, merkelization, delete-on-zeroization, fully content-addressed code | **Current source of truth** for tree specifics. Draft, Standards Track: Core. No `requires:` field (an earlier note recorded `requires: 7612`; that dependency has been dropped — see [05-design-evolution.md](05-design-evolution.md)). |
-| 3 | **EIP-8347 (published)** — https://eips.ethereum.org/EIPS/eip-8347 | The **formal, normative** offline migration spec: five-phase lifecycle, converter, RLP-encoded preimage/snapshot artifact formats, dual-check verification, BAL-replay translation rules, shadow commitment, activation, transition window, security considerations | **Current source of truth** for migration specifics; supersedes the HackMD roadmap (#4) wherever they conflict. Draft, Standards Track: Core; `requires: 7928, 8159, 8297`. Authored by Carlos Perez, Maria Silva, Kevaundray Wedderburn. Originated as [PR #12006](https://github.com/ethereum/EIPs/pull/12006), now merged/published — treat the PR link as historical provenance only. |
+| 2 | **EIP-8297 (published)** — https://eips.ethereum.org/EIPS/eip-8297 | The **current** design: variable-length prefix-free keys, 2 node types, full-digest keys, merkelization, delete-on-zeroization, fully content-addressed code, `DELEGATION_LEAF_KEY` header leaf for EIP-7702 delegations | **Current source of truth** for tree specifics. Draft, Standards Track: Core. No `requires:` field (an earlier note recorded `requires: 7612`; that dependency has been dropped — see [05-design-evolution.md](05-design-evolution.md)). Delegation indicators moved from `CODE_ZONE` into the header stem via [PR #12114](https://github.com/ethereum/EIPs/pull/12114), merged 2026-08-06. |
+| 3 | **EIP-8347 (published)** — https://eips.ethereum.org/EIPS/eip-8347 | The **formal, normative** offline migration spec: five-phase lifecycle, converter, RLP-encoded preimage/snapshot artifact formats, dual-check verification, BAL-replay translation rules, delegation-indicator handling, shadow commitment, activation, transition window, security considerations | **Current source of truth** for migration specifics; supersedes the HackMD roadmap (#4) wherever they conflict. Draft, Standards Track: Core; `requires: 7928, 8159, 8297`. Authored by Carlos Perez, Maria Silva, Kevaundray Wedderburn. Originated as [PR #12006](https://github.com/ethereum/EIPs/pull/12006), now merged/published — treat the PR link as historical provenance only. Converter/BAL-replay updated for header-leaf delegation indicators via [PR #12115](https://github.com/ethereum/EIPs/pull/12115), merged 2026-08-06. |
 | 4 | **Migration roadmap** — https://hackmd.io/@CPerezz/H1Q2zt8NMe | Offline conversion strategy, 6 program phases, converter, BAL-replay, snapshot, verification, params | Strategy/operator doc, not normative — where it disagrees with the published EIP-8347 (#3), the EIP wins. Tree constants may also lag EIP-8297. Approach is design-agnostic. |
 | 5 | **Verkle transition options** — https://notes.ethereum.org/@parithosh/verkle-transition | **Historical** survey comparing 4 migration approaches (overlay, conversion-node, local bulk, state expiry) | Verkle-era, predates PBT. Context for *why* offline was chosen — see [04-migration.md](04-migration.md). |
 | 6 | **EIP-2926** — https://eips.ethereum.org/EIPS/eip-2926 · **EIP-8038** — https://eips.ethereum.org/EIPS/eip-8038 | The two bases for PBT's gas repricing: per-chunk code access (EIP-2926, chunk-based code merkleization) and empirically-estimated state-access costs (EIP-8038). See [08-gas-and-access-events.md](08-gas-and-access-events.md). | PBT reprices from measured PBT prototype performance; the constants themselves are pending [A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md). |
@@ -61,11 +61,13 @@ Responses are cached ~15 min per URL.
 - When updating any tree constant, update **both** [02-tree-structure.md](02-tree-structure.md)
   / [03-key-derivation.md](03-key-derivation.md) **and** the comparison table in
   [05-design-evolution.md](05-design-evolution.md).
-- Re-fetch both published EIP pages (commands above) each sync. As of 2026-08-05:
-  EIP-8297 has been revised twice since the key/node-type rework — code is now uniformly
-  content-addressed (no header chunks) and zero-writes now delete leaves — see
-  [05-design-evolution.md](05-design-evolution.md); EIP-8347 has moved from PR #12006 to
-  a published EIP page with `requires: 7928, 8159, 8297` and RLP-based artifact formats.
+- Re-fetch both published EIP pages (commands above) each sync. As of 2026-08-07:
+  EIP-8297 has been revised three times since the key/node-type rework — code is now
+  uniformly content-addressed (no header chunks), zero-writes now delete leaves, and
+  EIP-7702 delegation indicators now live in a `DELEGATION_LEAF_KEY` header leaf instead
+  of `CODE_ZONE` — see [05-design-evolution.md](05-design-evolution.md); EIP-8347 has
+  moved from PR #12006 to a published EIP page with `requires: 7928, 8159, 8297`,
+  RLP-based artifact formats, and matching delegation-leaf converter/BAL-replay rules.
   When the two disagree, **EIP-8297 (the tree spec) wins** per this KB's standing
   convention.
 - Keep the "Last synced" date in [README.md](README.md) current when you refresh.

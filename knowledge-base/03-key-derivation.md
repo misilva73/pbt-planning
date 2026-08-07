@@ -12,6 +12,7 @@ is **co-located under one shared prefix (stem)** to minimize branch openings.
 |-----------|-------|---------|
 | `BASIC_DATA_LEAF_KEY` | 0 | sub-index of the packed header leaf |
 | `CODE_HASH_LEAF_KEY` | 1 | sub-index of the code-hash leaf |
+| `DELEGATION_LEAF_KEY` | 2 | sub-index of the EIP-7702 delegation-indicator leaf |
 | `HEADER_STORAGE_OFFSET` | 64 | storage slots 0..63 live in the header at sub-indices 64..127 |
 | `HEADER_STORAGE_SLOTS` | 64 | number of storage slots held in the header stem |
 | `STEM_SUBTREE_WIDTH` | 256 | leaves per stem (sub-index range) |
@@ -25,11 +26,17 @@ is **co-located under one shared prefix (stem)** to minimize branch openings.
 Required invariant: `HEADER_STORAGE_OFFSET + HEADER_STORAGE_SLOTS <= STEM_SUBTREE_WIDTH`.
 
 The header sub-indices in use are exactly `BASIC_DATA_LEAF_KEY`, `CODE_HASH_LEAF_KEY`,
-and `HEADER_STORAGE_OFFSET .. HEADER_STORAGE_OFFSET + HEADER_STORAGE_SLOTS - 1`. **No
-code chunk lives in the header** — there is no `CODE_OFFSET` constant, and code is
-always addressed via `CODE_ZONE` regardless of chunk index (see
-[Code](#code) below; this replaces an earlier design where chunks 0..127 lived
-per-account in the header stem — see [05-design-evolution.md](05-design-evolution.md)).
+`DELEGATION_LEAF_KEY`, and `HEADER_STORAGE_OFFSET .. HEADER_STORAGE_OFFSET +
+HEADER_STORAGE_SLOTS - 1`. **No code chunk lives in the header** — there is no
+`CODE_OFFSET` constant, and code is always addressed via `CODE_ZONE` regardless of
+chunk index (see [Code](#code) below; this replaces an earlier design where chunks
+0..127 lived per-account in the header stem — see
+[05-design-evolution.md](05-design-evolution.md)).
+
+**`CODE_HASH_LEAF_KEY` and `DELEGATION_LEAF_KEY` are mutually exclusive**: being
+delegated (EIP-7702) and holding contract code are mutually exclusive conditions, so
+every account that exists holds exactly one of the two leaves, never both and never
+neither (see [Delegation indicators](#delegation-indicators-eip-7702) below).
 
 ## Key construction primitives
 
@@ -59,12 +66,15 @@ def get_tree_key_for_header(address: Address32, sub_index: int) -> bytes:
 
 def get_tree_key_for_basic_data(address):  return get_tree_key_for_header(address, BASIC_DATA_LEAF_KEY)  # sub 0
 def get_tree_key_for_code_hash(address):   return get_tree_key_for_header(address, CODE_HASH_LEAF_KEY)   # sub 1
+def get_tree_key_for_delegation(address):  return get_tree_key_for_header(address, DELEGATION_LEAF_KEY)  # sub 2
 ```
 
 The header stem holds, under one shared prefix:
 
 - **`BASIC_DATA`** (sub-index 0) — packed fields (see below)
-- **`CODE_HASH`** (sub-index 1) — `keccak256(bytecode)`
+- **`CODE_HASH`** (sub-index 1) — `keccak256(bytecode)`, present **unless** the account is
+  delegated (see below)
+- **`DELEGATION`** (sub-index 2) — present **only if** the account is delegated (EIP-7702)
 - **Storage slots 0..63** — at sub-indices `64..127`
 
 No code chunk lives in the header stem — all code is content-addressed in `CODE_ZONE`
@@ -115,6 +125,36 @@ Chunk `i` stores a 32-byte value: bytes 1..31 are the i'th 31-byte slice of code
 byte 0 encodes how many leading bytes are inside a PUSH data region (chunkification per
 [EIP-2926](https://eips.ethereum.org/EIPS/eip-2926) chunk-based code merkleization, via
 `chunkify_code`).
+
+## Delegation indicators (EIP-7702)
+
+**Changed post-August-2026** (EIP-8297 [PR #12114](https://github.com/ethereum/EIPs/pull/12114),
+EIP-8347 [PR #12115](https://github.com/ethereum/EIPs/pull/12115) — see
+[05-design-evolution.md](05-design-evolution.md)). An account whose code is an
+[EIP-7702](https://eips.ethereum.org/EIPS/eip-7702) delegation indicator — the 23 bytes
+`0xef0100 || target` — holds it in its **header stem**, not as code:
+
+```python
+def get_tree_key_for_delegation(address: Address32):
+    return get_tree_key_for_header(address, DELEGATION_LEAF_KEY)
+```
+
+The leaf value is the 23-byte indicator followed by nine zero bytes; `code_size` (in
+`BASIC_DATA`) is fixed at 23. A delegated account emits **no `CODE_HASH_LEAF_KEY` leaf
+and no `CODE_ZONE` chunk leaves** — the two header leaves are mutually exclusive (see
+above), so there is nothing to content-address or reference-count for a delegation.
+Clearing a delegation (an EIP-7702 authorization to the zero address) removes the
+`DELEGATION_LEAF_KEY` leaf and restores `CODE_HASH_LEAF_KEY` holding the hash of empty
+bytecode, with `code_size` zeroed.
+
+This replaced an earlier design where the delegation indicator was chunked into
+`CODE_ZONE` like ordinary code and content-addressed (shared across accounts delegating
+to the same target). That broke locality — a node couldn't tell from block-local data
+alone whether another account still referenced the same shared delegation leaf before
+deleting it — and broke the migration's dual-check, which reassembles bytecode from
+`CODE_ZONE` chunks and re-hashes to `code_hash`; a 23-byte indicator isn't reconstructible
+that way. See [04-migration.md](04-migration.md#delegation-indicators-eip-7702) for the
+converter/BAL-replay side.
 
 ## Storage
 

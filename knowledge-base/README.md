@@ -44,9 +44,10 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
   (cperezz.github.io/pbt-spec) may still describe an **earlier** design.
   See [05-design-evolution.md](05-design-evolution.md) before trusting any specific
   numeric detail (key widths, node types, storage prefix bits) you find elsewhere — this
-  now includes two post-key-rework changes: code is **uniformly content-addressed** (no
-  per-account header chunks), and **zero-writes delete leaves** (the earlier
-  contradiction with EIP-8347 is resolved).
+  now includes three post-key-rework changes: code is **uniformly content-addressed** (no
+  per-account header chunks), **zero-writes delete leaves** (the earlier contradiction
+  with EIP-8347 is resolved), and **EIP-7702 delegation indicators live in a
+  `DELEGATION_LEAF_KEY` header leaf**, not `CODE_ZONE` (merged 2026-08-06).
 - The **migration EIP, [EIP-8347](https://eips.ethereum.org/EIPS/eip-8347)** ("Offline
   State Migration to the PBT"), is likewise `Draft`, now **published** (formerly tracked
   only as [PR #12006](https://github.com/ethereum/EIPs/pull/12006)), and `requires: 7928,
@@ -55,7 +56,7 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 - The **hash function is not final.** Reference implementations use BLAKE3; Poseidon2
   and Keccak are candidates. Treat all hash outputs as unpinned.
 
-Last synced from sources: **2026-08-05**. Re-verify against the live EIPs before relying
+Last synced from sources: **2026-08-07**. Re-verify against the live EIPs before relying
 on exact constants.
 
 The migration file also situates the chosen offline conversion against the earlier

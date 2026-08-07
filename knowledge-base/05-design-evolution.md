@@ -108,6 +108,36 @@ deletion. EIP-8297 has since been revised to require deletion on zeroization, ma
 EIP-8347 and `ethereum.state_pbt`. Full history and the case for this outcome:
 [10-zero-value-leaves-and-deletion.md](10-zero-value-leaves-and-deletion.md).
 
+## Further rework: delegation indicators move into the account header (post-August-2026)
+
+Merged 2026-08-06 via [PR #12114](https://github.com/ethereum/EIPs/pull/12114) (EIP-8297)
+and [PR #12115](https://github.com/ethereum/EIPs/pull/12115) (EIP-8347). Before this
+change, an EIP-7702 delegation indicator (the 23-byte `0xef0100 || target` an EOA's code
+is set to) was treated like ordinary code: chunked into `CODE_ZONE` and content-addressed,
+shared across every account delegating to the same target. Two problems drove this
+rework:
+
+1. **Locality.** Content-addressing a delegation leaf meant deleting it required
+   reference-counting against every other account that might share it (the Besu team
+   flagged that this can't be determined from block-local data alone, unlike ordinary
+   code deletion where the same check at least stays within one converter/replay pass).
+2. **Dual-check correctness.** EIP-8347's Check 2 verifies bytecode by reassembling it
+   from `CODE_ZONE` chunks and re-hashing to `code_hash`. A 23-byte delegation indicator
+   isn't real bytecode in that sense, so the reassembly either fails or needs a special
+   case — and because mainnet already has EIP-7702-delegated accounts in every recent
+   block, this wasn't a hypothetical: **every anchor-block snapshot would fail
+   verification** without a fix.
+
+The fix adds `DELEGATION_LEAF_KEY = 2` as a new header-stem sub-index, mutually exclusive
+with `CODE_HASH_LEAF_KEY`: a delegated account holds exactly one of the two leaves, never
+both, and never any `CODE_ZONE` chunk leaves. Value-based (rather than key-based)
+discriminators between the two leaf types were considered and rejected as vulnerable to
+grinding. Full current mechanics: [03-key-derivation.md § Delegation
+indicators](03-key-derivation.md#delegation-indicators-eip-7702) (key derivation, value
+layout) and [04-migration.md § Delegation
+indicators](04-migration.md#delegation-indicators-eip-7702) (converter, dual-check,
+BAL-replay).
+
 ## Even-earlier variant note
 
 The rendered spec site summary (cperezz.github.io/pbt-spec) additionally describes a
