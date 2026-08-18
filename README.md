@@ -36,5 +36,7 @@ EIP and execution-spec repositories linked below.
 
 | Suite | Link |
 |-------|------|
-| **Trie specs and tests** | https://github.com/ethereum/execution-specs/pull/3216 |
+| **Trie specs and tests** | https://github.com/ethereum/execution-specs/tree/projects/binary-trie |
 | **Migration specs and tests** | *TBD* |
+| **PBT devnet** | https://github.com/CPerezz/pbt-devnet |
+| **geth implementation (EIP-8297)** | https://github.com/CPerezz/go-ethereum/tree/pbt |

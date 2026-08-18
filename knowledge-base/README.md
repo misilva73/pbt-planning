@@ -56,7 +56,7 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 - The **hash function is not final.** Reference implementations use BLAKE3; Poseidon2
   and Keccak are candidates. Treat all hash outputs as unpinned.
 
-Last synced from sources: **2026-08-07**. Re-verify against the live EIPs before relying
+Last synced from sources: **2026-08-12**. Re-verify against the live EIPs before relying
 on exact constants.
 
 The migration file also situates the chosen offline conversion against the earlier

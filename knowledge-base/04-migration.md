@@ -28,7 +28,7 @@ re-synced. Downstream trackers: [../open-questions.md](../open-questions.md).
 | # | Point | HackMD roadmap | EIP-8347 (published) | Note |
 | --- | --- | --- | --- | --- |
 | D1 | **Re-anchor cadence / dual-state window** | Targets a **2–3 week** per-node dual-state holding window; re-anchor cadence `N′` left generic. | `REANCHOR_CADENCE = 50400` blocks (**~1 week**). Its "transition window" is a *distinct* concept: `PBT_ACTIVATION_FORK` activation → finality, **not** the dual-state holding period. | Two different clocks are being conflated across the docs. Reconcile the terminology: is the "2–3 week" figure the re-anchor cadence, the catch-up budget, or the hold window? |
-| D2 | **Hash domains** | Names **BLAKE3** explicitly for PBT key derivation and internal-node hashing (and BLAKE3/keccak256 for artifact hashing). | Defers entirely to [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) for key derivation; never names a hash. | The hash `H` is still an **open parameter** (BLAKE3 / Poseidon2 / Keccak candidates — see [../open-questions.md](../open-questions.md#hash-function-selection--the-dominant-open-parameter)). The EIP's deferral is the safer framing; the roadmap's BLAKE3 naming is ahead of the decision. |
+| D2 | **Hash domains** | Names **BLAKE3** explicitly for PBT key derivation and internal-node hashing (and BLAKE3/keccak256 for artifact hashing). | Defers to [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) for tree-hashing `H` (still open); but **does** pin artifact digests — `snapshotDigest`/`preimageDigest` are `keccak256`, unconditionally, per its "Canonical digests" section. | The tree hash `H` is still an **open parameter** (BLAKE3 / Poseidon2 / Keccak candidates — see [../open-questions.md](../open-questions.md#hash-function-selection--the-dominant-open-parameter)) and the EIP's deferral there is the safer framing vs. the roadmap's BLAKE3 naming. But for *artifact* hashing specifically, the EIP is no longer silent — it fixes keccak256, resolving what this row used to treat as open. |
 | D3 | **Phase model** | **Six** program phases (P0–P6): a project schedule from spec convergence to aftermath. | **Five** lifecycle phases: conversion → distribution/verification → catch-up → shadow → swap+window. | Not a contradiction (program schedule vs protocol lifecycle) but the two "phase" numberings must not be conflated. |
 | D4 | **Disk figure** | **300–500 GB** headroom for the PBT database (self-migrators). | Snapshot artifact is **~100+ GB**; ~300–500 GB is what MPT disposal *reclaims* after finality. | Three different quantities (PBT DB, snapshot file, extra-tree overhead ≈300 GB in [09](09-online-vs-offline-migration.md)). Pin a single definition. |
 
@@ -376,18 +376,27 @@ failing either **MUST** be rejected:
 
 ## Hash domains
 
-Which hash function operates in each domain. **Caveat:** the roadmap names BLAKE3, but the
-hash `H` is still an **open parameter** (BLAKE3 / Poseidon2 / Keccak) and the EIP defers
-to EIP-8297 rather than naming it — see discrepancy
-[D2](#source-discrepancies-to-reconcile) and
+Which hash function operates in each domain. **Caveat:** the roadmap names BLAKE3 for tree
+hashing, but the hash `H` is still an **open parameter** (BLAKE3 / Poseidon2 / Keccak) and
+EIP-8297 doesn't pin it — see discrepancy [D2](#source-discrepancies-to-reconcile) and
 [../open-questions.md](../open-questions.md#hash-function-selection--the-dominant-open-parameter).
-Treat the BLAKE3 entries below as *reference-implementation, not final*.
+Treat the BLAKE3 tree-hashing entry below as *reference-implementation, not final*.
+
+**Artifact digests are pinned, unlike tree hashing.** The published EIP-8347 fixes both
+distributed-artifact digests as **keccak256, unconditionally** — not BLAKE3 for snapshots as
+an earlier reading of the roadmap suggested. Its "Canonical digests" section: `snapshotDigest`
+is `keccak256` over the entire PBT snapshot byte stream (header included), and
+`preimageDigest` is `keccak256` over the entire preimage file. Neither is a root of trust —
+they exist for cheap pre-download cross-producer agreement; the [dual-check](#verification--dual-check-authentication)
+always runs regardless of what they say. (The EIP does not separately define a "manifest
+digest" — that term in this doc's [Option B procedure](#option-b--download-snapshot-majority-path)
+refers to these same two digests, not a third artifact.)
 
 | Domain | Hash function |
 |--------|--------------|
 | MPT paths, `codeHash` | Keccak256 (unchanged forever) |
 | PBT key derivation, internal-node hashing | BLAKE3 *(unpinned — see caveat)* |
-| Artifact / preimage / manifest hashes | BLAKE3 (snapshots) or keccak256 (self-migration) |
+| `snapshotDigest`, `preimageDigest` (artifact/preimage-file digests) | **keccak256**, fixed in EIP-8347 — not conditional on BLAKE3 |
 
 Raw keys (addresses, storage slots) are the **shared preimage of both tree domains**.
 

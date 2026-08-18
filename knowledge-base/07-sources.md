@@ -1,6 +1,6 @@
 # 07 — Sources & Re-fetching
 
-## Primary sources (synced 2026-08-07)
+## Primary sources (synced 2026-08-12)
 
 | # | Source | What it covers | Freshness caveat |
 |---|--------|----------------|------------------|
@@ -12,12 +12,14 @@
 | 6 | **EIP-2926** — https://eips.ethereum.org/EIPS/eip-2926 · **EIP-8038** — https://eips.ethereum.org/EIPS/eip-8038 | The two bases for PBT's gas repricing: per-chunk code access (EIP-2926, chunk-based code merkleization) and empirically-estimated state-access costs (EIP-8038). See [08-gas-and-access-events.md](08-gas-and-access-events.md). | PBT reprices from measured PBT prototype performance; the constants themselves are pending [A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md). |
 | 7 | **Binary tree reference impl (Python)** — https://github.com/jsign/binary-tree-spec | Minimal Python reference implementation of the unified binary tree: `tree.py` (`BinaryTree`, merkelization), `embedding.py` (account/state encoding), `eth_types.py`, and `test_tree.py` / `test_embedding.py`; hashes with BLAKE3 | Targets **EIP-7864** (PBT's predecessor), **not** the current EIP-8297. A starting point to **adapt** to PBT — variable-length prefix-free keys, the two node types, and zone partitioning all differ. Candidate reference impl for [A-T2](../roadmap/deliverables/A-T2-tree-key-derivation-vectors.md) / [A-C1](../roadmap/deliverables/A-C1-client-tree-implementations.md). |
 | 8 | **Verkle code-chunking mainnet analysis** — https://hackmd.io/@jsign/verkle-code-mainnet-chunking-analysis | Empirical gas-overhead study of putting contract code in the tree: ~1M mainnet txs (blocks 20,158,433–20,168,316, Jun 2024) via a Geth live-tracer capturing PC traces. Measures code-access gas overhead (**~32.6%** of current tx receipt gas on average; 95% of txs under 800k gas) and compares a **31-byte vs 32-byte** code chunker (32-byte ≈1.5% less total gas, +0.6% vs +3.7% contract-size overhead). Suggests mitigations (lower chunk charge, free-chunk allowance, multi-dimensional gas). | Pre-PBT (Verkle-era measurement, `CHUNK_SIZE = 31`). Data is design-agnostic evidence for PBT's code-chunk pricing ([A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md)) and the code-chunk cost in [08-gas-and-access-events.md](08-gas-and-access-events.md). |
+| 9 | **PBT devnet** — https://github.com/CPerezz/pbt-devnet | The current live devnet exercising client implementations of EIP-8297. Running on **geth** as of 2026-08-12, with additional clients planned in the coming weeks. | Implementation status, not a spec source — verify devnet behavior against the current EIP-8297 revision rather than assuming parity. Client coverage is a moving target; re-check which clients are live before citing it as multi-client validation. Candidate evidence source for [A-C1](../roadmap/deliverables/A-C1-client-tree-implementations.md). |
+| 10 | **geth implementation of EIP-8297** — https://github.com/CPerezz/go-ethereum/tree/pbt | A `go-ethereum` fork branch implementing the PBT tree per EIP-8297; likely the client backing the PBT devnet (#9). | Implementation status, not a spec source — a fork branch, not merged upstream; verify against the current EIP-8297 revision rather than assuming parity, and re-check whether it has diverged from the devnet's geth build. Candidate evidence source for [A-C1](../roadmap/deliverables/A-C1-client-tree-implementations.md). |
 
 ## Non-public inputs
 
 | # | Source | What it covers | Caveat |
 |---|--------|----------------|--------|
-| 9 | **CL-side design discussion on attester shadow-root telemetry** — internal chat, 2026-07-27 → 2026-07-29 (migration lead, CL specs team, client-team and consensus-spec reviewers) | The transport design space for shadow-root publication: rate-limited global gossip topic vs subnets / req/resp / ENR / beacon-state field / attestation extension; the ~800k-messages-per-epoch bandwidth objection; the signature-verification DoS concern; fork-independent deployment. Summarized in [11-attester-telemetry-transport.md](11-attester-telemetry-transport.md). | **Not a specification and not public.** A design conversation, not a decision record — positions may move. Participants are referred to by role. Supersedes nothing in EIP-8347; the companion spec is still unwritten. |
+| 11 | **CL-side design discussion on attester shadow-root telemetry** — internal chat, 2026-07-27 → 2026-07-29 (migration lead, CL specs team, client-team and consensus-spec reviewers) | The transport design space for shadow-root publication: rate-limited global gossip topic vs subnets / req/resp / ENR / beacon-state field / attestation extension; the ~800k-messages-per-epoch bandwidth objection; the signature-verification DoS concern; fork-independent deployment. Summarized in [11-attester-telemetry-transport.md](11-attester-telemetry-transport.md). | **Not a specification and not public.** A design conversation, not a decision record — positions may move. Participants are referred to by role. Supersedes nothing in EIP-8347; the companion spec is still unwritten. |
 
 ## How to re-fetch / re-verify
 
@@ -70,4 +72,34 @@ Responses are cached ~15 min per URL.
   RLP-based artifact formats, and matching delegation-leaf converter/BAL-replay rules.
   When the two disagree, **EIP-8297 (the tree spec) wins** per this KB's standing
   convention.
+- **2026-08-12 re-verification:** re-fetched both EIP pages in full against every
+  numbered file in this KB (01–10). Tree structure, key derivation constants, zero/deletion
+  rule, and delegation-leaf handling all still match the current EIP-8297 text exactly —
+  no drift found there. One correction made: EIP-8347's "Canonical digests" section pins
+  `snapshotDigest` and `preimageDigest` as **keccak256, unconditionally** — the KB's
+  [04-migration.md](04-migration.md#hash-domains) hash-domains table previously hedged this
+  as "BLAKE3 (snapshots) or keccak256 (self-migration)," which is now corrected. Also
+  confirmed execution-specs issues
+  [#3253](https://github.com/ethereum/execution-specs/issues/3253) and
+  [#3254](https://github.com/ethereum/execution-specs/issues/3254) (the EIP-7610/`CREATE`
+  and zero-value-leaf fixture-conformance issues) are both **closed**, consistent with
+  [10-zero-value-leaves-and-deletion.md](10-zero-value-leaves-and-deletion.md)'s "resolved"
+  status. Confirmed `execution-specs`' `projects/binary-trie` branch directly (a local
+  clone exists at `~/Documents/ef/execution-specs`; GitHub's tree view doesn't render via
+  WebFetch since it's client-side JS — `git fetch`/`git show` against the local clone is
+  the reliable way to inspect it): actively developed (last commit 2026-08-10), with a
+  `src/ethereum/binary_trie/` + `src/ethereum/forks/binary_tree/` implementation and a
+  substantial EIP-8297 test suite (`tests/binary_tree/eip8297_partitioned_binary_tree/*`,
+  `tests/binary_trie/*` — account/delegation lifecycle, code chunking/sharing, storage
+  ops, differential MPT-vs-binary-tree parity). Its 2026-08-06 "store delegation
+  indicators in the account header" commit matches EIP-8297 PR #12114's merge date exactly.
+  Found **no** EIP-8347 migration/converter/preimage-extraction code on this branch (the
+  two hits that looked relevant by name — `fuzzer_bridge/converter.py`,
+  `test_create_preimage_layout.py` — are unrelated: a fuzzer-DTO converter and a
+  `CREATE`-address preimage test helper, respectively). The top-level README's "Migration
+  specs and tests: *TBD*" is confirmed still accurate, not just unverified. Note also a
+  dormant `projects/ubt` branch (last commit 2026-04-29, disjoint history from
+  `projects/binary-trie`) — almost certainly the stale EIP-7864 ("Unified Binary Tree")
+  predecessor effort per [05-design-evolution.md](05-design-evolution.md); superseded, not
+  a second current implementation.
 - Keep the "Last synced" date in [README.md](README.md) current when you refresh.
