@@ -1,0 +1,27 @@
+[project]
+name = "access-pattern-exploration"
+version = "0.1.0"
+description = "Empirical sizing of PBT account-header allocation (Part 1: storage-window locality)"
+requires-python = ">=3.12"
+dependencies = [
+    "clickhouse-connect>=0.8",
+    "matplotlib>=3.9",
+    "pandas>=2.2",
+    "pydantic-settings>=2.5",
+    "pyarrow>=17.0",
+    "pyyaml>=6.0",
+    "seaborn>=0.13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "jupyter>=1.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

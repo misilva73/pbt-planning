@@ -1,0 +1,52 @@
+{
+  "description": "Part 1 frozen sample range and completeness evidence, per project-scope.md sampling plan.",
+  "source": {
+    "endpoint": "https://clickhouse.xatu.ethpandaops.io",
+    "database": "default",
+    "network_filter": "meta_network_name = 'mainnet'",
+    "retrieved_at": "2026-08-18T18:00:00Z"
+  },
+  "range": {
+    "start_block": 24783045,
+    "end_block": 25783044,
+    "n_blocks": 1000000
+  },
+  "completeness_checks": [
+    {
+      "check": "no block-number gaps in the candidate window",
+      "table": "canonical_execution_block",
+      "result": "count(DISTINCT block_number) = 1000000 over [24783045, 25783044], exactly matching (end - start + 1)"
+    },
+    {
+      "check": "tip health: last blocks in range have non-zero, in-line activity across all required tables",
+      "tables": ["canonical_execution_block", "canonical_execution_transaction", "canonical_execution_storage_reads", "canonical_execution_storage_diffs"],
+      "result": "block 25783044 (the chosen end_block) has row counts comparable to its neighbors in every table; no truncated-ingestion signal at the tip"
+    },
+    {
+      "check": "transaction_index consistency: embedded transaction_index in storage_diffs matches canonical_execution_transaction, and is internally single-valued per transaction_hash",
+      "sample_range": [24783045, 24783145],
+      "result": "0 mismatches out of all sampled transactions; storage_diffs max(transaction_index) per block never exceeds canonical_execution_transaction max(transaction_index) per block"
+    },
+    {
+      "check": "no gaps/duplicates in the canonical transaction_index sequence per block",
+      "table": "canonical_execution_transaction",
+      "sample_range": [24783045, 24783145],
+      "result": "0 blocks with count(tx) != max(transaction_index) + 1"
+    }
+  ],
+  "table_row_counts_full_history": {
+    "canonical_execution_block": {"min_block": 0, "max_block": 25783044, "n_rows": 25811598},
+    "canonical_execution_transaction": {"min_block": 46147, "max_block": 25783044, "n_rows": 4317924951},
+    "canonical_execution_storage_reads": {"min_block": 46402, "max_block": 25783044, "n_rows": 21621719717},
+    "canonical_execution_storage_diffs": {"min_block": 49018, "max_block": 25783044, "n_rows": 10028035080},
+    "canonical_execution_balance_reads": {"min_block": 46147, "max_block": 25783044, "n_rows": 16519530095},
+    "canonical_execution_balance_diffs": {"min_block": 46147, "max_block": 25783044, "n_rows": 9727395598},
+    "canonical_execution_nonce_reads": {"min_block": 46214, "max_block": 25783044, "n_rows": 15281045584},
+    "canonical_execution_nonce_diffs": {"min_block": 46147, "max_block": 25783044, "n_rows": 3842555573}
+  },
+  "notes": [
+    "transaction_index is embedded directly on canonical_execution_storage_reads/diffs and canonical_execution_balance/nonce reads/diffs rows; it is not a derived join. Validated against canonical_execution_transaction as the canonical ordering source.",
+    "internal_index breaks ties within a transaction for diffs, per project-scope.md.",
+    "Row counts above are full-history (not range-filtered) health/coverage figures gathered during validation; extraction queries themselves are range-filtered to [start_block, end_block]."
+  ]
+}

@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Local secrets / credentials
+config/config.local.yaml
+config/secrets.json
+
+# Extracted data and generated artifacts (regenerate via documented commands)
+data/*
+!data/.gitkeep
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test cache
+.pytest_cache/

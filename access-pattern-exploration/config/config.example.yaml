@@ -1,0 +1,14 @@
+# Copy to config.local.yaml (gitignored) and adjust if defaults don't fit.
+# Credentials are never stored here — see README for how they're supplied.
+clickhouse:
+  host: clickhouse.xatu.ethpandaops.io
+  port: 443
+  database: default
+  secure: true
+
+# Frozen once Part 1's sampling step runs; see manifest/block_range.json for the
+# authoritative record. These are placeholders until that step completes.
+sampling:
+  end_block: null
+  start_block: null
+  bucket_size: 100000
