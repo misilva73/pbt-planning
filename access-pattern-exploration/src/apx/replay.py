@@ -48,7 +48,7 @@ def event_locality_curve(
     """Return ({S: events with slot < S}, total_events) for a row-weighted series.
 
     `weight` is read_count for read series or an array of ones for row-count series
-    (tx_write_counts / block_write_counts / is_tx_read* variants).
+    (tx_write_counts / block_write_counts / is_tx_touched* variants).
     """
     s_values = list(s_values)
     s_max = max(s_values) if s_values else 0

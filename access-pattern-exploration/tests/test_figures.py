@@ -4,15 +4,13 @@ from matplotlib.figure import Figure
 
 from apx.figures import (
     EMPHASIZED_S,
-    READ_COACCESS_SERIES,
-    READ_PURE_SERIES,
+    TOUCHED_SERIES,
     WRITE_COACCESS_SERIES,
     WRITE_PURE_SERIES,
-    plot_basic_data_colocation,
     plot_leaf_stem_replay,
-    plot_mutation_kind,
-    plot_state_root_cost_writes,
-    plot_witness_cost_reads,
+    plot_state_root_cost_writes_coaccess,
+    plot_state_root_cost_writes_pure,
+    plot_witness_cost_touched,
 )
 from tests.fixtures import synthetic_results_table
 
@@ -27,34 +25,35 @@ def _vlines(ax):
     return [line for line in ax.lines if list(line.get_ydata()) == [0, 1]]
 
 
-def test_plot_witness_cost_reads_has_pure_and_coaccess_panels():
+def test_plot_witness_cost_touched_has_one_pure_panel():
     results = synthetic_results_table()
-    fig = plot_witness_cost_reads(results)
+    fig = plot_witness_cost_touched(results)
     assert isinstance(fig, Figure)
-    assert len(fig.axes) == 2
-    pure_ax, coaccess_ax = fig.axes
+    assert len(fig.axes) == 1
+    ax = fig.axes[0]
 
-    assert len(_data_lines(pure_ax)) == len(READ_PURE_SERIES)
-    assert len(_data_lines(coaccess_ax)) == len(READ_COACCESS_SERIES)
+    assert len(_data_lines(ax)) == len(TOUCHED_SERIES)
 
-    _, pure_labels = pure_ax.get_legend_handles_labels()
-    assert set(pure_labels) == set(READ_PURE_SERIES)
-    _, coaccess_labels = coaccess_ax.get_legend_handles_labels()
-    assert set(coaccess_labels) == set(READ_COACCESS_SERIES)
+    _, labels = ax.get_legend_handles_labels()
+    assert set(labels) == set(TOUCHED_SERIES)
 
     # emphasized S values get an extra marker layer: one point per series per S
-    assert max(len(c.get_offsets()) for c in pure_ax.collections) == len(EMPHASIZED_S) * len(READ_PURE_SERIES)
+    assert max(len(c.get_offsets()) for c in ax.collections) == len(EMPHASIZED_S) * len(TOUCHED_SERIES)
 
     # current design (S=64) and metadata-only (S=0) should be marked as vertical lines
-    assert sorted(line.get_xdata()[0] for line in _vlines(pure_ax)) == [0, 64]
+    assert sorted(line.get_xdata()[0] for line in _vlines(ax)) == [0, 64]
 
 
-def test_plot_state_root_cost_writes_has_pure_and_coaccess_panels():
+def test_plot_state_root_cost_writes_pure_and_coaccess_are_separate_figures():
     results = synthetic_results_table()
-    fig = plot_state_root_cost_writes(results)
-    assert isinstance(fig, Figure)
-    assert len(fig.axes) == 2
-    pure_ax, coaccess_ax = fig.axes
+    pure_fig = plot_state_root_cost_writes_pure(results)
+    coaccess_fig = plot_state_root_cost_writes_coaccess(results)
+    assert isinstance(pure_fig, Figure)
+    assert isinstance(coaccess_fig, Figure)
+    assert len(pure_fig.axes) == 1
+    assert len(coaccess_fig.axes) == 1
+    pure_ax = pure_fig.axes[0]
+    coaccess_ax = coaccess_fig.axes[0]
 
     assert len(_data_lines(pure_ax)) == len(WRITE_PURE_SERIES)
     assert len(_data_lines(coaccess_ax)) == len(WRITE_COACCESS_SERIES)
@@ -87,33 +86,14 @@ def test_plot_leaf_stem_replay_leaf_values_are_flat():
         assert len(set(line.get_ydata())) == 1  # flat reference line
 
 
-def test_plot_basic_data_colocation_has_read_and_write_lines():
-    results = synthetic_results_table()
-    fig = plot_basic_data_colocation(results)
-    assert isinstance(fig, Figure)
-    _, labels = fig.axes[0].get_legend_handles_labels()
-    assert set(labels) == {"read", "write"}
-
-
-def test_plot_mutation_kind_is_bar_chart_with_three_kinds():
-    results = synthetic_results_table()
-    fig = plot_mutation_kind(results)
-    assert isinstance(fig, Figure)
-    assert len(fig.axes) > 0
-    for ax in fig.axes:
-        assert len(ax.patches) == 3
-        assert {t.get_text() for t in ax.get_xticklabels()} == {"insertion", "update", "deletion"}
-
-
 def test_figures_build_without_error_on_full_synthetic_table():
     results = synthetic_results_table()
     figs = [
-        plot_witness_cost_reads(results),
-        plot_state_root_cost_writes(results),
+        plot_witness_cost_touched(results),
+        plot_state_root_cost_writes_pure(results),
+        plot_state_root_cost_writes_coaccess(results),
         plot_leaf_stem_replay(results, "transaction"),
         plot_leaf_stem_replay(results, "block"),
-        plot_basic_data_colocation(results),
-        plot_mutation_kind(results),
     ]
     for fig in figs:
         assert isinstance(fig, Figure)

@@ -3,8 +3,8 @@
 Writes each figure as a PNG under out_dir/figures/, embedded inline in report.md via
 standard markdown image syntax so it renders in any viewer (VS Code preview, GitHub, a
 PDF export) with no extra step. report.md's section order follows project-scope.md:
-methodology, data-quality notes, event-locality curves, leaf/stem replay, basic_data
-co-location, mutation-kind diagnostics, S=0/S=64 comparison, limitations.
+methodology, witness cost (touched), state-root cost (writes, including the BASIC_DATA
+co-location table), leaf/stem replay, limitations, data-quality notes.
 """
 
 from __future__ import annotations
@@ -18,104 +18,29 @@ import pandas as pd
 from apx.figures import (
     CURRENT_S,
     METADATA_S,
-    READ_COACCESS_SERIES,
-    READ_PURE_SERIES,
     SERIES_ORDER,
+    TOUCHED_SERIES,
     WRITE_COACCESS_SERIES,
     WRITE_PURE_SERIES,
-    plot_basic_data_colocation,
     plot_leaf_stem_replay,
-    plot_mutation_kind,
-    plot_state_root_cost_writes,
-    plot_witness_cost_reads,
+    plot_state_root_cost_writes_coaccess,
+    plot_state_root_cost_writes_pure,
+    plot_witness_cost_touched,
 )
 
 FIGURES_DIR_NAME = "figures"
 
-# Definitions for the event_locality series, per classify.classify_reads(_block) and
-# pipeline._event_locality_rows. Reads model witness/proof cost, writes model
-# state-root rehash cost; both are occurrence counts (one row per distinct key touched,
-# never weighted by touch count). Each pure series has a "_with_account" counterpart:
-# same denominator, numerator restricted to touches whose account was also BASIC_DATA-
-# accessed in the same scope -- the only touches where the header window's stem-sharing
-# can actually pay off. "is_tx_write" has no such counterpart (see its description).
-EVENT_SERIES_DESCRIPTIONS = {
-    "is_tx_read": (
-        "Distinct (block, transaction, address, slot) keys read but never written in "
-        "that transaction: one row per occurrence, regardless of how many times the "
-        "slot was read."
-    ),
-    "is_tx_read_write": (
-        "Distinct (block, transaction, address, slot) keys read and also written "
-        "(net-changed) in that same transaction: one row per occurrence, regardless of "
-        "how many times the slot was read."
-    ),
-    "is_tx_read_any": (
-        "Distinct (block, transaction, address, slot) keys read in that transaction, "
-        "whether or not they were also written: the union of `is_tx_read` and "
-        "`is_tx_read_write`."
-    ),
-    "is_block_read": (
-        "Distinct (block, address, slot) keys read by at least one transaction in the "
-        "block but never net-changed in that block."
-    ),
-    "is_block_read_write": (
-        "Distinct (block, address, slot) keys read by at least one transaction in the "
-        "block and also net-changed in that block."
-    ),
-    "is_block_read_any": (
-        "Distinct (block, address, slot) keys read by at least one transaction in the "
-        "block, whether or not they were also net-changed: the union of "
-        "`is_block_read` and `is_block_read_write`."
-    ),
-    "is_tx_write": (
-        "Per-transaction storage mutations: one row per (block, transaction, address, "
-        "slot) whose value changed within that transaction (no-ops already excluded)."
-    ),
-    "is_block_write": (
-        "Block-final net storage mutations: one row per (block, address, slot) whose "
-        "value changed net across the whole block (no-ops already excluded)."
-    ),
-    "is_tx_read_with_account": (
-        "`is_tx_read` restricted to keys whose account also had an observed "
-        "balance/nonce read in the same transaction (the BASIC_DATA read proxy) -- the "
-        "only touches where sharing the account's header stem can actually save a "
-        "witness lookup. Same denominator as `is_tx_read`."
-    ),
-    "is_tx_read_write_with_account": (
-        "`is_tx_read_write` restricted the same way: keys whose account also had an "
-        "observed balance/nonce read in the same transaction. Same denominator as "
-        "`is_tx_read_write`."
-    ),
-    "is_tx_read_any_with_account": (
-        "`is_tx_read_any` restricted the same way: keys whose account also had an "
-        "observed balance/nonce read in the same transaction. Same denominator as "
-        "`is_tx_read_any`."
-    ),
-    "is_block_read_with_account": (
-        "`is_block_read` restricted to keys whose account also had an observed "
-        "balance/nonce read anywhere in the block. Same denominator as `is_block_read`."
-    ),
-    "is_block_read_write_with_account": (
-        "`is_block_read_write` restricted the same way: keys whose account also had an "
-        "observed balance/nonce read anywhere in the block. Same denominator as "
-        "`is_block_read_write`."
-    ),
-    "is_block_read_any_with_account": (
-        "`is_block_read_any` restricted the same way: keys whose account also had an "
-        "observed balance/nonce read anywhere in the block. Same denominator as "
-        "`is_block_read_any`."
-    ),
-    "is_block_write_with_account": (
-        "`is_block_write` restricted to keys whose account also had an observed "
-        "balance/nonce mutation in the same block (the BASIC_DATA mutation proxy) -- "
-        "the only touches where sharing the account's header stem can actually save a "
-        "state-root rehash. Same denominator as `is_block_write`. `is_tx_write` has no "
-        "such counterpart: no per-transaction balance/nonce mutation table is "
-        "extracted, so per-transaction co-mutation can't be checked without "
-        "overstating it via this block-level proxy."
-    ),
-}
+# Series that are the same population by definition, and therefore share the same total
+# (the "denominator" column): a "_with_account" restriction shares its base series'
+# denominator by construction (same population, narrower numerator) rather than having its
+# own -- see figures.py's TOUCHED_SERIES module comment. Merging these avoids listing
+# the same number twice.
+EVENT_SERIES_TOTAL_GROUPS = [
+    ["is_tx_touched"],
+    ["is_block_touched"],
+    ["is_tx_write"],
+    ["is_block_write", "is_block_write_with_account"],
+]
 
 
 def _write_figures(results: pd.DataFrame, fig_dir: Path) -> dict[str, str]:
@@ -123,12 +48,11 @@ def _write_figures(results: pd.DataFrame, fig_dir: Path) -> dict[str, str]:
     to reference."""
     fig_dir.mkdir(parents=True, exist_ok=True)
     figures = {
-        "witness_cost_reads": plot_witness_cost_reads(results),
-        "state_root_cost_writes": plot_state_root_cost_writes(results),
+        "witness_cost_touched": plot_witness_cost_touched(results),
+        "state_root_cost_writes_pure": plot_state_root_cost_writes_pure(results),
+        "state_root_cost_writes_coaccess": plot_state_root_cost_writes_coaccess(results),
         "leaf_stem_transaction": plot_leaf_stem_replay(results, "transaction"),
         "leaf_stem_block": plot_leaf_stem_replay(results, "block"),
-        "basic_data_colocation": plot_basic_data_colocation(results),
-        "mutation_kind": plot_mutation_kind(results),
     }
     paths: dict[str, str] = {}
     for stem, fig in figures.items():
@@ -184,6 +108,22 @@ def _dict_to_table(d: dict[str, Any]) -> str:
     return _markdown_table(["Check", "Result"], rows)
 
 
+def _event_series_summary_table(df: pd.DataFrame) -> str:
+    """One row per group of series that share a total by definition (see
+    EVENT_SERIES_TOTAL_GROUPS): the total is the denominator behind every
+    captured-fraction figure for that group's series."""
+    present = set(df["series"].unique())
+    rows = []
+    for group in EVENT_SERIES_TOTAL_GROUPS:
+        members = [s for s in group if s in present]
+        if not members:
+            continue
+        sub = df[df["series"] == members[0]]
+        total = float(sub["denominator"].iloc[0]) if not sub.empty else None
+        rows.append([" / ".join(f"`{s}`" for s in members), _fmt(total, False)])
+    return _markdown_table(["Series", "Total events"], rows)
+
+
 def _methodology_section(results: pd.DataFrame) -> str:
     df = results[results["metric"] == "event_locality"]
     summary_table = _event_series_summary_table(df)
@@ -197,20 +137,34 @@ def _methodology_section(results: pd.DataFrame) -> str:
         "(`suffix = 64 + x`, valid only up to `S=192`, matching the live layout exactly at "
         "`S=64`). This report tracks two cost dimensions, each an occurrence count (one "
         "row per distinct key touched, never weighted by how many times it was touched "
-        "-- see the Limitations section for why): witness/proof cost for reads "
-        "(`is_tx_read*` / `is_block_read*`) and state-root rehash cost for writes "
-        "(`is_tx_write` / `is_block_write`). Each series has a `_with_account` "
-        "counterpart sharing the same denominator, restricted to touches whose account "
-        "was also BASIC_DATA-accessed in the same scope -- the header window's "
-        "stem-sharing only pays off when a slot's stem would otherwise need touching "
-        "anyway for the account's own header fields. All counts in this report are "
-        "Tier 1: exact event, distinct-leaf, "
-        "and distinct-stem counts from canonical access data. Tier 2 metrics (proof "
-        "siblings, witness bytes, recomputed hashes) require a pinned PBT implementation "
-        "and pre-state and are out of scope for this deliverable.\n\n"
+        "-- see the Limitations section for why): witness/proof cost for every touch "
+        "(`is_tx_touched*` / `is_block_touched*`) and state-root rehash cost for writes "
+        "(`is_tx_write` / `is_block_write`). All counts in this report are Tier 1: exact "
+        "event, distinct-leaf, and distinct-stem counts from canonical access data. Tier 2 "
+        "metrics (proof siblings, witness bytes, recomputed hashes) require a pinned PBT "
+        "implementation and pre-state and are out of scope for this deliverable.\n\n"
         "### Event series summary\n\n"
-        "Total event count per series, independent of `S` (the denominator behind "
-        f"every captured-fraction figure below).\n\n{summary_table}"
+        "Two access kinds are tracked per scope: `*_touched` (every key touched at all, "
+        "whether or not it was also net-changed) and `*_write` (a key net-changed). "
+        "Touched is a superset of write, not disjoint from it: a write-coupled key is "
+        "counted in both, since it needs a witness/proof and a rehash on the same event. "
+        "Touched models witness/proof cost; write models state-root rehash cost. Each "
+        "kind is measured at two grains: `is_tx_*` counts distinct (block, transaction, "
+        "address, slot) keys, `is_block_*` counts distinct (block, address, slot) keys "
+        "net across the whole block.\n\n"
+        "Every series except `is_tx_write` also has a `_with_account` counterpart: the "
+        "same population, restricted to touches whose account was also independently "
+        "`BASIC_DATA`-accessed or mutated in the same scope -- the only touches where "
+        "sharing the header stem can actually save a proof lookup or a rehash. "
+        "`is_tx_write` has no such variant because only block-final balance/nonce "
+        "mutations are extracted, not per-transaction ones (see Limitations). On the "
+        "touched side the restriction never removes anything -- every storage access "
+        "already requires resolving the account's own header fields -- so `_with_account` "
+        "touched series are identical to their pure counterpart and are omitted below "
+        "(see Witness cost (touched)); `is_block_write` and `is_block_write_with_account` "
+        "share a denominator by construction and are merged into one row.\n\n"
+        "The table below gives each series' total, the denominator behind every "
+        f"captured-fraction figure in this report.\n\n{summary_table}"
     )
 
 
@@ -220,19 +174,6 @@ def _data_quality_section(validation: dict[str, Any]) -> str:
     else:
         body = _dict_to_table(validation)
     return "## Data quality and reconciliation\n\n" + body
-
-
-def _event_series_summary_table(df: pd.DataFrame) -> str:
-    """Total event count and definition per series (the total is S-invariant: the
-    denominator behind every captured-fraction row for that series), so the percentages
-    below have an absolute scale and a definition to be read against."""
-    rows = []
-    for series in _ordered_series(df):
-        sub = df[df["series"] == series]
-        total = float(sub["denominator"].iloc[0]) if not sub.empty else None
-        description = EVENT_SERIES_DESCRIPTIONS.get(series, "n/a")
-        rows.append([series, description, _fmt(total, False)])
-    return _markdown_table(["Series", "Description", "Total events"], rows)
 
 
 def _cost_locality_table(results: pd.DataFrame, series_names: list[str]) -> str:
@@ -251,52 +192,7 @@ def _cost_locality_table(results: pd.DataFrame, series_names: list[str]) -> str:
     return _markdown_table(["Series", "S=0", "S=64", "S=253"], rows)
 
 
-def _witness_cost_section(results: pd.DataFrame, fig_paths: dict[str, str]) -> str:
-    table = _cost_locality_table(results, READ_PURE_SERIES + READ_COACCESS_SERIES)
-    figure = _figure_markdown(fig_paths, "witness_cost_reads", "Witness cost (reads) by header window size")
-    return (
-        "## Witness cost (reads)\n\n"
-        "Captured fraction of each read-side occurrence series for a header window of "
-        "size `S`. The left panel is the raw occurrence curve (every distinct key "
-        "touched, transaction- or block-grain); the right panel restricts the "
-        "numerator to touches whose account was also BASIC_DATA-accessed in the same "
-        "scope, over the *same* denominator -- the only touches where being inside the "
-        "header window can actually shrink a witness, since a slot's stem needs "
-        "proving either way once something else in it is independently needed.\n\n"
-        f"{figure}\n\n{table}"
-    )
-
-
-def _state_root_cost_section(results: pd.DataFrame, fig_paths: dict[str, str]) -> str:
-    table = _cost_locality_table(results, WRITE_PURE_SERIES + WRITE_COACCESS_SERIES)
-    figure = _figure_markdown(fig_paths, "state_root_cost_writes", "State-root cost (writes) by header window size")
-    return (
-        "## State-root cost (writes)\n\n"
-        "Captured fraction of each write-side occurrence series for a header window of "
-        "size `S`. The left panel is the raw net-mutation occurrence curve; the right "
-        "panel restricts the numerator to keys whose account was also BASIC_DATA-"
-        "mutated in the same block, over the *same* denominator -- the only mutations "
-        "where sharing the header stem actually saves a rehash, since the stem needs "
-        "rehashing either way once something else inside it changed. `is_tx_write` has "
-        "no account-restricted counterpart (see Limitations).\n\n"
-        f"{figure}\n\n{table}"
-    )
-
-
-def _leaf_stem_section(results: pd.DataFrame, fig_paths: dict[str, str]) -> str:
-    tx_figure = _figure_markdown(fig_paths, "leaf_stem_transaction", "Distinct leaves vs stems, per transaction")
-    block_figure = _figure_markdown(fig_paths, "leaf_stem_block", "Distinct leaves vs stems, per block")
-    return (
-        "## Distinct leaf and stem replay\n\n"
-        "Distinct leaf counts are invariant to `S`: moving a slot into the header changes "
-        "its key, not whether it was touched. Distinct stem counts fall as `S` grows, "
-        "because more slots collapse into shared header stems. Both placements (compact, "
-        f"current-anchored) are shown; current-anchored is only defined up to `S=192`.\n\n"
-        f"{tx_figure}\n\n{block_figure}"
-    )
-
-
-def _basic_data_section(results: pd.DataFrame, fig_paths: dict[str, str]) -> str:
+def _basic_data_colocation_table(results: pd.DataFrame) -> str:
     df = results[results["metric"] == "basic_data_colocation"]
     rows = []
     for series in _ordered_series(df):
@@ -309,56 +205,100 @@ def _basic_data_section(results: pd.DataFrame, fig_paths: dict[str, str]) -> str
                 _fmt(_value_at(sub, series, 253), True),
             ]
         )
-    table = _markdown_table(["Series", "S=0", "S=64", "S=253"], rows)
-    figure = _figure_markdown(fig_paths, "basic_data_colocation", "BASIC_DATA co-location fraction")
+    return _markdown_table(["Series", "S=0", "S=64", "S=253"], rows)
+
+
+def _witness_cost_section(results: pd.DataFrame, fig_paths: dict[str, str]) -> str:
+    figure = _figure_markdown(fig_paths, "witness_cost_touched", "Witness cost (touched) by header window size")
+    table = _cost_locality_table(results, TOUCHED_SERIES)
     return (
-        "## BASIC_DATA co-location\n\n"
-        "How often a low-index storage access shares an account header stem with an "
-        "observed `BASIC_DATA` access or mutation. This is an observed-metadata lower "
-        f"bound: it excludes code-hash resolution and other implied header reads.\n\n"
-        f"{figure}\n\n{table}"
+        "## Witness cost (touched)\n\n"
+        "This section estimates witness/proof-cost savings from growing the header "
+        "storage window `S`: how large a share of all storage touches -- read-only or "
+        "later net-changed -- could be proved from the account's already-shared header "
+        "stem instead of an independent one, at each window size. A witness has to prove "
+        "a key's pre-state value regardless of whether it then gets written, so this "
+        "section deliberately covers every touch. It addresses the core sizing question "
+        "-- how much locality benefit each additional header slot buys -- separately for "
+        "touches counted per transaction and per block. `is_tx_touched` and "
+        "`is_block_touched` include any key that was also net-changed in that scope (see "
+        "Event series summary), so a write-coupled key contributes to both this section "
+        "and State-root cost (writes) -- intentionally, since it incurs both costs on "
+        "the same event.\n\n"
+        "The plot shows the captured fraction of each touched occurrence series as `S` "
+        "grows, one line per series; markers highlight the emphasized `S` values, and the "
+        "vertical lines mark the metadata-only (`S=0`) and current (`S=64`) "
+        f"designs.\n\n{figure}\n\n"
+        "The table gives the same captured fraction at the metadata-only, current, and "
+        f"largest swept window sizes, for reference.\n\n{table}\n\n"
+        "Every touched series' `_with_account` counterpart (restricted to touches whose "
+        "account was also independently `BASIC_DATA`-accessed) is numerically identical "
+        "to the pure occurrence series shown here, at every `S` -- see the `read` row of "
+        "the BASIC_DATA co-location table in State-root cost (writes), which is 100% "
+        "throughout. This report therefore omits `_with_account` touched series. See "
+        "Limitations for a caveat on what \"touched\" means given how the underlying data "
+        "is collected."
     )
 
 
-def _mutation_kind_section(results: pd.DataFrame, fig_paths: dict[str, str]) -> str:
-    df = results[results["metric"] == "mutation_kind"]
-    rows = []
-    for series in _ordered_series(df):
-        sub = df[df["series"] == series]
-        block_value = _value_at(sub, series, -1, granularity="block")
-        tx_value = _value_at(sub, series, -1, granularity="transaction")
-        rows.append([series, _fmt(block_value, False), _fmt(tx_value, False)])
-    table = _markdown_table(["Kind", "Block-final count", "Transaction-sensitivity count"], rows)
-    figure = _figure_markdown(fig_paths, "mutation_kind", "Mutation-kind breakdown")
+def _state_root_cost_section(results: pd.DataFrame, fig_paths: dict[str, str]) -> str:
+    pure_figure = _figure_markdown(
+        fig_paths, "state_root_cost_writes_pure", "State-root cost (writes), pure occurrence, by header window size"
+    )
+    coaccess_figure = _figure_markdown(
+        fig_paths, "state_root_cost_writes_coaccess",
+        "State-root cost (writes), co-accessed with account, by header window size",
+    )
+    table = _cost_locality_table(results, WRITE_PURE_SERIES + WRITE_COACCESS_SERIES)
+    colocation_table = _basic_data_colocation_table(results)
     return (
-        "## Mutation-kind diagnostics\n\n"
-        "Zero-to-nonzero (insertion), nonzero-to-nonzero (update), and nonzero-to-zero "
-        "(deletion) mutations, counted separately. Their union is the net-mutation "
-        f"denominator used elsewhere in this report.\n\n{figure}\n\n{table}"
+        "## State-root cost (writes)\n\n"
+        "This section estimates state-root rehash savings from growing `S`: how large a "
+        "share of write-side storage mutations could share a stem rehash with the "
+        "account's own header fields, at each window size. Unlike reads, whether a "
+        "mutation's account was independently `BASIC_DATA`-mutated in the same block "
+        "matters here, so pure occurrence and account-co-accessed captured fractions are "
+        "shown as two separate plots.\n\n"
+        "The first plot is the raw net-mutation occurrence curve: every distinct key "
+        "net-changed, regardless of whether its account was independently mutated.\n\n"
+        f"{pure_figure}\n\n"
+        "The second plot restricts the numerator to keys whose account was also "
+        "`BASIC_DATA`-mutated in the same block, over the *same* denominator -- the only "
+        "mutations where sharing the header stem actually saves a rehash, since the stem "
+        "needs rehashing either way once something else inside it changed. `is_tx_write` "
+        "has no such counterpart (see Limitations).\n\n"
+        f"{coaccess_figure}\n\n"
+        "The table gives the captured fraction of both curves at the metadata-only, "
+        f"current, and largest swept window sizes, for reference.\n\n{table}\n\n"
+        "The table below shows how often a low-index storage touch shares an account "
+        "header stem with an independently observed `BASIC_DATA` access or mutation, by "
+        "`S`. The `read` row is the basis for the touched-side note in Witness cost "
+        "(touched): it is 100%, confirming that every storage touch's account is "
+        "independently accessed. The `write` row is far lower, which is why the "
+        "co-accessed curve above "
+        "differs materially from the pure occurrence curve. This is an observed-metadata "
+        "lower bound: it excludes code-hash resolution and other implied header "
+        f"reads.\n\n{colocation_table}"
     )
 
 
-def _comparison_section(results: pd.DataFrame) -> str:
-    event_df = results[results["metric"] == "event_locality"]
-    rows = []
-    for series in _ordered_series(event_df):
-        sub = event_df[event_df["series"] == series]
-        s0 = _value_at(sub, series, METADATA_S)
-        s64 = _value_at(sub, series, CURRENT_S)
-        delta = None if s0 is None or s64 is None else s64 - s0
-        rows.append(
-            [
-                series,
-                _fmt(s0, True),
-                _fmt(s64, True),
-                _fmt(delta, True) if delta is not None else "n/a",
-            ]
-        )
-    table = _markdown_table(["Series", "Metadata-only (S=0)", "Current (S=64)", "Gain"], rows)
+def _leaf_stem_section(results: pd.DataFrame, fig_paths: dict[str, str]) -> str:
+    tx_figure = _figure_markdown(fig_paths, "leaf_stem_transaction", "Distinct leaves vs stems, per transaction")
+    block_figure = _figure_markdown(fig_paths, "leaf_stem_block", "Distinct leaves vs stems, per block")
     return (
-        "## Comparison against S=0 and current S=64\n\n"
-        "The gain column is the captured-fraction increase the current 64-slot window "
-        "buys over the metadata-only baseline, for each event-locality series.\n\n" + table
+        "## Distinct leaf and stem replay\n\n"
+        "This section checks distinct-key replay: whether shrinking the number of "
+        "distinct stems that need proving or rehashing (by moving slots into a shared "
+        "header stem) reduces work independently of the occurrence curves above. "
+        "Distinct leaf counts are invariant to `S` by construction -- moving a slot into "
+        "the header changes its key, not whether it was touched -- while distinct stem "
+        "counts fall as `S` grows, because more slots collapse into shared header stems. "
+        "Both suffix placements (compact, current-anchored) are shown; current-anchored "
+        "is only defined up to `S=192`.\n\n"
+        "The first plot is per-transaction distinct leaf and stem counts, faceted by "
+        f"placement.\n\n{tx_figure}\n\n"
+        "The second plot is the same, per block.\n\n"
+        f"{block_figure}"
     )
 
 
@@ -388,7 +328,16 @@ def _limitations_section() -> str:
         "7. `is_tx_write` has no `_with_account` counterpart: only block-final "
         "balance/nonce mutations are extracted (no per-transaction table), so "
         "per-transaction account co-mutation can't be checked without overstating it "
-        "via the block-level proxy."
+        "via the block-level proxy.\n"
+        "8. `canonical_execution_storage_reads` is collected via geth's prestate tracer "
+        "(through cryo), which fires its SLOAD/SSTORE hook for both opcodes identically -- "
+        "there is no field distinguishing which opcode produced a row. This doesn't "
+        "affect `is_tx_touched` / `is_block_touched` themselves, which count every touch "
+        "regardless of which opcode produced it; it only means these series can't be "
+        "split into \"real `SLOAD`s\" versus SSTORE-implied pre-reads, since the data "
+        "doesn't separate them. `is_tx_write` / `is_block_write` are unaffected: they "
+        "come from a separate state-diff trace and only include keys with a genuine "
+        "value change."
     )
 
 
@@ -404,9 +353,6 @@ def build_report(results: pd.DataFrame, validation: dict[str, Any], out_dir: Pat
         _witness_cost_section(results, fig_paths),
         _state_root_cost_section(results, fig_paths),
         _leaf_stem_section(results, fig_paths),
-        _basic_data_section(results, fig_paths),
-        _mutation_kind_section(results, fig_paths),
-        _comparison_section(results),
         _limitations_section(),
         _data_quality_section(validation),
     ]

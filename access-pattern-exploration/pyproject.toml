@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "clickhouse-connect>=0.8",
     "matplotlib>=3.9",
+    "numpy>=2.0",
     "pandas>=2.2",
     "pydantic-settings>=2.5",
     "pyarrow>=17.0",

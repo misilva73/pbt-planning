@@ -5,13 +5,15 @@ returns one tidy long-format DataFrame with exactly these columns:
 
 - metric: "event_locality" | "distinct_leaves" | "distinct_stems" |
   "basic_data_colocation" | "mutation_kind"
-- series: for event_locality, one of the read-cost series ("is_tx_read" |
-  "is_tx_read_write" | "is_tx_read_any" | "is_block_read" | "is_block_read_write" |
-  "is_block_read_any") or write-cost series ("is_tx_write" | "is_block_write"), each
-  optionally paired with a "*_with_account" variant (same denominator, numerator
-  restricted to touches whose account was also BASIC_DATA-accessed in the same scope;
-  "is_tx_write" has no such variant -- see _event_locality_rows); for distinct_leaves/
-  distinct_stems, "tx_write_counts" | "block_write_counts" | "reads"; for
+- series: for event_locality, one of the witness-cost series ("is_tx_touched" |
+  "is_block_touched", every distinct key touched regardless of whether it was later
+  net-changed) or the write-cost series ("is_tx_write" | "is_block_write", a key
+  net-changed in that scope) -- touched is a superset of write, not disjoint from it: a
+  write-coupled key counts in both, since it needs both a witness and a rehash on the same
+  event -- each optionally paired with a "*_with_account" variant (same denominator,
+  numerator restricted to touches whose account was also BASIC_DATA-accessed in the same
+  scope; "is_tx_write" has no such variant -- see _event_locality_rows); for
+  distinct_leaves/distinct_stems, "tx_write_counts" | "block_write_counts" | "reads"; for
   basic_data_colocation, "read" | "write"; for mutation_kind, the kind name
   ("insertion" | "update" | "deletion").
 - granularity: "event" (row-weighted, no dedup) | "transaction" | "block"
@@ -124,18 +126,29 @@ def _event_locality_rows(clean: dict[str, pd.DataFrame], reads: pd.DataFrame, s_
     key touched, never weighted by how many times it was touched -- see classify.py and
     project-scope.md for why raw multiplicity doesn't map onto either cost).
 
-    Reads model witness/proof cost, paid once per distinct key a block's execution
-    touches. Writes model state-root rehash cost, paid once per distinct key net-changed
-    in a block. Both get a plain occurrence curve ("pure": every touch, S-swept) and,
-    where the data supports it, a "_with_account" curve sharing the same denominator but
-    restricting the numerator to touches whose account also had an observed BASIC_DATA
-    (balance/nonce) read or mutation in the same scope -- the only touches where sharing
-    the account's header stem can actually save a proof lookup or a rehash; a slot
-    touched without the account being independently touched gets no benefit from being
-    in the header, regardless of S. `is_tx_write` has no such variant: only block-final
-    balance/nonce mutations are extracted (no per-transaction table), so there is no way
-    to check account co-mutation at transaction grain without overstating it via the
-    block-level proxy.
+    `is_tx_touched`/`is_block_touched` model witness/proof cost, paid once per distinct
+    key touched in that scope at all -- whether it stayed read-only or was also
+    net-changed, since a stateless witness still has to prove the pre-state value before a
+    write can apply. `is_tx_write`/`is_block_write` model state-root rehash cost, paid
+    once per distinct key net-changed in that scope. Touched is therefore a superset of
+    write, not disjoint from it: a write-coupled key is counted in both series, since it
+    incurs both costs on the same event. `canonical_execution_storage_reads` is collected
+    via geth's prestate tracer, which fires on both SLOAD and SSTORE touches with no field
+    distinguishing which, so "touched" already naturally covers both without needing to
+    filter on `is_write_coupled` -- see classify.classify_reads(_block), used here only to
+    dedupe to block grain. See the report's Limitations section for the SLOAD vs. SSTORE
+    caveat.
+
+    Both get a plain occurrence curve ("pure": every touch, S-swept) and, where the data
+    supports it, a "_with_account" curve sharing the same denominator but restricting the
+    numerator to touches whose account also had an observed BASIC_DATA (balance/nonce)
+    read or mutation in the same scope -- the only touches where sharing the account's
+    header stem can actually save a proof lookup or a rehash; a slot touched without the
+    account being independently touched gets no benefit from being in the header,
+    regardless of S. `is_tx_write` has no such variant: only block-final balance/nonce
+    mutations are extracted (no per-transaction table), so there is no way to check
+    account co-mutation at transaction grain without overstating it via the block-level
+    proxy.
     """
     rows: list[dict] = []
     ones = lambda df: np.ones(len(df), dtype=np.float64)  # noqa: E731
@@ -161,17 +174,8 @@ def _event_locality_rows(clean: dict[str, pd.DataFrame], reads: pd.DataFrame, s_
                 )
             )
 
-    tx_read_only = reads[~reads["is_write_coupled"]]
-    tx_read_write = reads[reads["is_write_coupled"]]
-    block_read_only = reads_block[~reads_block["is_write_coupled"]]
-    block_read_write = reads_block[reads_block["is_write_coupled"]]
-
-    add_pair("is_tx_read", "transaction", tx_read_only, read_proxy, tx_join)
-    add_pair("is_tx_read_write", "transaction", tx_read_write, read_proxy, tx_join)
-    add_pair("is_tx_read_any", "transaction", reads, read_proxy, tx_join)
-    add_pair("is_block_read", "block", block_read_only, read_proxy_block, block_join)
-    add_pair("is_block_read_write", "block", block_read_write, read_proxy_block, block_join)
-    add_pair("is_block_read_any", "block", reads_block, read_proxy_block, block_join)
+    add_pair("is_tx_touched", "transaction", reads, read_proxy, tx_join)
+    add_pair("is_block_touched", "block", reads_block, read_proxy_block, block_join)
 
     add_pair("is_tx_write", "transaction", clean["storage_tx_mutations"], None, None)
     add_pair("is_block_write", "block", clean["storage_block_mutations"], mutation_proxy, block_join)
@@ -278,13 +282,29 @@ def build_results_table(data_dir: Path, s_values: Iterable[int] = range(254)) ->
     return df
 
 
+def _uncovered_key_count(mutations: pd.DataFrame, reads: pd.DataFrame, join_keys: list[str]) -> int:
+    """Count distinct mutation keys with no matching row in `reads` on `join_keys`: an
+    anti-join existence check, not a full key-set materialization."""
+    read_keys = reads[join_keys].drop_duplicates().assign(_seen=True)
+    merged = mutations[join_keys].drop_duplicates().merge(read_keys, on=join_keys, how="left")
+    return int(merged["_seen"].isna().sum())
+
+
 def validation_summary(data_dir: Path) -> dict:
-    """Reconciliation checks required by project-scope.md: is_tx_read + is_tx_read_write
-    = all reads (transaction grain) and is_block_read + is_block_read_write = all
-    distinct block-touched reads (block grain), storage-mutation tables are unique on
-    their natural key, `read_count` (still used to weight the `basic_data_colocation`
-    "read" series) partitions consistently, and rejection counts are surfaced explicitly
-    (never coerced to zero silently)."""
+    """Reconciliation checks required by project-scope.md: read-only + write-coupled
+    partitions every raw reads-table row exactly (transaction grain and block grain --
+    a diagnostic partition of the raw reads table, not a published series in its own
+    right; `is_tx_touched`/`is_block_touched` use the full reads table unfiltered),
+    storage-mutation tables are unique on their natural key,
+    `read_count` (still used to weight the `basic_data_colocation` "read" series)
+    partitions consistently, rejection counts are surfaced explicitly (never coerced to
+    zero silently), and every net-changed key also has a matching row in the raw reads
+    table in the same scope. That last one isn't a coincidence of this sample: reads are
+    collected via geth's prestate tracer (through cryo), which fires its SLOAD/SSTORE hook
+    for both opcodes identically, so any slot with a real diff was necessarily touched by
+    that hook too -- but nothing in this pipeline's own code enforces it (a broken
+    extraction could still violate it), so it is checked directly against the extracted
+    keys rather than assumed."""
     data_dir = Path(data_dir)
     raw = _load_raw(data_dir)
     clean, rejects = _normalize_all(raw)
@@ -338,4 +358,22 @@ def validation_summary(data_dir: Path) -> dict:
         .duplicated(subset=["block_number", "address", "slot"])
         .any()
     )
+
+    tx_keys = ["block_number", "transaction_index", "address", "slot"]
+    n_tx_write_keys = int(clean["storage_tx_mutations"][tx_keys].drop_duplicates().shape[0])
+    n_tx_write_uncovered = _uncovered_key_count(clean["storage_tx_mutations"], reads, tx_keys)
+    summary["tx_write_keys_all_observed_as_reads"] = {
+        "n_tx_write_keys": n_tx_write_keys,
+        "n_uncovered": n_tx_write_uncovered,
+        "holds": n_tx_write_uncovered == 0,
+    }
+
+    block_keys = ["block_number", "address", "slot"]
+    n_block_write_keys = int(clean["storage_block_mutations"][block_keys].drop_duplicates().shape[0])
+    n_block_write_uncovered = _uncovered_key_count(clean["storage_block_mutations"], reads_block, block_keys)
+    summary["block_write_keys_all_observed_as_reads"] = {
+        "n_block_write_keys": n_block_write_keys,
+        "n_uncovered": n_block_write_uncovered,
+        "holds": n_block_write_uncovered == 0,
+    }
     return summary

@@ -71,9 +71,10 @@ Then run `python scripts/run_part1.py data/full_1m reports/part1_full`.
 pytest
 ```
 
-49 tests, covering normalization, classification, key/stem derivation, the S-sweep replay
-math, BASIC_DATA co-location, figure building, and report assembly — including an
-end-to-end smoke test against the real pilot data.
+51 tests, covering normalization, classification, key/stem derivation, the S-sweep replay
+math, BASIC_DATA co-location, figure building, and report assembly. The end-to-end tests
+use a tiny generated parquet dataset; the multi-gigabyte pilot is reserved for explicit
+report reproduction rather than ordinary unit-test runs.
 
 ## Package layout
 

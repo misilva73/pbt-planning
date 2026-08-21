@@ -17,12 +17,11 @@ def test_build_report_writes_report_and_figures(tmp_path: Path):
 
     fig_dir = tmp_path / "figures"
     expected_stems = [
-        "witness_cost_reads",
-        "state_root_cost_writes",
+        "witness_cost_touched",
+        "state_root_cost_writes_pure",
+        "state_root_cost_writes_coaccess",
         "leaf_stem_transaction",
         "leaf_stem_block",
-        "basic_data_colocation",
-        "mutation_kind",
     ]
     for stem in expected_stems:
         path = fig_dir / f"{stem}.png"
@@ -42,24 +41,29 @@ def test_report_contains_required_sections():
     required_headings = [
         "## Methodology summary",
         "## Data quality and reconciliation",
-        "## Witness cost (reads)",
+        "## Witness cost (touched)",
         "## State-root cost (writes)",
         "## Distinct leaf and stem replay",
-        "## BASIC_DATA co-location",
-        "## Mutation-kind diagnostics",
-        "## Comparison against S=0 and current S=64",
         "## Limitations",
     ]
     for heading in required_headings:
         assert heading in text, f"missing section: {heading}"
 
+    excluded_headings = [
+        "## BASIC_DATA co-location",
+        "## Comparison against S=0 and current S=64",
+        "## Mutation-kind diagnostics",
+        "## Witness cost (reads)",
+    ]
+    for heading in excluded_headings:
+        assert heading not in text, f"section should have been removed: {heading}"
+
     # figures embedded inline as images
-    assert "![" in text and "figures/witness_cost_reads.png" in text
-    assert "figures/state_root_cost_writes.png" in text
+    assert "![" in text and "figures/witness_cost_touched.png" in text
+    assert "figures/state_root_cost_writes_pure.png" in text
+    assert "figures/state_root_cost_writes_coaccess.png" in text
     assert "figures/leaf_stem_transaction.png" in text
     assert "figures/leaf_stem_block.png" in text
-    assert "figures/basic_data_colocation.png" in text
-    assert "figures/mutation_kind.png" in text
 
 
 def test_report_renders_validation_dict_contents():
