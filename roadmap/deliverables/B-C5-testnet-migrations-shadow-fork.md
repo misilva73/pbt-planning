@@ -7,7 +7,7 @@
 | **Timeline** | 2028-01 → 2028-03 (3 months) |
 | **Migration phase** | Phase 4 — Rehearsals |
 | **Milestone alignment** | feeds fork S = I\* (2028-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | Not started (re-verified 2026-09-02) |
 
 ← [Back to roadmap](../README.md)
 

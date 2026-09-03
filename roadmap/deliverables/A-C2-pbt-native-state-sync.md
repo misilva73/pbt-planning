@@ -7,7 +7,7 @@
 | **Timeline** | 2027-01 → 2027-06 (5 months) |
 | **Migration phase** | Phase 2 — Devnets |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | Not started (re-verified 2026-09-02) |
 
 ← [Back to roadmap](../README.md)
 
@@ -17,6 +17,16 @@ reconstruct the tree and verify its root without any MPT round-trip. Sync must
 exploit the tree's zone partitioning — the first key byte marks a structural
 category — so a node can range-sync one zone (accounts, code overflow, storage)
 independently and prove each served range against the canonical root.
+
+> **Note (2026-09-02).** Not started as a sync deliverable, but some of the substrate it
+> needs already exists in geth's PBT branch: flat-state support for the binary tree
+> ([#34706](https://github.com/ethereum/go-ethereum/pull/34706)) and the proof machinery —
+> a canonical multiproof covering stems and single nodes, and a proof-shaped witness
+> (`CPerezz/go-ethereum` PRs [#19](https://github.com/CPerezz/go-ethereum/pull/19),
+> [#22](https://github.com/CPerezz/go-ethereum/pull/22)). One constraint discovered in
+> practice and worth designing around here: geth **refuses to open shadow trees while snap
+> sync runs**, so sync and a live migration are mutually exclusive in that implementation.
+> See [knowledge-base/07-sources.md](../../knowledge-base/07-sources.md).
 
 ## Scope — what ships
 - Zone-aware **range sync**: request/serve leaf ranges by contiguous PBT-key

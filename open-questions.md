@@ -9,11 +9,19 @@ Each item notes where it is tracked or resolved. Fold resolved questions back in
 knowledge base (and delete them here) as they settle. Roadmap deliverables that close a
 given parameter are linked inline.
 
-- **Trie:** [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) (Draft).
+- **Trie:** [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) (Draft; last revised
+  2026-08-06).
 - **Migration:** the offline MPT→PBT migration EIP, **[EIP-8347](https://eips.ethereum.org/EIPS/eip-8347)**
-  (Draft, published; originated as
-  [PR #12006](https://github.com/ethereum/EIPs/pull/12006)). The migration items below
-  are the "**§14 open parameters**" referenced throughout the roadmap deliverables.
+  (Draft, published; `requires: 7523, 7928, 8159, 8297`; last revised 2026-08-25;
+  originated as [PR #12006](https://github.com/ethereum/EIPs/pull/12006)). The migration
+  items below are the "**§14 open parameters**" referenced throughout the roadmap
+  deliverables.
+
+*Reviewed against the live EIPs and the client implementations on **2026-09-02**. Several
+items below are no longer purely open questions — a working geth implementation now exists
+for the converter, dual-check, BAL-replay and swap, and it answers some of these in code
+without them being specified. Where that is the case it is flagged inline; a client's
+choice is not a spec.*
 
 Background and the settled security analysis (collision resistance, grinding, preimage
 injectivity) live in
@@ -39,6 +47,16 @@ deliverable. Candidates:
 The spec-freeze ([A-S3](roadmap/deliverables/A-S3-eip8297-spec-freeze.md)) and all
 root-bearing test vectors consume the decided `H`; fixtures stay hash-parameterized until
 it resolves.
+
+**Watch for de-facto pinning.** All three devnet clients now hardcode or default to BLAKE3
+(geth-pbt hardcodes it for key derivation *and* node hashing; `besu-stateless` uses
+`Blake3Digest(256)`; Erigon takes `COMMITMENT_BIN_HASH=blake3` as an env var against a
+keccak default), and the devnet's genesis pins roots computed with it. Cross-client root
+agreement on that devnet is therefore **not** evidence about `H` — it is evidence about
+everything else, measured at one choice of `H`. The risk is that BLAKE3 becomes the answer
+by accumulation of pinned fixtures and shipped code rather than by the cryptography
+review, which is the same trap [A-S1](roadmap/deliverables/A-S1-eip8297-spec-convergence.md)
+already flags for spec convergence.
 
 ### State-access gas repricing
 
@@ -115,13 +133,20 @@ correlated all-client bug can't pass agreement undetected.
 ### Artifact formats & compression
 
 - **Preimage file byte-level format** — the MPT is hash-keyed and can't be walked back to
-  raw keys, so the extracted preimage set must be exhaustive. **Specified in the
-  published EIP-8347**: an RLP-encoded concatenation of per-account records
-  `[address, [slotKey, slotKey, ...]]` (`address` exactly 20 bytes, each `slotKey` a
-  canonical RLP integer), sorted byte-lexicographically by address then slot key. This
-  supersedes an earlier fixed-width layout once assumed here
-  (`address[20] | slotCount[4, BE] | slotKey[32] * slotCount`). Consumed by
-  [B-C1](roadmap/deliverables/B-C1-converter-prototype.md).
+  raw keys, so the extracted preimage set must be exhaustive. **Specified in the published
+  EIP-8347, and revised on 2026-08-20**
+  ([PR #12215](https://github.com/ethereum/EIPs/pull/12215)): a concatenation of
+  **fixed-width** records `address[20] | slotCount[4, BE] | slotKey[32] * slotCount`
+  (full 32-byte slot keys, leading zeros included), ordered by **hashed** key —
+  `keccak256(address)` across records, `keccak256(slotKey)` within one — which is exactly
+  MPT iteration order, so both consumers stream trie and file as a single sequential merge.
+  **This reverses what this file previously recorded:** between 2026-07-30 and 2026-08-20
+  the EIP specified RLP `[address, [slotKey…]]` records sorted by raw address, and that was
+  noted here as superseding the fixed-width layout. The fixed-width, hashed-order layout is
+  the spec now; the snapshot's RLP leaf records are unaffected. Consumed by
+  [B-C1](roadmap/deliverables/B-C1-converter-prototype.md) — whose only existing
+  implementation (geth's converter) **still emits the old layout**, so this is now a
+  drift-closing task rather than an open design question.
 - **Snapshot chunk encoding** — the byte-canonical *artifact* serialization is **specified
   in the published EIP-8347**: `pbtRoot[32] | leafCount[8, BE]` followed by `leafCount`
   RLP-encoded `[key, value]` leaf records (key at full zone-determined length, value as a
@@ -217,6 +242,20 @@ What genuinely remains:
   most consensus-critical point is the block just before the swap, and the general
   discard-and-replay rule above does not by itself say what a client does when the
   canonical PBT root it just adopted needs to be un-adopted.
+- **One client has now hit this for real**, which is worth reading as evidence rather than
+  as a resolution. geth
+  ([PR #33](https://github.com/CPerezz/go-ethereum/pull/33), merged 2026-09-01) found that a
+  reorg whose two branches *each* cross activation independently wedged the node for 30
+  seconds holding the chain mutex, then failed the import: the engine delivers such a branch
+  block by block before the forkchoice switch, so insertion asks the migration follower for
+  the shadow root of a block that is not yet canonical, and the height-bounded forward
+  replay walk silently replays nothing. Their fix walks back through parent hashes to the
+  nearest already-replayed ancestor, replays forward from there, and records roots by hash
+  while leaving the canonical cursor untouched; they report a live four-node devnet healing
+  a partition that spanned activation with a 41-block rewind across the format swap. That
+  this failure mode was found by running the code and not by reading the EIP is the
+  argument for specifying the procedure — it is exactly the shape of bug that would be
+  correlated across clients if each invents its own answer.
 - Behavior under both **short and long reorgs** during the transition window, at that
   specific boundary, must still be defined (recovery to the MPT is asserted, but the
   reorg mechanics there are not).

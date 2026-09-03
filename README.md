@@ -24,19 +24,36 @@ EIP and execution-spec repositories linked below.
 
 ## Key resources
 
+*Verified against live sources on **2026-09-02**. Re-verify before relying on exact
+constants or implementation status — see
+[knowledge-base/07-sources.md](knowledge-base/07-sources.md#how-to-re-fetch--re-verify).*
+
 ### EIPs
 
 | EIP | Status | Link |
 |-----|--------|------|
-| **Trie (PBT)** — EIP-8297 | Draft | https://eips.ethereum.org/EIPS/eip-8297 |
-| **Migration** — EIP-8347, offline MPT→PBT conversion | Draft | https://eips.ethereum.org/EIPS/eip-8347 |
+| **Trie (PBT)** — EIP-8297 | Draft (last revised 2026-08-06) | https://eips.ethereum.org/EIPS/eip-8297 |
+| **Migration** — EIP-8347, offline MPT→PBT conversion | Draft (last revised 2026-08-25; `requires: 7523, 7928, 8159, 8297`) | https://eips.ethereum.org/EIPS/eip-8347 |
 | **State pricing** — PBT gas repricing (benchmark-based; EIP-2926 + EIP-8038 lineage) | TBD | *to be drafted* |
 
 ### Specs & tests
 
 | Suite | Link |
 |-------|------|
-| **Trie specs and tests** | https://github.com/ethereum/execution-specs/tree/projects/binary-trie |
-| **Migration specs and tests** | *TBD* |
-| **PBT devnet** | https://github.com/CPerezz/pbt-devnet |
-| **geth implementation (EIP-8297)** | https://github.com/CPerezz/go-ethereum/tree/pbt |
+| **Trie specs and tests** | [`execution-specs@projects/binary-trie`](https://github.com/ethereum/execution-specs/tree/projects/binary-trie) — implementation + EIP-8297 test suite; proposed upstream as draft [PR #3207](https://github.com/ethereum/execution-specs/pull/3207) into `forks/amsterdam` |
+| **Migration specs and tests** | *TBD* — no EIP-8347 converter/preimage code on the `projects/binary-trie` branch as of 2026-09-02 |
+| **PBT devnet** | [CPerezz/pbt-devnet](https://github.com/CPerezz/pbt-devnet) — differential devnet, **geth + Besu + Erigon** (two nodes each) on an Amsterdam-at-genesis chain under Lighthouse; migration devnet on the `migration-*` branches |
+
+### Client implementations
+
+The devnet pins these exact checkouts
+([`scripts/sources.sh`](https://github.com/CPerezz/pbt-devnet/blob/main/scripts/sources.sh)):
+
+| Client | Branch under test | Upstreaming |
+|--------|-------------------|-------------|
+| **geth** | [`CPerezz/go-ethereum@pbt`](https://github.com/CPerezz/go-ethereum/tree/pbt) | draft [ethereum/go-ethereum#35436](https://github.com/ethereum/go-ethereum/pull/35436) — *the same branch*, opened for discussion |
+| **Erigon** | [`erigontech/erigon@binary-trie`](https://github.com/erigontech/erigon/tree/binary-trie) | draft [erigontech/erigon#22942](https://github.com/erigontech/erigon/pull/22942) (`PBinPatriciaHashed` commitment engine); tracking issue [#23389](https://github.com/erigontech/erigon/issues/23389) |
+| **Besu** | [`CPerezz/besu@fix/pbt-fcu-null-trie-node`](https://github.com/CPerezz/besu/tree/fix/pbt-fcu-null-trie-node) over [`matkt/besu@glamsterdam-devnet-8-pbt`](https://github.com/matkt/besu/tree/glamsterdam-devnet-8-pbt), plus the [`besu-eth/besu-stateless@feat/partitioned-binary-trie`](https://github.com/besu-eth/besu-stateless/tree/feat/partitioned-binary-trie) library ([PR #92](https://github.com/besu-eth/besu-stateless/pull/92)) | Besu now lives at `besu-eth/besu` |
+| **Nethermind** | [`NethermindEth/nethermind@pbt-state`](https://github.com/NethermindEth/nethermind/tree/pbt-state) | draft [NethermindEth/nethermind#12573](https://github.com/NethermindEth/nethermind/pull/12573) — explicitly a **prototype, not for merge**; not in the devnet |
+| **Reth** | *none found* | — |
+| Genesis generator | [`CPerezz/ethereum-genesis-generator@pbt`](https://github.com/CPerezz/ethereum-genesis-generator/tree/pbt) | emits `binaryTrieTime` |

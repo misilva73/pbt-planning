@@ -7,7 +7,7 @@
 | **Timeline** | 2027-01 → 2027-06 (6 months) |
 | **Migration phase** | Phase 2 — Devnets |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | Not started (re-verified 2026-09-02) |
 
 ← [Back to roadmap](../README.md)
 

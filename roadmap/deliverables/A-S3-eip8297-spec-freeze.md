@@ -7,7 +7,7 @@
 | **Timeline** | 2027-01 → 2027-03 (3 months) |
 | **Migration phase** | Phase 2-3 |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | Not started (re-verified 2026-09-02) |
 
 ← [Back to roadmap](../README.md)
 
@@ -49,4 +49,4 @@ Freeze the final EIP-8297 as the H\* Considered-for-Inclusion (CFI) spec: keys, 
 - [knowledge-base/03-key-derivation.md](../../knowledge-base/03-key-derivation.md)
 - [knowledge-base/05-design-evolution.md](../../knowledge-base/05-design-evolution.md)
 - [open-questions.md](../../open-questions.md)
-- EIP-8297 (requires EIP-7612); H\* CFI process.
+- EIP-8297 (no `requires` field — the former EIP-7612 dependency was dropped 2026-07-31); H\* CFI process.

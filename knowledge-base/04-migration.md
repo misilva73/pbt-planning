@@ -6,7 +6,7 @@
 > node-operator playbook, trust tiers, testing).
 >
 > **Formal write-up:** **[EIP-8347](https://eips.ethereum.org/EIPS/eip-8347) — Offline
-> State Migration to the PBT** (Draft, Standards Track: Core; `requires: 7928, 8159,
+> State Migration to the PBT** (Draft, Standards Track: Core; `requires: 7523, 7928, 8159,
 > 8297`; authored by Carlos Perez, Maria Silva, Kevaundray Wedderburn; originated as
 > [PR #12006](https://github.com/ethereum/EIPs/pull/12006), now published). The EIP is
 > the normative rendering of this roadmap: it pins the byte-level artifact formats, the
@@ -18,6 +18,31 @@
 > This is a *strategy* document; specific tree constants may lag the latest EIP design
 > (see [05-design-evolution.md](05-design-evolution.md)). The migration approach itself
 > is largely design-agnostic.
+
+## Implementation status (2026-09-02)
+
+The migration stopped being paper-only in August 2026. One client — **geth**, on
+`CPerezz/go-ethereum@pbt` — now implements EIP-8347 end to end, and a **migration devnet**
+passed a first acceptance gate on empty state:
+
+| Piece of this document | Where it exists | Notes |
+|---|---|---|
+| [The converter](#the-converter) | `geth bintrie convert` ([PR #14](https://github.com/CPerezz/go-ethereum/pull/14)) | Scan → external merge-sort → single bottom-up pass, with `--snapshot-out` / `--preimages-out` emitting the artifacts. **Preimage writer lags the 2026-08-20 format change.** |
+| [Dual-check verification](#verification--dual-check-authentication) | `geth bintrie import` ([PR #16](https://github.com/CPerezz/go-ethereum/pull/16)) | Both checks; anchor resolved from the node's *own* header chain, with no `--anchor-root` flag by design — a self-vouching artifact would make verification circular. |
+| [BAL-replay](#bal-replay), the swap, the transition window | geth's migration follower ([PR #31](https://github.com/CPerezz/go-ethereum/pull/31)) | Both trees in one chaindata DB; missing lists backfilled over `eth/71`; root swaps source at `binaryTrieTime`; merkle side held until a post-fork block finalizes or `MigrationWindowBlocks` elapses. |
+| [Shadow roots](#shadow-commitment--observability) | `debug_shadowStateRoot`, `debug_shadowRoots`, `debug_migrationProgress` | An **EL debug feed**, not the CL telemetry carrier — the [companion spec](../open-questions.md#shadow-root-publication--the-companion-specification) is still unwritten. |
+| [Fork-boundary reorgs](../open-questions.md#reorg-behavior-around-the-swap) | Partially, in practice ([PR #33](https://github.com/CPerezz/go-ethereum/pull/33)) | A reorg whose branches each cross activation independently used to wedge the node; now resolved by walking back to the nearest replayed ancestor. Proven on a four-node devnet with a 41-block rewind across the format swap. **This is one client's handling, not a specified procedure** — the open question stands. |
+
+Besu has migration code in flight (`matkt/besu@glamsterdam-devnet-8-pbt`, "add migration
+code for PBT", 2026-08-31) and Erigon lists "mainnet PBT state conversion — in progress".
+Nothing else exists yet. Reported geth conversion throughput and the caveats on it are in
+[07-sources.md #11](07-sources.md).
+
+**What this does not yet prove.** Everything above is single-client, and the M1 gate ran on
+**empty state** — so the two properties the design leans on hardest, *independent producers
+emit bit-identical artifacts* and *conversion holds at mainnet scale*, are both still
+untested. Those remain [B-C1](../roadmap/deliverables/B-C1-converter-prototype.md) /
+[B-C4](../roadmap/deliverables/B-C4-production-rehearsals.md) work.
 
 ## Source discrepancies to reconcile
 
@@ -225,8 +250,16 @@ stream) → diagnostic report on any failure → BAL-replay from `N` to tip.
 
 A deterministic function translating MPT state to PBT. Given the state at `ANCHOR_BLOCK`
 (MPT snapshot + preimages), it:
-1. Scans source (MPT) leaves.
-2. Validates `keccak256(preimage)` matches trie paths.
+1. Scans source (MPT) leaves, accumulating each leaf's full hashed path from the branch
+   indices and extension segments above it.
+2. Matches the preimages, by `keccak256(preimage)`, against those leaf paths, requiring the
+   two sets to match **exactly, in both directions** — a leaf path with no preimage means
+   the set is incomplete; a preimage matching no leaf path means it is not the set
+   `ANCHOR_BLOCK`'s `stateRoot` commits to. Either case **MUST** be rejected. Because the
+   [preimage file](#preimages--why-theyre-needed) is sorted by these same hashes, the match
+   runs as a **sequential merge** against the scan rather than an indexed lookup — the
+   2026-08-20 revision's purpose. Per-leaf hash equality is not a check on its own (a
+   preimage is only ever found by hashing it); what is enforced is the set equality.
 3. Derives PBT keys per [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297).
 4. For each account with code, fetches bytecode by `code_hash`, chunks it, and emits the
    code leaves (the `0x01` code zone). An account whose code is an EIP-7702 delegation
@@ -262,8 +295,15 @@ writes to the PBT (balance/nonce changes, storage writes, code deployments):
   [Delegation indicators](#delegation-indicators-eip-7702) below; no reference-counting
   applies since delegation leaves are never content-addressed.
 - **Account deletion:** if after a block's writes an account holds `nonce == 0`,
-  `balance == 0`, and `code_size == 0`, it is deleted. No special BAL marker is needed —
-  the rule is evaluated from the post-write state.
+  `balance == 0`, and `code_size == 0`, it is deleted — its header stem together with any
+  leaves under the shared prefix `STORAGE_ZONE || key_hash(address)`. No special BAL marker
+  is needed; the rule is evaluated from the post-write state. Because the trigger requires
+  `code_size == 0`, the account addresses no code leaves and EIP-8297's `CODE_ZONE` limb of
+  account deletion has nothing to remove. The trigger is **exact in both directions**
+  because [EIP-7523](https://eips.ethereum.org/EIPS/eip-7523) (empty-account deprecation)
+  leaves no empty account in the MPT and a non-empty account is never absent from it — this
+  is why EIP-8347 added `7523` to its `requires` on 2026-08-25
+  ([PR #12239](https://github.com/ethereum/EIPs/pull/12239)).
 - Batching bounds replay cost while keeping the replay rate **below** steady-state block
   production, so the snapshot converges to and then tracks the tip.
 
@@ -350,15 +390,43 @@ hash-keyed clients (geth, Nethermind, Besu) and (b) verifiers doing the consensu
 check. They **MUST** be extracted at `ANCHOR_BLOCK`. Extraction at an earlier height `E`
 from raw-keyed nodes + BAL-completion over `(E, N]` gives completeness.
 
-Formal file layout (EIP-8347): an **RLP-encoded** concatenation of per-account records,
-each the RLP list `[address, [slotKey, slotKey, ...]]`, where `address` is exactly 20
-bytes and each `slotKey` is a canonical RLP integer (the 256-bit slot, big-endian,
-leading zero bytes stripped). Records are sorted by `address` ascending
-(byte-lexicographic, each address appearing once); slot keys within a record are sorted
-ascending, no duplicates. This supersedes an earlier fixed-width binary layout
-(`address[20] | slotCount[4, BE] | slotKey[32] * slotCount`) once assumed for this file —
-the published EIP uses RLP throughout, matching the snapshot's leaf-record encoding. A
-verifier recovers MPT paths as `keccak256(address)` and `keccak256(slotKey)`.
+**Formal file layout (EIP-8347, as revised 2026-08-20 by
+[PR #12215](https://github.com/ethereum/EIPs/pull/12215)):** a concatenation of
+**fixed-width** per-account records with no framing between them —
+
+```text
+address[20] | slotCount[4, big-endian] | slotKey[32] * slotCount
+```
+
+— where each `slotKey` is the **full 32-byte** big-endian slot number, leading zero bytes
+included, and an account with no storage carries `slotCount == 0`. `slotCount` makes each
+record self-delimiting, so the file parses by reading records sequentially to EOF; there is
+no terminator, padding or trailing newline, and any trailing byte invalidates the file.
+
+Ordering is by **hashed** key, not raw key:
+
+- records ascending by `keccak256(address)`, byte-lexicographic, each address once;
+- within a record, `slotKey` entries ascending by `keccak256(slotKey)`, no duplicates.
+
+Those sort keys *are* the MPT paths, so the file is laid out in **MPT iteration order** —
+over the account trie and within each account's storage trie alike. That is the point of
+the ordering: both consumers (the consensus-anchoring re-hash, and a hash-keyed
+self-converter) walk their trie and the file as **one sequential merge**, with no random
+access and no in-memory index. The producer pays one sort, using the same external
+merge-sort the snapshot build already needs. A verifier still recovers MPT paths as
+`keccak256(address)` and `keccak256(slotKey)`.
+
+> **This reverses an earlier reading.** Between 2026-07-30 and 2026-08-20 the published
+> EIP specified RLP `[address, [slotKey…]]` records with canonical-integer slot keys,
+> sorted byte-lexicographically by raw address — and this KB recorded that as *superseding*
+> a fixed-width layout. The fixed-width, hashed-order layout is now the spec. Only the
+> **preimage file** changed; the snapshot's RLP `[key, value]` leaf records are untouched,
+> so the two artifacts no longer share an encoding.
+>
+> **Known implementation lag:** geth's converter
+> ([PR #14](https://github.com/CPerezz/go-ethereum/pull/14), merged 2026-08-09) still emits
+> the RLP, address-sorted form. Any cross-producer byte-canonicality claim needs it updated
+> first — see [07-sources.md #11](07-sources.md).
 
 ## Verification — dual-check authentication
 
@@ -458,7 +526,8 @@ The roadmap enumerates the test surface (built out in Phase 1):
 | `REANCHOR_CADENCE` (`N′`) | Re-anchoring cadence for late joiners | EIP proposes **50400 blocks (~1 week)**; roadmap leaves generic ([D1](#source-discrepancies-to-reconcile)) |
 
 **Open parameters (§14):** readiness thresholds (X, Y, D); preimage byte-level format
-*(now specified in the EIP-8347 draft)*; snapshot chunk/transport encoding; the shadow-root
+*(specified in EIP-8347, and re-cut to fixed-width hashed-key order on 2026-08-20 — see
+[Preimages](#preimages--why-theyre-needed))*; snapshot chunk/transport encoding; the shadow-root
 **companion specification** *(the carrier architecture is settled — only its wire format,
 aggregation, timing and EL→CL plumbing remain)*; post-swap MPT disposal timing; `N′`
 re-anchoring cadence;

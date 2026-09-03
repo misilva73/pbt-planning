@@ -7,7 +7,7 @@
 | **Timeline** | 2027-07 → 2027-12 (6 months) |
 | **Migration phase** | Phase 4 — Rehearsals |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | Not started (re-verified 2026-09-02) |
 
 ← [Back to roadmap](../README.md)
 
@@ -28,7 +28,7 @@ numbers size the production rehearsals ([B-C4](B-C4-production-rehearsals.md)).
 - State-access metrics: measured cost of the read/write operations the gas repricing prices
   — cold/warm account and storage access, storage writes, and per-chunk code access — isolating
   content-addressed overflow-code chunks (shared, charged once per block) from per-account
-  header chunks.
+  content-addressed `CODE_ZONE` chunks (there are no per-account header chunks).
 - Resource metrics: memory, disk and I/O per tier, reported as inputs to A-S2 repricing and
   B-C4 rehearsal sizing.
 

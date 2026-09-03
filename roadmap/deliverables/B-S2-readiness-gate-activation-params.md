@@ -7,7 +7,7 @@
 | **Timeline** | 2027-09 → 2028-02 (6 months) |
 | **Migration phase** | Phase 5 — Mainnet Window |
 | **Milestone alignment** | gates fork S = I\* (2028-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | Not started (re-verified 2026-09-02) |
 
 ← [Back to roadmap](../README.md)
 

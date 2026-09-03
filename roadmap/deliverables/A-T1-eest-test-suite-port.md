@@ -7,7 +7,7 @@
 | **Timeline** | 2026-08 → 2027-01 (6 months) |
 | **Migration phase** | Phase 1 — Prototypes & Evidence |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | **In flight** (as of 2026-09-02) — a substantial EIP-8297 suite exists on `execution-specs@projects/binary-trie` and is being consumed by clients; branch quiet since 2026-08-13 |
 
 ← [Back to roadmap](../README.md)
 
@@ -19,17 +19,45 @@ fixtures encode the expected PBT state and, once the hash function is pinned, th
 PBT root. It is the backbone the cyan Tests workstream builds on and the reference all
 green client implementations run against.
 
+> **Update (2026-09-02).** The port exists and is in use. `execution-specs`'
+> [`projects/binary-trie`](https://github.com/ethereum/execution-specs/tree/projects/binary-trie)
+> branch carries a `src/ethereum/binary_trie/` + `src/ethereum/forks/binary_tree/`
+> implementation and an EIP-8297 test suite
+> (`tests/binary_tree/eip8297_partitioned_binary_tree/*`, `tests/binary_trie/*`) covering
+> account and delegation lifecycle, code chunking and sharing, storage operations, and
+> differential MPT-vs-binary-tree parity — plus, since the last sync, zero-code-chunk
+> vectors ([#3305](https://github.com/ethereum/execution-specs/pull/3305)), consecutive
+> deploys into a shared code zone ([#3316](https://github.com/ethereum/execution-specs/pull/3316))
+> and delegation re-auth / 2935 ring-buffer / chunking edges
+> ([#3338](https://github.com/ethereum/execution-specs/pull/3338)). It is proposed upstream
+> into `forks/amsterdam` as draft [PR #3207](https://github.com/ethereum/execution-specs/pull/3207).
+>
+> Clients are consuming it: geth reports the suite **fully green**
+> ([PR #13](https://github.com/CPerezz/go-ethereum/pull/13)), and Erigon reports **67 of
+> 70** blockchain fixtures passing.
+>
+> **Two things to watch.** (1) The branch tip has not moved since **2026-08-13** — only
+> merges down from `forks/amsterdam` — and two EIP-8297 test PRs (#3444 reorg-branch
+> provider state, #3446 genesis commitment provider) were **closed unmerged** on 2026-08-28.
+> Test-suite momentum has stalled while client work accelerated. (2) Erigon's three failures
+> are fixtures the reference marks as pinning *current provider behaviour* rather than
+> conformance — two zero-write tests where `state_pbt.py` deletes on a zero write, and one
+> `CREATE2`-after-EIP-161-clear test the reference itself calls an open consensus question.
+> **A suite that encodes provider behaviour rather than the spec cannot serve as the shared
+> oracle this deliverable is for**; separating the two is now part of the work.
+
 ## Scope — what ships
 - EEST state-test and blockchain-test fillers adapted to emit PBT key/value state and PBT
   roots, replacing MPT trie construction with the two-node-type tree (LeafNode/BranchNode,
   canonical prefix-compressed form) from EIP-8297.
 - Key-embedding hooks so fillers derive tree keys via the zone/stem/sub-index scheme
   (account header stem, storage buckets, content-addressed code overflow).
-- Gas fixtures covering PBT's state-access and code-chunk accounting: content-addressed
-  overflow-code events keyed by `(zone, tree_position, sub-index)` (shared, charged once per
-  block) versus per-account header chunks, with the actual state-access and per-chunk costs
-  left as parameters until the gas repricing EIP ([A-S2](A-S2-gas-cost-recalibration.md))
-  fixes them from benchmarks.
+- Gas fixtures covering PBT's state-access and code-chunk accounting: code events keyed by
+  `(zone, tree_position, sub-index)` in the content-addressed `CODE_ZONE`, shared across
+  accounts with the same `code_hash` and charged once per block — there are no per-account
+  header chunks any more (EIP-8297 moved all code into `CODE_ZONE` on 2026-08-04) — with the
+  actual state-access and per-chunk costs left as parameters until the gas repricing EIP
+  ([A-S2](A-S2-gas-cost-recalibration.md)) fixes them from benchmarks.
 - A fixture format that carries the PBT state root (parameterized on the hash function until
   the hash-function dependency lands) and CI wiring so clients consume the ported suite.
 

@@ -50,14 +50,24 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
   `DELEGATION_LEAF_KEY` header leaf**, not `CODE_ZONE` (merged 2026-08-06).
 - The **migration EIP, [EIP-8347](https://eips.ethereum.org/EIPS/eip-8347)** ("Offline
   State Migration to the PBT"), is likewise `Draft`, now **published** (formerly tracked
-  only as [PR #12006](https://github.com/ethereum/EIPs/pull/12006)), and `requires: 7928,
-  8159, 8297`. **Where EIP-8347 and EIP-8297 disagree, treat EIP-8297 (the tree spec) as
-  correct** — this KB's standing convention for resolving cross-EIP conflicts.
+  only as [PR #12006](https://github.com/ethereum/EIPs/pull/12006)), and `requires: 7523,
+  7928, 8159, 8297` — EIP-7523 (empty-account deprecation) was added on 2026-08-25, since
+  the BAL-replay account-deletion trigger relies on the MPT holding no empty accounts.
+  **Where EIP-8347 and EIP-8297 disagree, treat EIP-8297 (the tree spec) as correct** —
+  this KB's standing convention for resolving cross-EIP conflicts.
+- The **preimage-file format changed on 2026-08-20** ([PR
+  #12215](https://github.com/ethereum/EIPs/pull/12215)): it is now **fixed-width records
+  sorted by hashed key** (`address[20] | slotCount[4, BE] | slotKey[32] * slotCount`,
+  ordered by `keccak256(address)` / `keccak256(slotKey)`), replacing the RLP,
+  address-sorted layout the earlier draft used. See
+  [04-migration.md § Preimages](04-migration.md#preimages--why-theyre-needed).
 - The **hash function is not final.** Reference implementations use BLAKE3; Poseidon2
   and Keccak are candidates. Treat all hash outputs as unpinned.
 
-Last synced from sources: **2026-08-12**. Re-verify against the live EIPs before relying
-on exact constants.
+Last synced from sources: **2026-09-02**. Re-verify against the live EIPs before relying
+on exact constants. Implementation status (clients, devnet, execution-specs) is tracked in
+[07-sources.md](07-sources.md) and summarized in
+[../roadmap/README.md § Implementation status](../roadmap/README.md#implementation-status-snapshot).
 
 The migration file also situates the chosen offline conversion against the earlier
 Verkle-era survey of transition options (overlay, conversion-node, local bulk, state
@@ -68,7 +78,8 @@ expiry); see [04-migration.md](04-migration.md) and [07-sources.md](07-sources.m
 | EIP | Role |
 |-----|------|
 | EIP-8297 | **Partitioned Binary Tree** — the tree spec this KB documents |
-| EIP-8347 | **Offline State Migration to the PBT** — the migration spec this KB documents; `requires: 7928, 8159, 8297` |
+| EIP-8347 | **Offline State Migration to the PBT** — the migration spec this KB documents; `requires: 7523, 7928, 8159, 8297` |
+| EIP-7523 | Empty-accounts deprecation — why BAL-replay's `nonce/balance/code_size == 0` deletion trigger is exact in both directions |
 | EIP-7864 | Flat unified binary tree — PBT's immediate predecessor design |
 | EIP-2926 | Chunk-based code merkleization — code-chunk access pricing PBT adopts |
 | EIP-8038 | Benchmark-based state-access gas repricing — the model PBT's gas EIP follows |

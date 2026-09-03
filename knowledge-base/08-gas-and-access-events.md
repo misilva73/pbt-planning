@@ -24,6 +24,43 @@ state-access gas from empirical measurement rather than first principles; and (2
 execution actually touches instead of a flat per-byte cost. Both are grounded in measured
 PBT prototype performance, not estimates.
 
+## 0 · The baseline PBT reprices *from* (EIP-8038 / EIP-8037)
+
+PBT's repricing is a **delta on the Amsterdam state-gas schedule**, so the baseline matters
+as much as the delta — and the baseline has moved. As of 2026-09-02
+[EIP-8038](https://eips.ethereum.org/EIPS/eip-8038) ("State-access gas cost update") is
+`Review`, with state *creation* split out into
+[EIP-8037](https://eips.ethereum.org/EIPS/eip-8037) ("State Creation Gas Cost Increase",
+also `Review`). EIP-8038 decomposes state-touching cost into three components — **access**,
+**write**, **state creation** — and renames the EIP-2929 parameters:
+
+| Parameter | Component | Current | EIP-8038 | Δ |
+|---|---|---|---|---|
+| `COLD_ACCOUNT_ACCESS` (was `COLD_ACCOUNT_ACCESS_COST`) | Access | 2,600 | **3,000** | +15% |
+| `COLD_STORAGE_ACCESS` (was `COLD_SLOAD_COST`) | Access | 2,100 | 2,100 | +0% |
+| `WARM_ACCESS` (was `WARM_STORAGE_READ_COST`) | Access | 100 | 100 | +0% |
+| `ACCOUNT_WRITE` *(new named parameter)* | Write | 6,700¹ | **9,000** | +34% |
+| `CREATE_ACCESS` = `ACCOUNT_WRITE` + `COLD_ACCOUNT_ACCESS` *(new)* | Access + write | 7,000¹ | **12,000** | +71% |
+| `STORAGE_CLEAR_REFUND` (was `SSTORE_CLEARS_SCHEDULE`) | Refund | 4,800 | **11,616** | +142% |
+| `ACCESS_LIST_ADDRESS_COST` | Access (prepaid) | 2,400 | **2,900** | +21% |
+| `ACCESS_LIST_STORAGE_KEY_COST` | Access (prepaid) | 1,900 | **2,000** | +5% |
+
+¹ `ACCOUNT_WRITE`, `STORAGE_WRITE` and `CREATE_ACCESS` have no pre-existing counterpart —
+the "current" column is the equivalent cost extracted from composites such as
+`GAS_STORAGE_UPDATE`, `CALL_VALUE` and `GAS_CREATE`, and the old schedule is not exactly
+separable into these components, so those figures are approximate. Note the two access-list
+constants are *derived*: `ACCESS_LIST_ADDRESS_COST = COLD_ACCOUNT_ACCESS − WARM_ACCESS` and
+`ACCESS_LIST_STORAGE_KEY_COST = COLD_STORAGE_ACCESS − WARM_ACCESS`.
+
+**Two consequences worth holding onto.** First, `A-S2`'s numbers cannot be expressed until
+this baseline is pinned — PBT's repricing is measured *relative* to it. Second, the clients
+are **already divergent on it**: geth-pbt matches the revised schedule while Erigon's
+default Amsterdam still ships the pre-revision one (8000 / 3000 / 11000 / 12480) and does
+not subtract `WARM_ACCESS` from the access-list constants (3000 and 2100), giving 100 gas of
+drift per access-list entry. That is a consensus divergence riding alongside PBT rather than
+a tree bug, but it is what a multi-client root-agreement gate meets first. See
+[07-sources.md](07-sources.md).
+
 ## 1 · Benchmark-based state-access repricing (EIP-8038 lineage)
 
 PBT keeps the familiar **cold/warm access model** (a slot or account is charged a higher

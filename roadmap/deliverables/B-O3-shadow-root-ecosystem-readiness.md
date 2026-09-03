@@ -7,7 +7,7 @@
 | **Timeline** | 2027-09 → 2028-04 (8 months) |
 | **Migration phase** | Phase 4 → 5 — Rehearsals through Mainnet Window |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | Not started (re-verified 2026-09-02) |
 
 ← [Back to roadmap](../README.md)
 

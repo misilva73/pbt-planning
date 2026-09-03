@@ -7,7 +7,7 @@
 | **Timeline** | 2028-03 → 2028-06 (4 months) |
 | **Migration phase** | Phase 5 → 6 — Mainnet Window through Swap & Aftermath |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | Not started (as of 2026-07) |
+| **Status** | Not started (re-verified 2026-09-02) |
 
 ← [Back to roadmap](../README.md)
 
