@@ -7,7 +7,7 @@
 | **Timeline** | 2026-09 → 2027-03 (6 months) |
 | **Migration phase** | Phase 1 — Prototypes & Evidence |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | **In flight** (as of 2026-09-02) — three implementations exist and are differentially tested; two clients missing, semantics not yet uniform |
+| **Status** | **In flight** (as of 2026-09-17) — **four** implementations exist and are differentially tested (Nethermind joined the devnet 2026-09-14); only Reth missing, semantics still not uniform |
 
 ← [Back to roadmap](../README.md)
 
@@ -46,24 +46,26 @@ foundation every later devnet, sync, and migration deliverable builds on.
 ## Client coverage
 - EL: geth, Nethermind, Besu, Reth, Erigon (+ CL where relevant)
 
-### Where each client actually is (2026-09-02)
+### Where each client actually is (2026-09-17)
 
 | Client | Branch | State |
 |---|---|---|
-| **geth** | [`CPerezz/go-ethereum@pbt`](https://github.com/CPerezz/go-ethereum/tree/pbt) | Furthest along; the tree plus proofs, flat state and the whole EIP-8347 migration. Upstream draft [#35436](https://github.com/ethereum/go-ethereum/pull/35436) is this same branch. |
+| **geth** | [`CPerezz/go-ethereum@pbt`](https://github.com/CPerezz/go-ethereum/tree/pbt) | Furthest along; the tree plus proofs, flat state and the whole EIP-8347 migration. Upstream draft [#35436](https://github.com/ethereum/go-ethereum/pull/35436) is this same branch. **Quiet since 2026-09-07** — no longer the fastest-moving branch in the field. |
 | **Erigon** | [`erigontech/erigon@binary-trie`](https://github.com/erigontech/erigon/tree/binary-trie) | `PBinPatriciaHashed` commitment engine behind `--experimental.bin-commitment`, off by default, in the **upstream** repo. **67 of 70** EIP-8297 fixtures pass; the three failures and two deletion caveats are deliberate divergences (see risks). Tracking issue [#23389](https://github.com/erigontech/erigon/issues/23389). |
 | **Besu** | [`matkt/besu@glamsterdam-devnet-8-pbt`](https://github.com/matkt/besu/tree/glamsterdam-devnet-8-pbt) + [`besu-eth/besu-stateless@feat/partitioned-binary-trie`](https://github.com/besu-eth/besu-stateless/tree/feat/partitioned-binary-trie) | Tree in the `besu-stateless` library ([PR #92](https://github.com/besu-eth/besu-stateless/pull/92)), enabled with `--data-storage-format=BINARY`. Besu has moved org to `besu-eth/besu`. |
-| **Nethermind** | [`pbt-state`](https://github.com/NethermindEth/nethermind/tree/pbt-state) | Draft [#12573](https://github.com/NethermindEth/nethermind/pull/12573), explicitly **"prototype — not for merge"**: a state backend exploring node-grouping layouts on RocksDB (depth-4-interleave fastest; root calculation 3 ms → 11 ms). Valuable as storage-layout evidence; **not** a production-track implementation, and not in the devnet. |
-| **Reth** | — | Nothing found. |
+| **Nethermind** | [`pbt-state`](https://github.com/NethermindEth/nethermind/tree/pbt-state) | **Changed materially since the last sync.** Draft [#12573](https://github.com/NethermindEth/nethermind/pull/12573) still carries the **"prototype — not for merge"** warning, but the branch is now the **most actively developed in the field** (daily commits through 2026-09-17: parallel trie-updater folds, node groups keyed by zero-padded path + nibble count, RocksDB tuning, and a correctness fix counting delegation leaves as code references on rebuild), and it **joined the devnet on 2026-09-14** — running in *both* the tree-at-genesis and migration profiles via `--Pbt.Enabled=true`. Its storage-layout evidence (depth-4-interleave fastest; root calculation 3 ms → 11 ms) still stands. **Treat the not-for-merge label as stale relative to the branch**, and resolve which it is: the roadmap cannot count a client that disowns its own implementation. |
+| **Reth** | — | Still nothing: no branch, issue or PR matching PBT / EIP-8297 as of 2026-09-17. The sole remaining gap against the five-client exit criterion. |
 
 **Cross-client root agreement is already being measured**, ahead of
 [A-C3](A-C3-multiclient-pbt-genesis-devnets.md): the
 [PBT devnet](https://github.com/CPerezz/pbt-devnet) runs two nodes each of geth, Besu and
-Erigon — deliberately configured differently within each pair — on an Amsterdam-at-genesis
-chain, requires every client to agree on every state root, and forces a reorg every 15–30
-blocks. Its genesis pins state root `0x7e16e879…` and block hash `0x52327d2d…` as the pair
-geth and Besu both produce, which is the concrete artifact this deliverable's first exit
-criterion asks for — at three clients rather than five.
+Erigon — deliberately configured differently within each pair — plus a single Nethermind node
+since 2026-09-14, on an Amsterdam-at-genesis chain, requires every client to agree on every
+state root, and forces a reorg every 15–30 blocks. Its genesis pins state root `0x7e16e879…`
+and block hash `0x52327d2d…` as the pair geth and Besu both produce, which is the concrete
+artifact this deliverable's first exit criterion asks for — now at **four** clients rather
+than five. Caveat unchanged and worth repeating: all four compute those roots with **BLAKE3**,
+so none of this agreement is evidence about the undecided `H`.
 
 ## Dependencies
 - **Upstream (blocks this):** [A-S1](A-S1-eip8297-spec-convergence.md) (spec convergence), the [hash-function dependency](../README.md) (hash function `H` selection)

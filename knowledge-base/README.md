@@ -30,6 +30,7 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 | [05-design-evolution.md](05-design-evolution.md) | How the design got here: EIP-7864 → early EIP-8297 draft → current EIP-8297. **Read this to avoid citing stale details.** |
 | [10-zero-value-leaves-and-deletion.md](10-zero-value-leaves-and-deletion.md) | The **zero-value leaf vs. delete-on-zeroization** decision record — **resolved**: EIP-8297 was revised to require deletion, matching EIP-8347. Read this for why, and where the earlier no-deletion rule came from. |
 | [11-attester-telemetry-transport.md](11-attester-telemetry-transport.md) | **How attester shadow-root reports travel during the transition period**: the CL carrier design space (rate-limited global gossip topic vs subnets, req/resp, ENR, state field, attestations), the bandwidth arithmetic, the spam/signature-DoS risk, and why this is an Ethereum networking protocol rather than a libp2p change. |
+| [12-testing-inventory.md](12-testing-inventory.md) | **What we test, and what actually exists.** The full test surface split by component — trie, EVM/state-transition rules, converter, BAL-replay, swap/lifecycle — with every test enumerated from `execution-specs`, `pbt-devnet` and `geth@pbt`, mapped against the roadmap's seven Tests deliverables. Includes the gap register and the eleven tests agreed in August client calls that have no roadmap home. |
 | [06-open-questions.md](06-open-questions.md) | Settled **security considerations** (collision resistance, grinding, preimage injectivity) and superseded/historical questions. **Live open questions moved to [../open-questions.md](../open-questions.md).** |
 | [08-gas-and-access-events.md](08-gas-and-access-events.md) | PBT's gas model: benchmark-based state-access repricing (EIP-8038 lineage) plus chunk-based code access (EIP-2926), grounded in measured PBT read/write performance. |
 | [07-sources.md](07-sources.md) | Primary sources, related EIPs, and how to re-fetch them. |
@@ -64,7 +65,9 @@ partial-statelessness proposals can build on. It is specified in **EIP-8297**.
 - The **hash function is not final.** Reference implementations use BLAKE3; Poseidon2
   and Keccak are candidates. Treat all hash outputs as unpinned.
 
-Last synced from sources: **2026-09-02**. Re-verify against the live EIPs before relying
+Last synced from sources: **2026-09-17** (both EIPs unchanged since 2026-08-25; the movement
+was all on the implementation side — the migration devnet went multi-client and Nethermind
+joined as a fourth implementation). Re-verify against the live EIPs before relying
 on exact constants. Implementation status (clients, devnet, execution-specs) is tracked in
 [07-sources.md](07-sources.md) and summarized in
 [../roadmap/README.md § Implementation status](../roadmap/README.md#implementation-status-snapshot).

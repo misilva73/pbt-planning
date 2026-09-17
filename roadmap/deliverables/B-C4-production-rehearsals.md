@@ -7,7 +7,7 @@
 | **Timeline** | 2027-07 → 2027-12 (6 months) |
 | **Migration phase** | Phase 4 — Rehearsals |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | Not started (re-verified 2026-09-02) |
+| **Status** | Not started (re-verified 2026-09-17) — but **Erigon's tracking issue now lists "mainnet PBT state conversion" as in progress**, which is this deliverable's subject reached ~10 months early and from a client rather than a coordinated rehearsal. Worth confirming scope with the Erigon team before the next replan. |
 
 ← [Back to roadmap](../README.md)
 

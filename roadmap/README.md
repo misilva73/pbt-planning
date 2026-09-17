@@ -19,36 +19,45 @@ This document is the *when* and *who*.
 
 ## Implementation status snapshot
 
-*Verified against live sources on **2026-09-02**. Detail and caveats in
+*Verified against live sources on **2026-09-17**. Detail and caveats in
 [knowledge-base/07-sources.md](../knowledge-base/07-sources.md).*
 
-Two things changed the shape of the plan since it was written in July 2026: **PBT is being
-implemented by three clients in parallel and differentially tested** on a live devnet, and
-**geth has an end-to-end EIP-8347 migration**. Both are running about six months ahead of
-where this roadmap placed them — the Phase 1/2 client and devnet work is materially in
-flight while several deliverables below still read "not started".
+Two things changed the shape of the plan since it was written in July 2026: **PBT is now being
+implemented by four clients in parallel and differentially tested** on a live devnet, and
+**the EIP-8347 migration is no longer a single-client story** — Erigon, Besu and Nethermind
+were all brought through the migration profiles in the first half of September 2026. Both are
+running roughly six months ahead of where this roadmap placed them; the Phase 1/2 client and
+devnet work is materially in flight while several deliverables below still read "not started".
 
 | | Where it stands |
 |---|---|
-| **Specs** | EIP-8297 unchanged since 2026-08-06. EIP-8347 revised twice: preimage file re-cut to fixed-width, hashed-key order (2026-08-20), and `EIP-7523` added to `requires` (2026-08-25). Both still `Draft`. Neither has a `Review` or freeze date. |
-| **Reference impl. / tests** | `execution-specs@projects/binary-trie` carries the EIP-8297 implementation and test suite, and is proposed upstream into `forks/amsterdam` (draft [PR #3207](https://github.com/ethereum/execution-specs/pull/3207)). Tip has been quiet since 2026-08-13. **No EIP-8347 migration code on it.** |
-| **Clients** | **geth** (`CPerezz/go-ethereum@pbt`) — tree + full migration; **Erigon** (`erigontech/erigon@binary-trie`, upstream repo) — commitment engine, 67/70 EIP-8297 fixtures; **Besu** (`matkt/besu@glamsterdam-devnet-8-pbt` + `besu-eth/besu-stateless`) — tree, migration code started 2026-08-31; **Nethermind** (`pbt-state`) — prototype, explicitly not for merge; **Reth** — nothing found. |
-| **Devnets** | PBT-genesis differential devnet live with **six nodes across three implementations** on an Amsterdam-at-genesis chain, with deliberate reorgs and six state-stranding scenarios. A separate **migration devnet** passed its M1 gate — but **on empty state** (2026-08-27). |
-| **Not yet demonstrated** | Independent producers emitting **bit-identical** artifacts; conversion at **mainnet scale**; anything multi-client on the migration side; the shadow-root **CL carrier** (geth's `debug_shadowRoots` is an EL debug feed, not the telemetry spec). |
+| **Specs** | **Unchanged this sync.** EIP-8297 still at its 2026-08-06 revision; EIP-8347 still at 2026-08-25 (`requires: 7523, 7928, 8159, 8297`). Both still `Draft`; neither has a `Review` or freeze date. The PBT gas-repricing EIP is **still undrafted**. |
+| **Reference impl. / tests** | `execution-specs@projects/binary-trie` carries the EIP-8297 implementation and test suite, proposed upstream into `forks/amsterdam` (draft [PR #3207](https://github.com/ethereum/execution-specs/pull/3207)). **Tip unchanged since 2026-08-13 — now five weeks quiet**, and still **no EIP-8347 migration code on it.** This is now the slowest-moving link in the chain. |
+| **Clients** | **geth** (`CPerezz/go-ethereum@pbt`) — tree + the only complete migration, but quiet since 2026-09-07; **Erigon** (`erigontech/erigon@binary-trie`, upstream repo) — commitment engine, 67/70 EIP-8297 fixtures, active daily, **mainnet state conversion listed in progress**; **Nethermind** (`pbt-state`) — **joined the devnet 2026-09-14** and is now the most active branch in the field, though its PR still says prototype/not-for-merge; **Besu** (`matkt/besu@glamsterdam-devnet-8-pbt` + `besu-eth/besu-stateless`) — tree + migration, weakest introspection; **Reth** — still nothing. |
+| **Devnets** | Tree-at-genesis devnet now runs **seven nodes across four implementations** (was six across three), with deliberate reorgs and six state-stranding scenarios. The **migration devnet went multi-client**: five participants across the same four clients, each migrating by a *different* mechanism, with partitions before/across/after the fork block and a judge scoring straddle rewinds, heal deadlines, orphan cleanup and shadow-root agreement. |
+| **Not yet demonstrated** | Independent producers emitting **bit-identical** artifacts; conversion at **mainnet scale** (Erigon has it in progress); any migration run on **non-trivial state** — M1 (empty state, 2026-08-27) is still the last accepted gate; the shadow-root **CL carrier** (geth's `debug_shadowRoots` is an EL debug feed, not the telemetry spec). |
 
-**Three things to act on:**
+**Four things to act on:**
 
-1. **The hash function is being pinned by accumulation.** All three clients use BLAKE3 and
-   the devnet genesis pins roots computed with it, while `H` is formally undecided and due
-   end-2026. Devnet root agreement is evidence about everything *except* `H`. See
+1. **The hash function is being pinned by accumulation, and the fourth implementation raises
+   the cost again.** All four clients use BLAKE3 and the devnet genesis pins roots computed
+   with it, while `H` is formally undecided and due end-2026. Devnet root agreement across
+   four clients is evidence about everything *except* `H`. See
    [open-questions.md](../open-questions.md#hash-function-selection--the-dominant-open-parameter).
-2. **Implementations have started diverging from the spec, deliberately.** Erigon keeps
-   zero-valued leaves (against current EIP-8297), refuses account removal, and leaks code
-   chunks above a shortened redeploy's length; geth's preimage writer still emits the
-   pre-2026-08-20 format. Alongside those sit gas divergences — Erigon on the pre-revision
-   EIP-8038 schedule, three different answers to the EIP-7610 `CREATE2` rule. A
-   root-agreement readiness gate trips over these before it trips over tree bugs.
-3. **Several deliverable dates are now behind reality, not ahead of it.** The affected rows
+2. **Implementations have started diverging from the spec, deliberately — and neither known
+   drift was fixed this sync.** Erigon still keeps zero-valued leaves (against current
+   EIP-8297), refuses account removal, and leaks code chunks above a shortened redeploy's
+   length; geth's preimage writer still emits the pre-2026-08-20 RLP address-sorted format,
+   four weeks on. Alongside those sit gas divergences — Erigon on the pre-revision EIP-8038
+   schedule, three different answers to the EIP-7610 `CREATE2` rule. A root-agreement
+   readiness gate trips over these before it trips over tree bugs.
+3. **The reference suite is now the bottleneck, not the clients.** Four implementations are
+   being differentially tested against a branch nobody has advanced since 2026-08-13, whose
+   upstreaming PR is equally stale, and which still contains no migration tests at all. The
+   test deliverables ([A-T1](deliverables/A-T1-eest-test-suite-port.md),
+   [B-T1](deliverables/B-T1-conversion-replay-vectors.md)) are where attention buys the most
+   right now — client velocity is not the constraint.
+4. **Several deliverable dates are now behind reality, not ahead of it.** The affected rows
    are marked *in flight* in the Gantt notes below; the windows themselves have **not** been
    redrawn, because pulling dates in should be a deliberate replan against H\*, not a
    bookkeeping side effect of this sync.
@@ -150,18 +159,26 @@ and **◆ I\*** (fork S, the swap).
 > [`deliverables/`](deliverables/)). Regenerate the chart after editing the plan with
 > `python3.12 roadmap/scripts/gen_gantt.py`.
 
-**Rows already in flight as of 2026-09-02** (bars unchanged — see point 3 of the
+**Rows already in flight as of 2026-09-17** (bars unchanged — see point 4 of the
 [status snapshot](#implementation-status-snapshot)):
 [A-S1](deliverables/A-S1-eip8297-spec-convergence.md) ·
-[A-T1](deliverables/A-T1-eest-test-suite-port.md) ·
+[A-T1](deliverables/A-T1-eest-test-suite-port.md) *(stalled — reference branch untouched since 2026-08-13)* ·
 [A-T2](deliverables/A-T2-tree-key-derivation-vectors.md) ·
-[A-C1](deliverables/A-C1-client-tree-implementations.md) ·
-[A-C3](deliverables/A-C3-multiclient-pbt-genesis-devnets.md) *(started ~5 months early)* ·
+[A-C1](deliverables/A-C1-client-tree-implementations.md) *(four implementations now)* ·
+[A-C3](deliverables/A-C3-multiclient-pbt-genesis-devnets.md) *(started ~5 months early; seven nodes / four clients)* ·
 [A-C4](deliverables/A-C4-snapshot-serving-verification.md) *(dual-check implemented)* ·
 [B-S1](deliverables/B-S1-offline-migration-eip.md) ·
 [B-C1](deliverables/B-C1-converter-prototype.md) *(started ~2 months early)* ·
 [B-C2](deliverables/B-C2-bal-replay-engine.md) *(started ~5 months early)* ·
-[B-T2](deliverables/B-T2-full-cycle-devnet-swap.md) *(swap exercised on empty state)*.
+[B-T2](deliverables/B-T2-full-cycle-devnet-swap.md) *(swap now exercised by **four clients**, still on trivial state)*.
+
+Two early signals that do **not** yet justify moving a bar, but should be watched at the next
+sync: Erigon lists **mainnet PBT state conversion as in progress**, which is
+[B-C4](deliverables/B-C4-production-rehearsals.md) territory (windowed 2027-07) reached from a
+different direction than this plan assumed; and the migration devnet's four-client judge is
+already scoring **shadow-root agreement**, an input
+[B-O3](deliverables/B-O3-shadow-root-ecosystem-readiness.md) expects from the CL sidecar that
+does not exist yet.
 
 ---
 
@@ -169,8 +186,8 @@ and **◆ I\*** (fork S, the swap).
 
 | Window | Migration phase(s) | Headline outcome |
 |--------|--------------------|------------------|
-| 2026-07 → 2026-12 | **0 → 1** Spec Convergence, Prototypes & Evidence | EIP-8297 contention resolved (spec convergence); migration spec complete (offline-migration EIP: conversion, snapshot/manifest, BAL-replay); hash function `H` decided (external dependency); prototype tree + converter; first test vectors; outreach begins. *Ahead of plan: three client trees, a published EIP-8347, and a working geth converter + BAL-replay all landed by 2026-09.* |
-| 2027-01 → 2027-06 | **2 → 3** Devnets, Migration Machinery | EIP-8297 spec frozen (A-S3, by 2027-03); multi-client PBT-genesis devnets; converter + BAL-replay + snapshot pipeline; full-cycle devnet swap. **→ H\* opens shadow period against the frozen spec.** *Partly pulled forward: a three-client PBT-genesis devnet and an empty-state migration devnet with the swap are already running.* |
+| 2026-07 → 2026-12 | **0 → 1** Spec Convergence, Prototypes & Evidence | EIP-8297 contention resolved (spec convergence); migration spec complete (offline-migration EIP: conversion, snapshot/manifest, BAL-replay); hash function `H` decided (external dependency); prototype tree + converter; first test vectors; outreach begins. *Ahead of plan: four client trees, a published EIP-8347, and a working geth converter + BAL-replay all landed by 2026-09.* |
+| 2027-01 → 2027-06 | **2 → 3** Devnets, Migration Machinery | EIP-8297 spec frozen (A-S3, by 2027-03); multi-client PBT-genesis devnets; converter + BAL-replay + snapshot pipeline; full-cycle devnet swap. **→ H\* opens shadow period against the frozen spec.** *Partly pulled forward: a four-client PBT-genesis devnet and a four-client migration devnet with the swap are already running, the latter still on trivial state.* |
 | 2027-07 → 2027-12 | **4** Rehearsals | Production converter runs on mainnet state; hardware-matrix + perf metrics. |
 | 2028-01 → 2028-06 | **5 → 6** Mainnet Window, Swap | Public testnet migrations + mainnet shadow fork; block `N` chosen; snapshot produced, cross-verified, distributed; BAL-replay to tip; readiness gate passed. **→ I\* = fork S, PBT canonical.** |
 | 2028-06 → 2028-08 | **6** Aftermath | MPT retained to finality then sunset; snapshot disposed; fresh-node sync restored. |
@@ -180,4 +197,4 @@ and **◆ I\*** (fork S, the swap).
 *Assumptions: H\* summer 2027, I\* summer 2028, monthly granularity. Dates and parameters
 (`N`, `S`, readiness thresholds) are placeholders until fixed by the processes in the
 deliverables above. The hash function `H` is an external dependency due end of 2026 (see top).
-Last updated 2026-09-02 (implementation-status sync; deliverable windows unchanged).*
+Last updated 2026-09-17 (implementation-status sync; deliverable windows unchanged).*

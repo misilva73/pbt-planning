@@ -7,7 +7,7 @@
 | **Timeline** | 2026-08 → 2027-01 (6 months) |
 | **Migration phase** | Phase 1 — Prototypes & Evidence |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | **In flight** (as of 2026-09-02) — a substantial EIP-8297 suite exists on `execution-specs@projects/binary-trie` and is being consumed by clients; branch quiet since 2026-08-13 |
+| **Status** | **In flight but stalled** (as of 2026-09-17) — a substantial EIP-8297 suite exists on `execution-specs@projects/binary-trie` and is consumed by all four clients, but the branch has not moved since **2026-08-13** (five weeks) and its upstreaming PR [#3207](https://github.com/ethereum/execution-specs/pull/3207) is equally stale. This is now the field's bottleneck, not client velocity. |
 
 ← [Back to roadmap](../README.md)
 

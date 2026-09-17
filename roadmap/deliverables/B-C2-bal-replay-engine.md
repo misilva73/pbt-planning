@@ -7,7 +7,7 @@
 | **Timeline** | 2027-01 → 2027-05 (5 months) |
 | **Migration phase** | Phase 3 — Migration Machinery |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | **In flight, ~5 months early** (as of 2026-09-02) — geth's migration follower replays BALs onto the shadow tree, backfills over `eth/71`, and drives the swap; single-client, exercised on empty state |
+| **Status** | **In flight, ~5 months early** (as of 2026-09-17) — geth's migration follower replays BALs onto the shadow tree, backfills over `eth/71`, and drives the swap. **Still the only BAL-replay implementation**: the three clients that joined the migration devnet in September migrate by other means (Erigon folds both commitment domains, Besu swaps the trie per header, Nethermind mirrors flat state), so the devnet going multi-client does *not* make this deliverable multi-client. Still exercised on trivial state. |
 
 ← [Back to roadmap](../README.md)
 

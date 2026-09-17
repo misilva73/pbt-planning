@@ -7,7 +7,7 @@
 | **Timeline** | 2026-09 → 2027-03 (7 months) |
 | **Migration phase** | Phase 1 — Prototypes & Evidence |
 | **Milestone alignment** | feeds H\* (2027-06) |
-| **Status** | Not started (as of 2026-09-02) — but now **blocked behind a moving format**, and one client has shipped ahead of the fixtures |
+| **Status** | Not started (as of 2026-09-17) — the preimage format has now been **stable for four weeks** (unchanged since 2026-08-20), so the "moving format" excuse has expired; meanwhile the one client that shipped ahead of the fixtures still emits the superseded layout, and the reference branch that would host these vectors has not moved since 2026-08-13 |
 
 ← [Back to roadmap](../README.md)
 

@@ -7,7 +7,7 @@
 | **Timeline** | 2027-01 → 2027-06 (5 months) |
 | **Migration phase** | Phase 2 — Devnets |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | **In flight, ~5 months early** (as of 2026-09-02) — a three-client PBT-genesis devnet with per-block root agreement and deliberate reorgs has been running since August 2026 |
+| **Status** | **In flight, ~5 months early** (as of 2026-09-17) — a **four-client** PBT-genesis devnet with per-block root agreement and deliberate reorgs has been running since August 2026; Nethermind joined 2026-09-14 |
 
 ← [Back to roadmap](../README.md)
 
@@ -19,10 +19,11 @@ byte-identical PBT roots. This is the first cross-client integration of the
 A-C1 implementations under live block production and the primary evidence that
 feeds the H\* milestone.
 
-> **Update (2026-09-02).** This deliverable's core scope already exists as
+> **Update (2026-09-17).** This deliverable's core scope already exists as
 > [CPerezz/pbt-devnet](https://github.com/CPerezz/pbt-devnet), five months ahead of its
-> 2027-01 start. What is running: **six nodes across three implementations** (two geth, two
-> Besu, two Erigon) plus a protected geth bootnode, on an **Amsterdam-at-genesis** chain
+> 2027-01 start. What is running (`make tree-at-genesis`): **seven nodes across four
+> implementations** — two geth, two Besu, two Erigon and **one Nethermind**, which joined on
+> 2026-09-14 — the first of them a protected bootnode, on an **Amsterdam-at-genesis** chain
 > driven by real Lighthouse consensus clients, with the tree switched on by `binaryTrieTime`
 > in the genesis and every execution client required to agree on every state root. It
 > composes `ethpandaops/ethereum-package` with **no patches** — the binary tree is reached
@@ -34,20 +35,26 @@ feeds the H\* milestone.
 > agree by construction and prove nothing: geth adds `--state.size-tracking` on one node and
 > archive/`--syncmode=full` on the other; Besu adds
 > `--bonsai-limit-trie-logs-enabled=false`; Erigon adds `--prune.include-commitment-history`.
+> Nethermind runs unpaired, built as `nethermind-pbt:local` from the `pbt-state` branch with
+> `--Pbt.Enabled=true` selecting the PBT backend and the chainspec deciding the mode (binary
+> tree from genesis here, flat-to-PBT migration when `binaryTrieTime` is after genesis).
 >
 > It also goes beyond this deliverable's original scope in one respect worth keeping:
 > **chaos is on by default.** `pbtchaos` forces a reorg every 15–30 blocks by cutting the
-> p2p of whichever node proposes next, rotating the victim so reorgs land on all three
+> p2p of whichever node proposes next, rotating the victim so reorgs land on all four
 > clients, and six scenarios strand specific state on a branch that is then abandoned —
 > `code-sole`, `code-shared` (the content-addressed-code pair from
 > [go-ethereum#30](https://github.com/CPerezz/go-ethereum/pull/30), lifted from unit test to
-> six live clients), `delegate` (EIP-7702), `account`, `storage-add` (slots either side of
+> seven live nodes), `delegate` (EIP-7702), `account`, `storage-add` (slots either side of
 > `HEADER_STORAGE_OFFSET`), `storage-del`.
 >
-> **What is still missing against the exit criteria below:** Nethermind and Reth (three
-> clients, not five), and a genesis generator that is a shared spec rather than
+> **What is still missing against the exit criteria below:** **Reth** (four clients, not
+> five — and Reth still has no PBT work of any kind), and a genesis generator that is a
+> shared spec rather than
 > [one fork's branch](https://github.com/CPerezz/ethereum-genesis-generator/tree/pbt).
-> Treat the devnet as the seed of this deliverable, not its completion.
+> Treat the devnet as the seed of this deliverable, not its completion. Note also that all
+> four implementations agree *using BLAKE3*, so this devnet's root agreement is evidence
+> about everything except the still-undecided `H`.
 
 ## Scope — what ships
 - A PBT-genesis specification and genesis-state generator producing an initial

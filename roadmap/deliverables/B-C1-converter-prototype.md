@@ -7,7 +7,7 @@
 | **Timeline** | 2026-10 → 2027-03 (6 months) |
 | **Migration phase** | Phase 1 — Prototypes & Evidence |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | **In flight, ~2 months early** (as of 2026-09-02) — geth's `bintrie convert` implements the full EIP-8347 pipeline; single-client, small-fixture, and its preimage writer lags the spec |
+| **Status** | **In flight, ~2 months early** (as of 2026-09-17) — geth's `bintrie convert` implements the full EIP-8347 pipeline; **still the only offline converter**, small-fixture, and its preimage writer **still** lags the spec (re-checked 2026-09-17, unfixed four weeks on). Erigon now lists mainnet PBT state conversion as in progress — watch it as a possible second producer. |
 
 ← [Back to roadmap](../README.md)
 

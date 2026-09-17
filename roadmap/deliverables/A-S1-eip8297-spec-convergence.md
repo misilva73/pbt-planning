@@ -7,7 +7,7 @@
 | **Timeline** | 2026-07 → 2026-09 (3 months) |
 | **Migration phase** | Phase 0 — Spec Convergence |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | **In flight** (as of 2026-09-02) — the EIP text has been stable since 2026-08-06 and three clients are implementing against it; the formal sign-off record is still missing |
+| **Status** | **In flight** (as of 2026-09-17) — the EIP text has now been stable for six weeks (unchanged since 2026-08-06) and **four** clients are implementing against it; the formal sign-off record is still missing |
 
 ← [Back to roadmap](../README.md)
 
@@ -44,7 +44,7 @@ Converge every client team and researcher on the current [EIP-8297](https://eips
 
 ## Risks & open questions
 - The third-party rendered spec site (cperezz.github.io/pbt-spec) may still describe the earlier draft (fixed 32-byte keys, 4-bit/3-bit zone prefixes, `StemNode`); reviewers may cite stale specifics. See [knowledge-base/05-design-evolution.md](../../knowledge-base/05-design-evolution.md).
-- The **hash function `H`** (== `key_hash`) is intentionally left open here and resolved by the [hash-function dependency](../README.md) (external, due end 2026); convergence must not accidentally pin BLAKE3 as final just because it is the reference-impl choice. **This risk is now live, not hypothetical:** all three devnet clients hardcode or default to BLAKE3 and the devnet's genesis pins roots computed with it, so BLAKE3 is accumulating de-facto status through shipped code and fixtures. See [open-questions.md](../../open-questions.md#hash-function-selection--the-dominant-open-parameter).
+- The **hash function `H`** (== `key_hash`) is intentionally left open here and resolved by the [hash-function dependency](../README.md) (external, due end 2026); convergence must not accidentally pin BLAKE3 as final just because it is the reference-impl choice. **This risk is now live, not hypothetical, and grew with the field:** all **four** devnet clients hardcode or default to BLAKE3 and the devnet's genesis pins roots computed with it, so BLAKE3 is accumulating de-facto status through shipped code and fixtures — each new implementation raises the cost of choosing anything else. See [open-questions.md](../../open-questions.md#hash-function-selection--the-dominant-open-parameter).
 - **Convergence is being tested by implementation rather than by sign-off, and it is finding real disagreement.** Erigon's [PR #22942](https://github.com/erigontech/erigon/pull/22942) passes 67 of 70 EIP-8297 fixtures and *deliberately* diverges on the rest: it keeps zero-valued leaves as distinct from absent keys (against the current text, which requires deletion), refuses account removal outright on the grounds that "EIP-8297 defines no removal", and retains code chunks above a shortened redeploy's length — making the tree a function of history rather than of current state. The reference itself is described as having two providers that disagree on removal. Whatever this deliverable's sign-off record ends up saying, **account deletion and zeroization semantics are where it has to be unambiguous**, and today they are not.
 - **Gas costs** are out of scope for the base design and are owned by the separate PBT gas repricing EIP ([A-S2](A-S2-gas-cost-recalibration.md)); the base EIP text should not pin state-access or code-chunk costs.
 - Reserved zones `0x02`–`0xFE` must be documented as requiring mutual prefix-freedom for any future category.

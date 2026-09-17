@@ -7,7 +7,7 @@
 | **Timeline** | 2027-03 → 2027-08 (6 months) |
 | **Migration phase** | Phase 3 — Migration Machinery |
 | **Milestone alignment** | feeds H\* (2027-06) → validates path to fork S = I\* (2028-06) |
-| **Status** | **Seeded** (as of 2026-09-02) — a migration devnet exists and passed an M1 gate, but on **empty state** and one client |
+| **Status** | **Seeded, and now multi-client** (as of 2026-09-17) — the migration devnet runs **four execution clients** through the swap, each by a different mechanism, but still on **trivial state**; M1 (empty state) remains the last accepted gate |
 
 ← [Back to roadmap](../README.md)
 
@@ -39,6 +39,30 @@ before rehearsals move to mainnet-scale state.
 > the reorg-across-activation case ([go-ethereum#33](https://github.com/CPerezz/go-ethereum/pull/33),
 > a 41-block rewind across the format swap on four nodes) are real evidence, but they are
 > evidence about the swap mechanism, not about migrating a populated state multi-client.
+>
+> **Update (2026-09-17): half that gap closed — the multi-client half.** Between 2026-09-11
+> and 2026-09-16 the migration profile grew from geth-only to **five participants across four
+> clients** (geth on 1 and 3, Erigon on 2, Besu on 4, Nethermind on 5), and — importantly for
+> this deliverable's evidentiary value — **each migrates by a different mechanism**: geth
+> replays **BALs**, Erigon **folds both commitment domains** from `erigon init`, Besu **swaps
+> the trie per header**, Nethermind **mirrors its flat state** into the PBT backend. Four
+> independent routes to the same post-`I*` root is much stronger evidence than four instances
+> of one design. The lap now partitions **before, across and after** `I*` — including a
+> straddle phase that islands every light from `I*`−120 s and forces each to rewind below
+> `I*` and re-cross on the anchor's block — and ends in a judge emitting `PASS`/`FAIL`/
+> `INCONCLUSIVE` per check (fork block per node, per-victim straddle rewind, heal deadlines,
+> orphaned fork blocks gone everywhere, **shadow-root agreement**, completion after the fork
+> block finalized, lap manifest).
+>
+> **What still separates this from the deliverable.** (1) **State is still trivial** — the
+> chain is generator-produced with spamoor traffic; Nethermind's PBT anchor is bootstrapped
+> from the *genesis allocation*, not an exported snapshot, and there is **no M2 report**, so
+> M1-on-empty-state is still the last accepted gate. (2) **convert → snapshot → distribute is
+> still untested here** — every client builds its own tree in place; nobody ingests another
+> producer's artifact, so the bit-identical-artifact question is untouched. (3) **Evidence is
+> uneven across the four**: `internal/migmon/registry.go` scopes each check to what a client
+> declares, and Besu exposes no `debug_migrationProgress` or shadow-root RPC at all, so its
+> participation is weaker than geth's or Nethermind's rather than equivalent to it.
 
 ## Scope — what ships
 - A multi-client devnet that runs the full cycle: converter output at an anchor block, byte-canonical chunked snapshot, distribution to fresh nodes, BAL-replay from anchor to tip, and activation at a simulated fork `S`.

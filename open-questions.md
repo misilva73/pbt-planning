@@ -17,7 +17,9 @@ given parameter are linked inline.
   items below are the "**§14 open parameters**" referenced throughout the roadmap
   deliverables.
 
-*Reviewed against the live EIPs and the client implementations on **2026-09-02**. Several
+*Reviewed against the live EIPs and the client implementations on **2026-09-17** (both EIPs
+unchanged since 2026-08-25, so no question below was opened or closed by spec movement; the
+client picture changed — a fourth implementation and a multi-client migration devnet). Several
 items below are no longer purely open questions — a working geth implementation now exists
 for the converter, dual-check, BAL-replay and swap, and it answers some of these in code
 without them being specified. Where that is the case it is flagged inline; a client's
@@ -48,10 +50,12 @@ The spec-freeze ([A-S3](roadmap/deliverables/A-S3-eip8297-spec-freeze.md)) and a
 root-bearing test vectors consume the decided `H`; fixtures stay hash-parameterized until
 it resolves.
 
-**Watch for de-facto pinning.** All three devnet clients now hardcode or default to BLAKE3
+**Watch for de-facto pinning.** All **four** devnet clients now hardcode or default to BLAKE3
 (geth-pbt hardcodes it for key derivation *and* node hashing; `besu-stateless` uses
 `Blake3Digest(256)`; Erigon takes `COMMITMENT_BIN_HASH=blake3` as an env var against a
-keccak default), and the devnet's genesis pins roots computed with it. Cross-client root
+keccak default; Nethermind's `pbt-state`, which joined the devnet on 2026-09-14, builds its
+node-grouping layout around a ~60 ns BLAKE3 at 64-byte granularity), and the devnet's genesis
+pins roots computed with it. Cross-client root
 agreement on that devnet is therefore **not** evidence about `H` — it is evidence about
 everything else, measured at one choice of `H`. The risk is that BLAKE3 becomes the answer
 by accumulation of pinned fixtures and shipped code rather than by the cryptography
