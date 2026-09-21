@@ -25,7 +25,7 @@ Consensus clients and validator assignments are expected to stay unchanged.
 | --- | --- |
 | **ethpandaops** | Run and size the network, deploy builds/configuration, take snapshots, distribute preimages, retain BALs, and collect metrics. |
 | **State team** | Provide the specs and tests, coordinate `N` and `S`, compare results, and decide whether each step passes. |
-| **client teams** | Implement migration, provide builds and commands and measure resource needs.. |
+| **client teams** | Implement migration, provide builds and commands and measure resource needs. |
 
 ## Planning assumptions
 
@@ -63,9 +63,9 @@ State team records the result of each step before ethpandaops proceeds.
 | --- | --- | --- |
 | **1. Prepare** | Client teams supply qualified builds. ethpandaops confirms storage and upgrades execution nodes after Glamsterdam testing. | The network finalizes normally after the upgrade. |
 | **2. Capture `N`** | State team coordinates the future cutoff. ethpandaops preserves each client's state at `N`, exports and distributes Erigon preimages, and retains BALs from `N + 1`. | `N` is finalized; its hash and MPT root are recorded; source databases and complete preimages are verified. |
-| **3. Convert** | ethpandaops runs local conversion alongside the live network using client-team commands and  validates snapshots and report timing and resource usage. | All clients produce the same PBT root. |
+| **3. Convert** | ethpandaops runs local conversion alongside the live network using client-team commands, validates snapshots, and reports timing and resource usage. | All clients produce the same PBT root. |
 | **4. BAL replay** | ethpandaops runs BAL replay and verifies both PBT and source MPT roots. | All clients reach the live head and agree on PBT roots at matching blocks. |
-| **5. Test both trees** | ethpandaops runs transaction load while nodes mantain both tries. | Nodes remain at head, and agree on roots within the agreed resource limits. |
+| **5. Test both trees** | ethpandaops runs transaction load while nodes maintain both tries. | Nodes remain at head, and agree on roots within the agreed resource limits. |
 | **6. Activate `S`** | State team coordinates a future `S`. ethpandaops applies the configuration. | The network finalizes after `S` with all clients agreeing on head and PBT root. |
 
 ## When to stop
@@ -76,6 +76,6 @@ ethpandaops pauses the next step, client teams investigate, and State team decid
 
 ## Confirm before the run
 
-- **ethpandaops:**  BAL retention, snapshot deployment, artifact/log locations, and deferral/recovery procedure.
+- **ethpandaops:** BAL retention, snapshot deployment, artifact/log locations, and deferral/recovery procedure.
 - **State team:** pinned specs and tests, network window, node sizing, and consensus-layer compatibility.
 - **client teams:** final builds, operating commands, configuration behavior, and peak resource requirements.
