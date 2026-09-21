@@ -35,6 +35,8 @@
 > its migration evidence is the thinnest of the four. Re-enumerate the counts at the next
 > sync if `execution-specs` moves.
 
+> **Addendum — 2026-09-18: where the fixtures actually run. There is no Hive.** This file previously inventoried *which* tests exist without recording *where they execute*, and the answer is a gap of its own — verified live against `ethereum/hive@master` and `execution-specs@projects/binary-trie` on 2026-09-18. **No PBT surface in Hive:** `simulators/ethereum` holds `consensus`, `eels`, `engine`, `graphql`, `rpc-compat` and `sync` — no binary-trie/EIP-8297 simulator, and no PBT reference anywhere in that repo. The Hive machinery is nonetheless **sitting on the spec branch, inert**: `hive-consume.yaml` and `hive-execute.yaml` came down with the merges from `forks/amsterdam`, trigger on pushes to `forks/**` (so pushes to `projects/binary-trie` never fire them), target **Osaka**, run `ethereum/eels/consume-{engine,rlp,sync}`, and mention no `binary_tree`. Underneath sits the mechanical blocker: `release_fixtures.yaml` fills nightly at 02:00 UTC "all tests, all fixture formats, up to the latest mainnet fork — **no dev forks**", with no `binary_tree` feature among its targets, and Hive's consume simulators ingest *released* fixture tarballs. **PBT fixtures are never released, so there is nothing for Hive to consume** — wiring Hive up is a fixture-release problem first, not a simulator problem. Consequence for every pass/fail claim in section 2: fixture execution is **per-client and self-reported**, never shared. See [§2 · Where the fixtures actually execute](#implemented--where-the-fixtures-actually-execute) and [gap 5](#gap-register).
+
 ## The one-line summary
 
 The tree and the execution rules on top of it are covered deep — **224 tests** in
@@ -521,17 +523,37 @@ the wrong node: `TestFrozenClientIsDetectedAfterWedgeTicks`, `TestFrozenNeedsEno
 `make forks`, `make proposals`. Assertoor runs upstream's block-proposal, EOA-transaction and
 synchronized checks alongside.
 
+### Implemented — where the fixtures actually execute
+
+The 70 blockchain fixtures above are a shared *artifact*. They are **not** executed by a shared *harness*. Verified live 2026-09-18; see the 2026-09-18 addendum at the top of this file for the Hive findings in full.
+
+| Venue | What runs there | Whose CI |
+|---|---|---|
+| **`execution-specs@projects/binary-trie`**, `test.yaml` | The 224 test functions — 168 unit in `tests/binary_trie/` + the 56 fillers | EF spec branch. **Tip stalled since 2026-08-13** |
+| **`binary-trie-vectors.yaml`** | Regenerates `tests/binary_trie/vectors/binary_trie_vectors.json` and commits it back on change. The **only** PBT-specific workflow on the branch, and it publishes no artifact — so even the vector file is not distributed, only committed | EF spec branch |
+| **`hive-consume.yaml` / `hive-execute.yaml`** | **Nothing PBT.** Inherited from `forks/amsterdam`; fire on `forks/**` pushes only, target Osaka, run `ethereum/eels/consume-{engine,rlp,sync}` | EF spec branch, inert here |
+| **`release_fixtures.yaml`** | Nightly 02:00 UTC, "up to the latest mainnet fork — **no dev forks**". **No `binary_tree` feature**, so PBT fixtures are never released as a consumable tarball | EF spec branch |
+| **Per-client fixture consumption** | geth reports the suite **fully green** ([go-ethereum#13](https://github.com/CPerezz/go-ethereum/pull/13)); Erigon reports **67 of 70** behind `--experimental.bin-commitment` | **Each client's own CI, separately** |
+| **geth nightly** | `.github/workflows/pbt-nightly.yml` + the `PBT_FLAT_STATE_BASELINE.md` recorded baseline — the seed of the "minimum benchmarking loop" asked for on 2026-08-26 | `CPerezz/go-ethereum@pbt` |
+| **Client in-repo unit suites** | ~240 PBT tests in geth alone (60 trie, 57 EVM-rule, 34 converter, 74 BAL-replay, 8 catalyst lifecycle); Nethermind's published numbers are prototype measurements, not conformance | Client repos |
+| **Assertoor, inside pbt-devnet** | Upstream block-proposal, EOA-transaction and synchronized checks alongside `pbtmonitor` — **the nearest thing to Hive-style cross-client automation the programme has** | pbt-devnet |
+
+**Why this matters for the numbers in this section.** "geth green, Erigon 67/70" are two clients' **own** reports, produced by their own CI, on their own schedule, in formats that do not compare. Nobody runs the 70 fixtures against all four clients and emits one report — which is exactly what a Hive `consume-rlp`/`consume-engine` job over a released `tests-binary-tree@vX` feature would produce, and it is the missing half of [A-T3](../roadmap/deliverables/A-T3-pbt-genesis-conformance-sync-tests.md)'s cross-client conformance claim that the devnet does **not** cover: the devnet proves four clients agree with *each other* on live blocks, not that any of them agrees with the *spec fixtures*.
+
+**Sequencing caveat.** Promoting these fixtures to a shared cross-client oracle **before** separating spec from provider would bake `state_pbt.py`'s choices into conformance — three of the 70 pin provider behaviour rather than EIP text (the two zero-write cases and the `CREATE2`-after-EIP-161-clear case the reference itself calls an open consensus question). That is the same failure mode gap 1 names for the converter fixtures. Release the feature and wire Hive, but fix the three fixtures in the same motion.
+
 ### Where it stands
 
 - **Implemented.** 56 fillers (70 fixtures) + 72 provider unit tests; geth green, Erigon
-  67/70.
+  67/70 — both **self-reported in each client's own CI**, not measured by a shared harness.
 - **Watch.** Erigon's three failures are **not tree bugs** — two are zero-write fixtures
   pinning `state_pbt.py`'s deletion behaviour and one is a `CREATE2`-after-EIP-161-clear case
   the reference itself calls an open consensus question. **A suite that encodes provider
   behaviour cannot serve as the shared oracle A-T1 exists to provide**; separating the two is
   now part of that deliverable.
 - **Absent.** No PBT-native sync tests. No adversarial/structural-cost suite. No
-  hardware-matrix numbers.
+  hardware-matrix numbers. **No shared fixture-execution harness** — no released fixture
+  feature, no Hive simulator, no single cross-client report.
 
 ---
 
@@ -887,10 +909,11 @@ fix.
 | 2 | **Blocking** | **Nothing tests bit-identical artifacts across independent producers.** C8 compares digests across four nodes running *the same geth binary*. That is reproducibility, which is necessary and not the claim. A besu snapshot and a geth snapshot over the same mainnet anchor being byte-identical — hash-keyed clients on the preimage-driven path, raw-keyed on preimage extraction — has no evidence behind it, and it is the property that makes distribution verifiable rather than trust-based. | B-C4 (2027-07); gated on Besu/Erigon converter work |
 | 3 | **High** | **Dual-check verification is untested at any scale, and failure injection does not exist.** geth proves both checks work in miniature. Nobody has run Check 1 or Check 2 over ~100+ GB, done a fresh-node run from snapshot + preimages + header alone, or injected a corrupted chunk / wrong preimage / tampered root. Check 2 also depends on **preimage completeness** — the MPT is hash-keyed and cannot be walked back to raw keys, so a gap in extraction at `E` plus `(E, N]` BAL-completion surfaces here and nowhere earlier. | B-T3 (2027-10); needs B-C3 artifacts and mainnet-scale infrastructure |
 | 4 | **High** | **The reference suite has stopped moving, and part of it encodes provider behaviour.** Tip unchanged since 2026-08-13 apart from merges down from `forks/amsterdam`; PRs #3444 (reorg-branch provider state) and #3446 (genesis commitment) closed unmerged 2026-08-28 — precisely the areas the devnet is now exercising live. Erigon's three failures pin `state_pbt.py` rather than the EIP. | A-T1 / A-T2 — separating spec from provider is now part of the work |
-| 5 | **High** | **Every root-bearing artifact is provisional until `H` is chosen.** All four client trees use BLAKE3, the devnet genesis pins BLAKE3 roots, and `test_key_hash_is_blake3` asserts it as fact — while `H` is formally undecided. A-T2's structure-only / hash-parameterised split is the right hedge and is not yet how the existing vectors are organised. A-T4's benchmarks are also hash-sensitive. | External dependency, end-2026; consumed by [A-S3](../roadmap/deliverables/A-S3-eip8297-spec-freeze.md) and every root-bearing vector |
-| 6 | Medium | **Gas is a parameter everywhere, and there is no adversarial cost suite.** A-T1's gas fixtures treat costs as parameters pending A-S2 — correct sequencing, but no fixture currently fails when a cost is wrong. The KB's adversarial / structural-cost suites appear in no deliverable. The devnet already shows geth and besu 2.9% apart on the same deployment estimate. | Unowned; A-S2 (2028-01) consumes A-T4 (2027-07) |
-| 7 | Medium | **No PBT-native sync tests exist.** A-T3's "a joining client reconstructs state and converges to the serving client's root" has no implementation. geth has the negative half (the follower refuses tree work during snap-sync); nothing tests the positive path, and A-C4's serve/ingest/verify devnet exercise has not run. | [A-C2](../roadmap/deliverables/A-C2-pbt-native-state-sync.md) (2027-01) → A-T3; A-C4 exercise |
-| 8 | Medium | **Shadow-root telemetry is tested as an EL debug feed, not as the specified carrier.** geth has `TestShadowRootSidecar` and `debug_shadowRoots`, but that is an EL debug feed, not the CL-carried telemetry the design calls for; wire format, aggregation, timing and EL→CL plumbing are open §14 parameters. Nethermind's adversarial question — a meaningful share of validators publishing *wrong* roots, and where the 66%/75% circuit breaker sits — has no test and no owner. | [B-O3](../roadmap/deliverables/B-O3-shadow-root-ecosystem-readiness.md) / B-S2; telemetry spec unowned since 2026-08-12. See [11-attester-telemetry-transport.md](11-attester-telemetry-transport.md) |
+| 5 | **High** | **Fixture conformance is self-reported, because there is no shared execution harness.** The 70 blockchain fixtures are a shared artifact executed by no shared runner: geth's "fully green" and Erigon's "67 of 70" are each client's own CI, on its own schedule, in formats that do not compare, and neither result is reproducible by a third party. Hive cannot close this today — it has no binary-trie simulator, and the branch's inherited `hive-consume.yaml` fires only on `forks/**`, targets Osaka and runs `ethereum/eels/consume-*`. The binding constraint is upstream of Hive: `release_fixtures.yaml` publishes "no dev forks" and has no `binary_tree` feature, so **no consumable fixture tarball exists**. The devnet does not substitute — it proves four clients agree with *each other* on live blocks, never that any agrees with the *spec fixtures*. Verified 2026-09-18. | Add a `binary_tree` fixture feature to `release_fixtures.yaml` (a `tests-binary-tree@vX` release), **then** a Hive job consuming it — but fix the three provider-pinning fixtures in the same motion, or the shared oracle codifies `state_pbt.py`. Feeds [A-T1](../roadmap/deliverables/A-T1-eest-test-suite-port.md)'s "consumed in CI" exit criterion and [A-T3](../roadmap/deliverables/A-T3-pbt-genesis-conformance-sync-tests.md). |
+| 6 | **High** | **Every root-bearing artifact is provisional until `H` is chosen.** All four client trees use BLAKE3, the devnet genesis pins BLAKE3 roots, and `test_key_hash_is_blake3` asserts it as fact — while `H` is formally undecided. A-T2's structure-only / hash-parameterised split is the right hedge and is not yet how the existing vectors are organised. A-T4's benchmarks are also hash-sensitive. | External dependency, end-2026; consumed by [A-S3](../roadmap/deliverables/A-S3-eip8297-spec-freeze.md) and every root-bearing vector |
+| 7 | Medium | **Gas is a parameter everywhere, and there is no adversarial cost suite.** A-T1's gas fixtures treat costs as parameters pending A-S2 — correct sequencing, but no fixture currently fails when a cost is wrong. The KB's adversarial / structural-cost suites appear in no deliverable. The devnet already shows geth and besu 2.9% apart on the same deployment estimate. | Unowned; A-S2 (2028-01) consumes A-T4 (2027-07) |
+| 8 | Medium | **No PBT-native sync tests exist.** A-T3's "a joining client reconstructs state and converges to the serving client's root" has no implementation. geth has the negative half (the follower refuses tree work during snap-sync); nothing tests the positive path, and A-C4's serve/ingest/verify devnet exercise has not run. | [A-C2](../roadmap/deliverables/A-C2-pbt-native-state-sync.md) (2027-01) → A-T3; A-C4 exercise |
+| 9 | Medium | **Shadow-root telemetry is tested as an EL debug feed, not as the specified carrier.** geth has `TestShadowRootSidecar` and `debug_shadowRoots`, but that is an EL debug feed, not the CL-carried telemetry the design calls for; wire format, aggregation, timing and EL→CL plumbing are open §14 parameters. Nethermind's adversarial question — a meaningful share of validators publishing *wrong* roots, and where the 66%/75% circuit breaker sits — has no test and no owner. | [B-O3](../roadmap/deliverables/B-O3-shadow-root-ecosystem-readiness.md) / B-S2; telemetry spec unowned since 2026-08-12. See [11-attester-telemetry-transport.md](11-attester-telemetry-transport.md) |
 
 ---
 
@@ -917,7 +940,7 @@ Worth deciding, per row, whether it becomes roadmap scope or is consciously drop
 
 ---
 
-## Three things worth doing with this
+## Four things worth doing with this
 
 1. **Order B-S1's freeze before B-T1's fixtures.** The preimage format has already changed
    under one implementation. Publishing golden fixtures against an unfrozen §14 means
@@ -932,6 +955,7 @@ Worth deciding, per row, whether it becomes roadmap scope or is consciously drop
    tests its own checks. Neither `execution-specs` nor the client suites do this. A-T3's
    conformance harness and B-T3's verification harness should both ship with a self-test, or
    "all clients agree" will not be a falsifiable claim.
+4. **Release a `binary_tree` fixture feature, then wire Hive.** The cheapest unclaimed win in the programme: the fixtures exist, four clients already consume them, `release_fixtures.yaml` already knows how to cut a feature release, and Hive already runs `ethereum/eels/consume-*` for every other fork. What is missing is one fixture-release target and one simulator job — after which "geth green, Erigon 67/70" becomes one reproducible cross-client report instead of two self-reports. Do it together with separating the three provider-pinning fixtures from spec text, and it also unsticks A-T1's stalled half.
 
 ---
 
@@ -951,5 +975,12 @@ Worth deciding, per row, whether it becomes roadmap scope or is consciously drop
   Nethermind's `pbt-state` prototype is explicitly not for merge and Reth has no PBT work, so
   neither contributes tests.
 
-Last synced from sources: **2026-09-03**. The devnet and client repos move faster than this
-file; re-enumerate before quoting counts.
+- **Test-execution venues (2026-09-18):** `ethereum/hive@master` `simulators/ethereum/` (no
+  binary-trie simulator; `simulators/ethereum/eest` does not exist — the EEST consumers are
+  `eels/consume-*`) and `execution-specs@projects/binary-trie` `.github/workflows/`
+  (`hive-consume.yaml`, `hive-execute.yaml`, `release_fixtures.yaml`,
+  `binary-trie-vectors.yaml`, `test.yaml`). Read for triggers and targets, not re-run.
+
+Last synced from sources: **2026-09-03**, with test counts re-verified **2026-09-17** (no
+change) and **test-execution venues added 2026-09-18**. The devnet and client repos move
+faster than this file; re-enumerate before quoting counts.
