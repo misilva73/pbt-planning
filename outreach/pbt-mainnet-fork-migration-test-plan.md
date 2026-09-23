@@ -29,10 +29,12 @@ Consensus clients and validator assignments are expected to stay unchanged.
 
 ## Planning assumptions
 
-- **Storage:** about 300 GB for the snapshot plus an estimated 40–50 GB for preimages, or roughly 350 GB extra. Client teams must measure peak usage, including databases and temporary files, before ethpandaops sizes disks.
-- **Hardware:** aim for the discussed 8-core, 32 GB RAM baseline.
+- **Storage:** about 450 GB for the snapshot plus an estimated 40–50 GB for preimages, or roughly 500 GB extra. Client teams must measure peak usage, including databases and temporary files, before ethpandaops sizes disks.
+- **Hardware:** aim for two nodes types:
+  - 8-core, 16 GB RAM
+  - 8-core, 32 GB RAM
 - **BALs:** the normal 18-day retention should cover a run lasting a few days.
-- **Window:** still TBD, as we need to measure self-conversion time.
+- **Window:** We want at least 2 weeks of BAL replay. Conversion time is still TBD.
 - **Clients:** Geth, Nethermind, Besu, and Erigon.
 
 ## Implementation status
@@ -42,12 +44,12 @@ Every participant needs all four components.
 | Client | Converter | Snapshot consumer | BAL replay | Fork activation |
 | --- | --- | --- | --- | --- |
 | **Geth** | ✅ | ✅ | ✅ | ✅ |
-| **Nethermind** | ❌ | ❌ | ✅ | ✅ |
+| **Nethermind** | ⚠️ | ⚠️ | ✅ | ✅ |
 | **Besu** | ❌ | ❌ | ✅ | ✅ |
-| **Erigon** | ✅ | ✅ | ✅ | ✅ |
-| **Testing** | ❌ | ❌ | ⚠️ | ✅ |
+| **Erigon** | ❌ | ❌ | ✅ | ✅ |
+| **Testing** | ✅ | ✅ | ⚠️ | ✅ |
 
-The [pbt-devnet](https://github.com/CPerezz/pbt-devnet) already exercises BAL replay alongside activation, restart, and reorgs. Besu and Erigon can run the full suite. Replay coverage exists but needs strengthening. Add converter and import tests, and extend replay tests for corrupt inputs, missing preimages, and wrong anchors.
+The [pbt-devnet](https://github.com/CPerezz/pbt-devnet) already exercises BAL replay alongside activation, restart, and reorgs. Replay coverage exists but needs strengthening. Add converter and import tests, and extend replay tests for corrupt inputs, missing preimages, and wrong anchors.
 
 ### Remaining preparation
 
@@ -69,7 +71,7 @@ Throughout the run, ethpandaops collects Grafana/Prometheus data, client logs, `
 | **4. BAL replay** | ethpandaops runs BAL replay and verifies both PBT and source MPT roots. | All clients reach the live head and agree on PBT roots at matching blocks. |
 | **5. Test both trees** | ethpandaops runs transaction load while nodes maintain both tries. | Nodes remain at head, and agree on roots within the agreed resource limits. |
 | **6. Activate `S`** | State team coordinates a future `S`. ethpandaops applies the configuration. | The network finalizes after `S` with all clients agreeing on head and PBT root. |
-| **7. Sustained load** | ethpandaops leaves the devnet running for a few days with transaction spamming and continuous telemetry. | Clients remain at head, agree on roots, and finalize normally without sustained resource exhaustion. |
+| **7. Final PBT snapshot** | ethpandaops takes a final PBT snapshot for benchmarkoor testing, recording the client build, block hash, and state root. | The snapshot is validated and available with its metadata for benchmarkoor runs. |
 
 ## When to stop
 
