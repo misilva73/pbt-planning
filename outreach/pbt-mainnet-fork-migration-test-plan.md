@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Status** | Draft for coordination; devnet status checked 2026-09-18 |
+| **Status** | Draft for coordination; revised on 2026-09-23 |
 | **Network** | Retained ethpandaops Glamsterdam mainnet fork (exact network TBD) |
 | **Window** | After Glamsterdam testing and before the fork is decommissioned |
 | **Goal** | Prove an end-to-end, multi-client MPT → PBT migration on mainnet-scale state |
@@ -29,7 +29,7 @@ Consensus clients and validator assignments are expected to stay unchanged.
 
 ## Planning assumptions
 
-- **Storage:** about 300 GB for the snapshot plus 90 GB for preimages, or roughly 400 GB extra. Client teams must measure peak usage, including databases and temporary files, before ethpandaops sizes disks.
+- **Storage:** about 300 GB for the snapshot plus an estimated 40–50 GB for preimages, or roughly 350 GB extra. Client teams must measure peak usage, including databases and temporary files, before ethpandaops sizes disks.
 - **Hardware:** aim for the discussed 8-core, 32 GB RAM baseline.
 - **BALs:** the normal 18-day retention should cover a run lasting a few days.
 - **Window:** still TBD, as we need to measure self-conversion time.
@@ -37,21 +37,21 @@ Consensus clients and validator assignments are expected to stay unchanged.
 
 ## Implementation status
 
-Baseline from 18 September; every participant needs all four components.
+Every participant needs all four components.
 
 | Client | Converter | Snapshot consumer | BAL replay | Fork activation |
 | --- | --- | --- | --- | --- |
 | **Geth** | ✅ | ✅ | ✅ | ✅ |
-| **Nethermind** | ✅ | ✅ | ✅ | ✅ |
-| **Besu** | ❌ | ❌ | ❌ | ✅ |
-| **Erigon** | ❌ | ❌ | ❌ | ✅ |
-| **Testing** | ❌ | ❌ | ❌ | ✅ |
+| **Nethermind** | ❌ | ❌ | ✅ | ✅ |
+| **Besu** | ❌ | ❌ | ✅ | ✅ |
+| **Erigon** | ✅ | ✅ | ✅ | ✅ |
+| **Testing** | ❌ | ❌ | ⚠️ | ✅ |
 
-The [devnet](https://github.com/CPerezz/pbt-devnet) already covers activation, restart, and reorgs. Add converter, import, and common BAL-replay tests, including corrupt inputs, missing preimages, and wrong anchors.
+The [pbt-devnet](https://github.com/CPerezz/pbt-devnet) already exercises BAL replay alongside activation, restart, and reorgs. Besu and Erigon can run the full suite. Replay coverage exists but needs strengthening. Add converter and import tests, and extend replay tests for corrupt inputs, missing preimages, and wrong anchors.
 
 ### Remaining preparation
 
-- **client teams:** finish missing components and provide pinned builds, commands, configuration keys, and resource measurements.
+- **client teams:** confirm Nethermind's converter and consumer status, finish missing components, and provide pinned builds, commands, configuration keys, and resource measurements.
 - **State team:** share the snapshot format and pinned spec revisions. Run a populated-state devnet test with client teams covering conversion → cross-import → BAL replay → activation.
 - **ethpandaops:** confirm live Snapshotter deployment and preimage distribution. Use a merged version of [Snapshotter PR #41](https://github.com/ethpandaops/snapshotter/pull/41) or pin its branch/image.
 
@@ -59,14 +59,17 @@ The [devnet](https://github.com/CPerezz/pbt-devnet) already covers activation, r
 
 State team records the result of each step before ethpandaops proceeds.
 
+Throughout the run, ethpandaops collects Grafana/Prometheus data, client logs, `/proc` metrics, and other available host/hardware telemetry. Track CPU load, memory pressure, disk space and I/O, and network usage to assess machine stress.
+
 | Step | Actions | Ready to continue when |
 | --- | --- | --- |
 | **1. Prepare** | Client teams supply qualified builds. ethpandaops confirms storage and upgrades execution nodes after Glamsterdam testing. | The network finalizes normally after the upgrade. |
 | **2. Capture `N`** | State team coordinates the future cutoff. ethpandaops preserves each client's state at `N`, exports and distributes Erigon preimages, and retains BALs from `N + 1`. | `N` is finalized; its hash and MPT root are recorded; source databases and complete preimages are verified. |
-| **3. Convert** | ethpandaops runs local conversion alongside the live network using client-team commands, validates snapshots, and reports timing and resource usage. | All clients produce the same PBT root. |
+| **3. Convert** | ethpandaops runs local conversion, validates and retains PBT snapshots for benchmarks, and reports timing and resource usage. Record each snapshot's client build, anchor, and root. | All clients produce the same PBT root; snapshots and metadata are saved. |
 | **4. BAL replay** | ethpandaops runs BAL replay and verifies both PBT and source MPT roots. | All clients reach the live head and agree on PBT roots at matching blocks. |
 | **5. Test both trees** | ethpandaops runs transaction load while nodes maintain both tries. | Nodes remain at head, and agree on roots within the agreed resource limits. |
 | **6. Activate `S`** | State team coordinates a future `S`. ethpandaops applies the configuration. | The network finalizes after `S` with all clients agreeing on head and PBT root. |
+| **7. Sustained load** | ethpandaops leaves the devnet running for a few days with transaction spamming and continuous telemetry. | Clients remain at head, agree on roots, and finalize normally without sustained resource exhaustion. |
 
 ## When to stop
 
