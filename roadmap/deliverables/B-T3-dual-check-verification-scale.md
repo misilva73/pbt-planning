@@ -7,7 +7,7 @@
 | **Timeline** | 2027-10 → 2028-04 (7 months) |
 | **Migration phase** | Phase 4 — Rehearsals |
 | **Milestone alignment** | gates fork S = I\* (2028-06) |
-| **Status** | Not started (re-verified 2026-09-02) |
+| **Status** | **Scale work not started**; miniature failure-injection coverage now exists in draft [Hive PR #1614](https://github.com/ethereum/hive/pull/1614) (2026-09-23) |
 
 ← [Back to roadmap](../README.md)
 
@@ -17,6 +17,15 @@ node with no prior state** — can verify a downloaded snapshot without trusting
 source. The two checks are (1) **internal PBT consistency** and (2) **consensus anchoring**. This is
 the test that makes the ~100+ GB distributed artifact trustworthy, and it must hold at full mainnet
 state size.
+
+## Existing seed coverage — 2026-09-23
+
+[Hive PR #1614](https://github.com/ethereum/hive/pull/1614) supplies shared miniature artifact verification and failure injection,
+including wrong claimed roots, wrong-anchor snapshots, malformed encodings and
+missing/misbound preimages. Reuse these cases for scale work; see the [testing inventory](../../knowledge-base/12-testing-inventory.md#implemented--hive-artifact-conformance-draft-pr-1614).
+This 32-account / 363-leaf fixture does not establish full-size fresh-node verification,
+transport-chunk integrity, resource budgets or `(E, N]` preimage completeness. The PR
+remains draft and its client results are author-reported. No scale exit criterion is closed.
 
 ## Scope — what ships
 - **Check 1 — internal PBT consistency:** rebuild the PBT from snapshot leaves, derive keys, hash bottom-up, and verify the claimed PBT root — run over a full mainnet-scale snapshot.

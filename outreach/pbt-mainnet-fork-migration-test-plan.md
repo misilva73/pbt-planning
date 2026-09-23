@@ -49,7 +49,7 @@ Every participant needs all four components.
 | **Erigon** | ❌ | ❌ | ✅ | ✅ |
 | **Testing** | ✅ | ✅ | ⚠️ | ✅ |
 
-The [pbt-devnet](https://github.com/CPerezz/pbt-devnet) already exercises BAL replay alongside activation, restart, and reorgs. Replay coverage exists but needs strengthening. Add converter and import tests, and extend replay tests for corrupt inputs, missing preimages, and wrong anchors.
+The [pbt-devnet](https://github.com/CPerezz/pbt-devnet) already exercises BAL replay alongside activation, restart, and reorgs. Replay coverage exists but needs strengthening. We are adding the cnverter and snapshot consumer test in [hive](https://github.com/ethereum/hive/pull/1614).
 
 ### Remaining preparation
 

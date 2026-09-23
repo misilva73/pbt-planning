@@ -35,16 +35,23 @@
 > its migration evidence is the thinnest of the four. Re-enumerate the counts at the next
 > sync if `execution-specs` moves.
 
-> **Addendum — 2026-09-18: where the fixtures actually run. There is no Hive.** This file previously inventoried *which* tests exist without recording *where they execute*, and the answer is a gap of its own — verified live against `ethereum/hive@master` and `execution-specs@projects/binary-trie` on 2026-09-18. **No PBT surface in Hive:** `simulators/ethereum` holds `consensus`, `eels`, `engine`, `graphql`, `rpc-compat` and `sync` — no binary-trie/EIP-8297 simulator, and no PBT reference anywhere in that repo. The Hive machinery is nonetheless **sitting on the spec branch, inert**: `hive-consume.yaml` and `hive-execute.yaml` came down with the merges from `forks/amsterdam`, trigger on pushes to `forks/**` (so pushes to `projects/binary-trie` never fire them), target **Osaka**, run `ethereum/eels/consume-{engine,rlp,sync}`, and mention no `binary_tree`. Underneath sits the mechanical blocker: `release_fixtures.yaml` fills nightly at 02:00 UTC "all tests, all fixture formats, up to the latest mainnet fork — **no dev forks**", with no `binary_tree` feature among its targets, and Hive's consume simulators ingest *released* fixture tarballs. **PBT fixtures are never released, so there is nothing for Hive to consume** — wiring Hive up is a fixture-release problem first, not a simulator problem. Consequence for every pass/fail claim in section 2: fixture execution is **per-client and self-reported**, never shared. See [§2 · Where the fixtures actually execute](#implemented--where-the-fixtures-actually-execute) and [gap 5](#gap-register).
+> **Update — 2026-09-23: Hive artifact conformance now exists in an open draft.**
+> [Hive PR #1614](https://github.com/ethereum/hive/pull/1614), reviewed at `b8703d2`, adds `ethereum/pbt-artifacts` for
+> EIP-8347 converter outputs and snapshot/preimage consumers. This supersedes the
+> September 18 blanket “no Hive” finding and the September 17 artifact single-source
+> claim. It does **not** execute the 70 EIP-8297 blockchain fixtures or test BAL replay.
+> The earlier EEST fixture-release/workflow gap remains a separate work item.
+> Existing client/reference test-function counts below were not re-enumerated in this
+> targeted update; the Hive manifest contains **58 mutation cases**, counted separately.
 
 ## The one-line summary
 
-The tree and the execution rules on top of it are covered deep — **224 tests** in
-`execution-specs`, seven nodes across four implementations differentially tested on a live
-devnet. The converter and BAL replay have **zero tests in the reference implementation**
-and exactly one client implementation each, which is also the only oracle they are checked
-against — the migration devnet going four-client (2026-09) added independent *migration
-mechanisms*, not independent converters or replay engines.
+The tree and execution rules have **224 reference test functions** in the earlier
+inventory. Migration artifacts now have a **shared Hive conformance suite in draft**:
+58 mutation cases, valid-pair gates and producer-agreement checks. The PR reports two
+matching preimage producers and two consumers, but only one snapshot producer.
+BAL-replay conformance vectors, mainnet-scale verification and shared execution of
+the EIP-8297 blockchain fixtures remain open.
 
 ## Coverage matrix
 
@@ -52,7 +59,7 @@ mechanisms*, not independent converters or replay engines.
 |---|---|---|---|---|---|
 | **1 · The trie itself**<br>merkelization, key derivation, encoding, canonical form | [A-T2](../roadmap/deliverables/A-T2-tree-key-derivation-vectors.md), [A-T1](../roadmap/deliverables/A-T1-eest-test-suite-port.md) (A-T3, A-T4 downstream) | **96** + a JSON vector file | 2 pins (genesis root, root agreement) | 60 (incl. 4 fuzz targets) | **Strong** — roots stay provisional until `H` is pinned |
 | **2 · EVM rules around PBT**<br>state transition, code chunking, deletion, delegation, gas events | [A-T1](../roadmap/deliverables/A-T1-eest-test-suite-port.md), [A-T3](../roadmap/deliverables/A-T3-pbt-genesis-conformance-sync-tests.md), [A-C3](../roadmap/deliverables/A-C3-multiclient-pbt-genesis-devnets.md), A-T4 | **72** unit + **56** fillers (70 fixtures) | 6 scenarios · 11 workloads · 8 oracles | 57 | **Strong** — gas costs still parameters; 3 fixtures pin provider behaviour |
-| **3 · The converter**<br>scan → preimage check → key derivation → bottom-up root → artifacts | [B-T1](../roadmap/deliverables/B-T1-conversion-replay-vectors.md), [B-T3](../roadmap/deliverables/B-T3-dual-check-verification-scale.md), B-C1, B-C4, A-C4 | **0** | **0** — M1 ran on empty state | 34 (incl. 2 benchmarks) | **Single-source** — no vectors, no second implementation, format churn already bit once |
+| **3 · The converter**<br>scan → preimage check → key derivation → bottom-up root → artifacts | [B-T1](../roadmap/deliverables/B-T1-conversion-replay-vectors.md), [B-T3](../roadmap/deliverables/B-T3-dual-check-verification-scale.md), B-C1, B-C4, A-C4 | **0** | **0** — M1 ran on empty state | 34 (incl. 2 benchmarks) | **Shared artifact suite in draft** — Hive #1614 adds 58 mutations; two preimage producers, one snapshot producer (see below) |
 | **4 · BAL replay**<br>translation rules, follower, catch-up, cursor, reorg | [B-T1](../roadmap/deliverables/B-T1-conversion-replay-vectors.md), B-C2, [B-T2](../roadmap/deliverables/B-T2-full-cycle-devnet-swap.md) | **0** | C1–C8 + F1–F3 (+31 harness unit tests) | 74 | **Single-source** — well tested in one client, unspecified as conformance |
 | **5 · Swap & lifecycle**<br>`b*`, activation, both-trees window, finality close | [B-T2](../roadmap/deliverables/B-T2-full-cycle-devnet-swap.md), [B-S2](../roadmap/deliverables/B-S2-readiness-gate-activation-params.md), B-C5, B-C6, B-C7 | 0 | 7-stage ladder (S1 → R3, accepted 2026-08-27) | 8 (catalyst lifecycle) | **Seeded** — trivial state, **four ELs since 2026-09**, still no convert/distribute step |
 
@@ -525,7 +532,7 @@ synchronized checks alongside.
 
 ### Implemented — where the fixtures actually execute
 
-The 70 blockchain fixtures above are a shared *artifact*. They are **not** executed by a shared *harness*. Verified live 2026-09-18; see the 2026-09-18 addendum at the top of this file for the Hive findings in full.
+The 70 blockchain fixtures above are a shared *artifact*. They are **not** executed by a shared *harness*. Workflow findings verified 2026-09-18. Hive #1614 adds a shared artifact harness, described in section 3, but does not run these blockchain fixtures.
 
 | Venue | What runs there | Whose CI |
 |---|---|---|
@@ -535,8 +542,9 @@ The 70 blockchain fixtures above are a shared *artifact*. They are **not** execu
 | **`release_fixtures.yaml`** | Nightly 02:00 UTC, "up to the latest mainnet fork — **no dev forks**". **No `binary_tree` feature**, so PBT fixtures are never released as a consumable tarball | EF spec branch |
 | **Per-client fixture consumption** | geth reports the suite **fully green** ([go-ethereum#13](https://github.com/CPerezz/go-ethereum/pull/13)); Erigon reports **67 of 70** behind `--experimental.bin-commitment` | **Each client's own CI, separately** |
 | **geth nightly** | `.github/workflows/pbt-nightly.yml` + the `PBT_FLAT_STATE_BASELINE.md` recorded baseline — the seed of the "minimum benchmarking loop" asked for on 2026-08-26 | `CPerezz/go-ethereum@pbt` |
+| **Hive `ethereum/pbt-artifacts` (draft #1614)** | Shared EIP-8347 artifact consumer/producer checks; 58 mutations plus valid-pair and agreement checks. Does not execute the 70 blockchain fixtures | Hive PR branch; reviewed 2026-09-23 |
 | **Client in-repo unit suites** | ~240 PBT tests in geth alone (60 trie, 57 EVM-rule, 34 converter, 74 BAL-replay, 8 catalyst lifecycle); Nethermind's published numbers are prototype measurements, not conformance | Client repos |
-| **Assertoor, inside pbt-devnet** | Upstream block-proposal, EOA-transaction and synchronized checks alongside `pbtmonitor` — **the nearest thing to Hive-style cross-client automation the programme has** | pbt-devnet |
+| **Assertoor, inside pbt-devnet** | Upstream block-proposal, EOA-transaction and synchronized checks alongside `pbtmonitor` — cross-client live-chain automation, complementary to the new Hive artifact suite | pbt-devnet |
 
 **Why this matters for the numbers in this section.** "geth green, Erigon 67/70" are two clients' **own** reports, produced by their own CI, on their own schedule, in formats that do not compare. Nobody runs the 70 fixtures against all four clients and emits one report — which is exactly what a Hive `consume-rlp`/`consume-engine` job over a released `tests-binary-tree@vX` feature would produce, and it is the missing half of [A-T3](../roadmap/deliverables/A-T3-pbt-genesis-conformance-sync-tests.md)'s cross-client conformance claim that the devnet does **not** cover: the devnet proves four clients agree with *each other* on live blocks, not that any of them agrees with the *spec fixtures*.
 
@@ -553,7 +561,8 @@ The 70 blockchain fixtures above are a shared *artifact*. They are **not** execu
   now part of that deliverable.
 - **Absent.** No PBT-native sync tests. No adversarial/structural-cost suite. No
   hardware-matrix numbers. **No shared fixture-execution harness** — no released fixture
-  feature, no Hive simulator, no single cross-client report.
+  feature or shared Hive report for these **EIP-8297 blockchain fixtures**. The new
+  artifact simulator below covers a different surface.
 
 ---
 
@@ -573,7 +582,7 @@ programme.**
 | [B-C4](../roadmap/deliverables/B-C4-production-rehearsals.md) | 2027-07 → 2027-12 | **Cross-client snapshot equality:** snapshots produced by different clients over the same mainnet anchor are bit-identical (chunk hashes + manifest match), inside 2× disk, across the EIP-7870 hardware matrix. Hash-keyed clients exercise the preimage-driven path; raw-keyed clients exercise preimage extraction; all must converge on the same snapshot. |
 | [A-C4](../roadmap/deliverables/A-C4-snapshot-serving-verification.md) | 2027-03 → 2027-07 · *in flight* | Chunked byte-canonical emission in PBT-key order, sequential bulk-load with resumability markers, one client serving while others ingest and independently verify to the same root. |
 
-### Implemented — `geth@pbt` only (34 tests)
+### Implemented — `geth@pbt` unit tests (34; September inventory)
 
 **Nothing in `execution-specs`.** There is no EIP-8347 code on `projects/binary-trie` at all,
 so there is no reference implementation to derive fixtures from. **The migration devnet does
@@ -644,18 +653,71 @@ Also present: `.github/workflows/pbt-nightly.yml` and `PBT_FLAT_STATE_BASELINE.m
 nightly CI job and a recorded performance baseline, the seed of the "minimum benchmarking
 loop" the 2026-08-26 sync asked the group to define.
 
+### Implemented — Hive artifact conformance (draft PR #1614)
+
+[Hive PR #1614](https://github.com/ethereum/hive/pull/1614) is **open and draft** as of 2026-09-23. Reviewed source:
+[`pbt-artifacts` at `b8703d2`](https://github.com/ethereum/hive/blob/b8703d2c782fdd18948f1ce771f447b8c027b852/simulators/ethereum/pbt-artifacts/README.md), including the
+[manifest](https://github.com/ethereum/hive/blob/b8703d2c782fdd18948f1ce771f447b8c027b852/simulators/ethereum/pbt-artifacts/fixtures/manifest.json), simulator, generator and client shims.
+This is executable shared coverage, not evidence of an upstream merge or an established CI gate.
+
+**Count and scope.** The manifest has **58 mutations: 14 preimage rejections, 43 snapshot
+rejections and one unscored `snapshot/empty` case**. These exclude the genesis-root gate,
+valid-pair tests, conversion/output comparisons and per-artifact producer-agreement tests.
+The fixture has **32 accounts and 363 PBT leaves**; it uses BLAKE3 and records EIP-8347
+at 2026-08-25 and EIP-8297 at 2026-09-21. These are not additions to the 224 Python
+reference test functions counted above.
+
+| Surface | Coverage |
+|---|---|
+| Preimage consumer | Truncation/trailing bytes, oversized slot count, hashed-key ordering, duplicate addresses/slots, missing or surplus accounts/slots, empty file and slots assigned to the wrong account |
+| Snapshot consumer | Root/count/version/framing and canonical encoding, key order/width/zones, zero or orphan leaves, missing storage/code, code hash/size/chunk/PUSHDATA checks, delegation rules and an artifact anchored to another state |
+| Converter output | Convert the sound genesis allocation and compare each supported output byte-for-byte with the canonical fixture; check agreement separately for preimages and snapshots |
+| Embedding edges | 31-byte code boundaries, PUSH straddles, zero chunks, two code groups, shared bytecode, delegation targets/designators, header/overflow storage, maximum nonce/balance |
+
+**Oracle and scoring.** Preimages are derived directly from the allocation. Snapshot bytes
+come from the reference converter, with the leaf set checked against an independent
+embedding derivation before writing; snapshot byte canonicality still needs another
+producer. Genesis-root agreement gates the run, and accepting the sound pair gates each
+consumer suite. Exit 0 means accept, 1 reject, 3 unsupported; other exits are crashes,
+which never count as conforming rejections. At the reviewed head, a rejection requires
+exit 1 and nonempty stderr; the PR description's older regexp-attribution claim is not
+implemented there. Mutation effects are recorded and duplicate effects rejected.
+
+**Reported results in the PR description, not re-run here:**
+
+| Client | Anchor root | Preimage rejection cases | Snapshot rejection cases | Produce preimages | Produce snapshot |
+|---|---|---|---|---|---|
+| geth | Matches | 14/14 | 43/43 | Canonical bytes | Canonical bytes |
+| Nethermind | Matches | 12/14 | 42/43 | Unsupported | Unsupported |
+| Erigon | Matches | Unsupported | Unsupported | Canonical bytes | Unsupported |
+| Besu | Matches | Unsupported | Unsupported | Unsupported | Unsupported |
+
+The reported Nethermind misses are crashes on truncated preimages, trailing preimage
+bytes and a truncated snapshot. Both consumers reportedly reject the empty snapshot,
+but the manifest leaves that case **unspecified**, so it is not a scored failure.
+Reth is absent from the shipped client set. The PR's reported matrix is not a fresh
+measurement of the reviewed head.
+
+[`clients.yaml`](https://github.com/ethereum/hive/blob/b8703d2c782fdd18948f1ce771f447b8c027b852/simulators/ethereum/pbt-artifacts/clients.yaml) selects geth `pbt-preimage-format`
+(dependent on [CPerezz/go-ethereum#41](https://github.com/CPerezz/go-ethereum/pull/41))
+and Nethermind `pbt-state`; Erigon and Besu use stock, unpinned configurations.
+This corrects the old format on the tested geth branch without establishing that the
+older `pbt` branch has caught up. To run from the PR checkout:
+
+```sh
+./hive --sim ethereum/pbt-artifacts --client-file simulators/ethereum/pbt-artifacts/clients.yaml
+go run ./simulators/ethereum/pbt-artifacts/tools/matrix workspace/logs > CAPABILITY.md
+```
+
 ### Where it stands
 
-- **Absent.** No reference-implementation tests, no cross-client vectors. M1 tested the
-  lifecycle machinery while testing **none** of the conversion, the artifacts, or the
-  dual-check.
-- **One implementation, and B-T1's risk has already fired.** The preimage record format
-  changed on **2026-08-20** ([EIPs #12215](https://github.com/ethereum/EIPs/pull/12215)) from
-  RLP/address-sorted to fixed-width/hashed-key-ordered, *after* geth implemented against the
-  earlier form — so the one existing converter now disagrees with the spec. Deriving fixtures
-  from it would quietly make them a conformance test for geth's choices.
-- **Ordering.** Erigon still needs its preimages ordered lexicographically by hash for the
-  fast path (2026-08-21) — fixed in the EIP repo, not yet in the implementation.
+- **In flight:** B-T1's artifact fixtures and A-C4's cross-client consumer checks now
+  have a shared harness. The PR reports byte-identical geth/Erigon **preimages**.
+- **Still open:** a second snapshot producer, all-case consumer conformance, upstream
+  integration/CI, full converter-pipeline vectors and BAL-replay vectors.
+- **Scale remains untested here:** these miniature artifacts do not demonstrate external
+  sort/spill behaviour, mainnet-scale dual-checks, distribution/resumption, `(E, N]`
+  preimage completion, or the live migration lifecycle. The old M1 run remains separate.
 
 ---
 
@@ -892,9 +954,11 @@ minus convert/snapshot/distribute.
 - **The gap is the deliverable.** M1 ran on **empty state**, on **one execution client**, and
   does not exercise convert → snapshot → distribute at all. Stated next gates:
   populated-state single-client, then a second client — in that order, since bit-identical
-  artifacts across producers is the claim with **no** evidence behind it.
-- **Blocked on others.** Only one EL can migrate today. Besu started migration code
-  2026-08-31; Erigon lists mainnet conversion as in progress.
+  snapshots across producers still lack evidence; Hive now reports preimage agreement
+  on its separate miniature fixture.
+- **Remaining integration gap.** The September 17 update records four ELs exercising
+  migration, but no full convert/distribute cycle. The Hive artifact suite is separate
+  from that lifecycle test.
 
 ---
 
@@ -905,11 +969,11 @@ fix.
 
 | # | Sev | Gap | Owner / next step |
 |---|---|---|---|
-| 1 | **Blocking** | **The converter and BAL replay have one implementation and no vectors.** B-T1's exit criterion is "at least two independent implementations pass every vector with identical output". Today there is one implementation, zero vectors, and the implementation predates the current preimage format. Deriving fixtures from geth converts them into a conformance test for geth's choices — the exact failure already visible in the EIP-8297 suite, where three fixtures pin provider behaviour rather than spec text. | Freeze the §14 preimage/chunk-encoding parameters in [B-S1](../roadmap/deliverables/B-S1-offline-migration-eip.md) **first**, then derive fixtures from EIP text, then run geth against them as a candidate oracle rather than as the source. |
-| 2 | **Blocking** | **Nothing tests bit-identical artifacts across independent producers.** C8 compares digests across four nodes running *the same geth binary*. That is reproducibility, which is necessary and not the claim. A besu snapshot and a geth snapshot over the same mainnet anchor being byte-identical — hash-keyed clients on the preimage-driven path, raw-keyed on preimage extraction — has no evidence behind it, and it is the property that makes distribution verifiable rather than trust-based. | B-C4 (2027-07); gated on Besu/Erigon converter work |
-| 3 | **High** | **Dual-check verification is untested at any scale, and failure injection does not exist.** geth proves both checks work in miniature. Nobody has run Check 1 or Check 2 over ~100+ GB, done a fresh-node run from snapshot + preimages + header alone, or injected a corrupted chunk / wrong preimage / tampered root. Check 2 also depends on **preimage completeness** — the MPT is hash-keyed and cannot be walked back to raw keys, so a gap in extraction at `E` plus `(E, N]` BAL-completion surfaces here and nowhere earlier. | B-T3 (2027-10); needs B-C3 artifacts and mainnet-scale infrastructure |
+| 1 | **Blocking** | **B-T1 is partial, not absent.** [Hive PR #1614](https://github.com/ethereum/hive/pull/1614) supplies artifact vectors and shared consumer checks, but full converter-pipeline and BAL-replay conformance vectors remain missing. Two clients passing every vector is not demonstrated. | Land the artifact suite and CI gate, fix consumer crashes, add remaining conversion/replay vectors; keep fixtures tied to explicit spec revisions. |
+| 2 | **Blocking** | **Snapshot byte agreement still has one producer.** Hive reports matching geth/Erigon preimages and explicitly marks snapshot agreement inconclusive with geth alone. This is miniature-state evidence, not mainnet snapshot equality. | Add a second snapshot producer; extend agreement runs to B-C4 mainnet anchors. |
+| 3 | **High** | **Dual-check verification remains unproven at mainnet scale.** Hive now injects malformed preimages, roots, encodings and wrong-anchor snapshots in miniature. Full-size fresh-node verification, transport-chunk failures and extraction/completion coverage remain open. | B-T3; reuse Hive mutations with B-C3/B-C4 artifacts and scale infrastructure. |
 | 4 | **High** | **The reference suite has stopped moving, and part of it encodes provider behaviour.** Tip unchanged since 2026-08-13 apart from merges down from `forks/amsterdam`; PRs #3444 (reorg-branch provider state) and #3446 (genesis commitment) closed unmerged 2026-08-28 — precisely the areas the devnet is now exercising live. Erigon's three failures pin `state_pbt.py` rather than the EIP. | A-T1 / A-T2 — separating spec from provider is now part of the work |
-| 5 | **High** | **Fixture conformance is self-reported, because there is no shared execution harness.** The 70 blockchain fixtures are a shared artifact executed by no shared runner: geth's "fully green" and Erigon's "67 of 70" are each client's own CI, on its own schedule, in formats that do not compare, and neither result is reproducible by a third party. Hive cannot close this today — it has no binary-trie simulator, and the branch's inherited `hive-consume.yaml` fires only on `forks/**`, targets Osaka and runs `ethereum/eels/consume-*`. The binding constraint is upstream of Hive: `release_fixtures.yaml` publishes "no dev forks" and has no `binary_tree` feature, so **no consumable fixture tarball exists**. The devnet does not substitute — it proves four clients agree with *each other* on live blocks, never that any agrees with the *spec fixtures*. Verified 2026-09-18. | Add a `binary_tree` fixture feature to `release_fixtures.yaml` (a `tests-binary-tree@vX` release), **then** a Hive job consuming it — but fix the three provider-pinning fixtures in the same motion, or the shared oracle codifies `state_pbt.py`. Feeds [A-T1](../roadmap/deliverables/A-T1-eest-test-suite-port.md)'s "consumed in CI" exit criterion and [A-T3](../roadmap/deliverables/A-T3-pbt-genesis-conformance-sync-tests.md). |
+| 5 | **High** | **EIP-8297 blockchain-fixture conformance still lacks shared execution.** The 70 blockchain fixtures are a shared artifact executed by no shared runner: geth's "fully green" and Erigon's "67 of 70" are each client's own CI, on its own schedule, in formats that do not compare, and neither result is reproducible by a third party. Hive #1614 covers EIP-8347 artifacts, not these blockchain fixtures; the branch's inherited `hive-consume.yaml` fires only on `forks/**`, targets Osaka and runs `ethereum/eels/consume-*`. The binding constraint is upstream of Hive: `release_fixtures.yaml` publishes "no dev forks" and has no `binary_tree` feature, so **no consumable fixture tarball exists**. The devnet does not substitute — it proves four clients agree with *each other* on live blocks, never that any agrees with the *spec fixtures*. Workflow findings verified 2026-09-18; scope distinguished from #1614 on 2026-09-23. | Add a `binary_tree` fixture feature to `release_fixtures.yaml` (a `tests-binary-tree@vX` release), **then** a Hive job consuming it — but fix the three provider-pinning fixtures in the same motion, or the shared oracle codifies `state_pbt.py`. Feeds [A-T1](../roadmap/deliverables/A-T1-eest-test-suite-port.md)'s "consumed in CI" exit criterion and [A-T3](../roadmap/deliverables/A-T3-pbt-genesis-conformance-sync-tests.md). |
 | 6 | **High** | **Every root-bearing artifact is provisional until `H` is chosen.** All four client trees use BLAKE3, the devnet genesis pins BLAKE3 roots, and `test_key_hash_is_blake3` asserts it as fact — while `H` is formally undecided. A-T2's structure-only / hash-parameterised split is the right hedge and is not yet how the existing vectors are organised. A-T4's benchmarks are also hash-sensitive. | External dependency, end-2026; consumed by [A-S3](../roadmap/deliverables/A-S3-eip8297-spec-freeze.md) and every root-bearing vector |
 | 7 | Medium | **Gas is a parameter everywhere, and there is no adversarial cost suite.** A-T1's gas fixtures treat costs as parameters pending A-S2 — correct sequencing, but no fixture currently fails when a cost is wrong. The KB's adversarial / structural-cost suites appear in no deliverable. The devnet already shows geth and besu 2.9% apart on the same deployment estimate. | Unowned; A-S2 (2028-01) consumes A-T4 (2027-07) |
 | 8 | Medium | **No PBT-native sync tests exist.** A-T3's "a joining client reconstructs state and converges to the serving client's root" has no implementation. geth has the negative half (the follower refuses tree work during snap-sync); nothing tests the positive path, and A-C4's serve/ingest/verify devnet exercise has not run. | [A-C2](../roadmap/deliverables/A-C2-pbt-native-state-sync.md) (2027-01) → A-T3; A-C4 exercise |
@@ -942,10 +1006,10 @@ Worth deciding, per row, whether it becomes roadmap scope or is consciously drop
 
 ## Four things worth doing with this
 
-1. **Order B-S1's freeze before B-T1's fixtures.** The preimage format has already changed
-   under one implementation. Publishing golden fixtures against an unfrozen §14 means
-   regenerating them; a freeze gate in B-S1 is the cheaper order, and it is the one thing that
-   unblocks the converter's whole test story.
+1. **Land and extend the Hive artifact suite.** Track its geth format dependency,
+   fix Nethermind's consumer crashes, add a second snapshot producer and make the suite
+   a CI gate. Keep its spec revision explicit; add the still-missing converter-pipeline
+   and BAL-replay vectors under B-T1.
 2. **Take the September mainnet fork.** A ~600 GB state on the Glamsterdam mainnet fork, kept
    alive an extra week, is the only near-term route to populated-state conversion numbers. It
    answers B-C4's sizing questions eighteen months before B-C4 opens, and turns the M1 ladder's
@@ -971,7 +1035,7 @@ Worth deciding, per row, whether it becomes roadmap scope or is consciously drop
   `migration-m1-tooling` (migration devnet, `M1-REPORT.md`).
 - **Client tests:** `CPerezz/go-ethereum@pbt`. geth's trie and EVM-rule tests are listed at
   file level because they corroborate the same surface the spec suite covers; its converter and
-  replay tests are listed in full because they are the only ones that exist.
+  replay tests retain their September enumeration; shared artifact coverage is added above.
   Nethermind's `pbt-state` prototype is explicitly not for merge and Reth has no PBT work, so
   neither contributes tests.
 
@@ -984,3 +1048,5 @@ Worth deciding, per row, whether it becomes roadmap scope or is consciously drop
 Last synced from sources: **2026-09-03**, with test counts re-verified **2026-09-17** (no
 change) and **test-execution venues added 2026-09-18**. The devnet and client repos move
 faster than this file; re-enumerate before quoting counts.
+
+**Targeted artifact update: 2026-09-23.** [Hive PR #1614](https://github.com/ethereum/hive/pull/1614) at `b8703d2c782fdd18948f1ce771f447b8c027b852`; manifest counts and source inspected, reported client results not re-run. Other source snapshots retain their dates.

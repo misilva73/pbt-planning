@@ -7,7 +7,7 @@
 | **Timeline** | 2027-03 → 2027-09 (6 months) |
 | **Migration phase** | Phase 2 — Devnets |
 | **Milestone alignment** | feeds H\* (2027-06) / fork S = I\* (2028-06) |
-| **Status** | **Partly in flight** (as of 2026-09-02) — geth implements artifact production and full dual-check ingestion; serving/chunked transport and multi-client verification not started |
+| **Status** | **Partly in flight** (2026-09-23) — [Hive PR #1614](https://github.com/ethereum/hive/pull/1614) adds shared geth/Nethermind consumer checks in draft; snapshot serving, resumable transport and a second snapshot producer remain open |
 
 ← [Back to roadmap](../README.md)
 
@@ -44,8 +44,19 @@ plumbing the migration snapshot pipeline depends on.
 >
 > **Still missing, and it is most of this deliverable:** serving (nothing emits chunks for
 > transport), resumable bulk-load markers, composition with [A-C2](A-C2-pbt-native-state-sync.md)
-> range sync, and any second implementation — so "a second independent producer reproduces it
+> range sync, and a second snapshot producer — so "a second independent producer reproduces it
 > bit-for-bit" remains untested.
+
+## Shared consumer evidence — 2026-09-23
+
+[Hive PR #1614](https://github.com/ethereum/hive/pull/1614) adds the `pbt-artifacts` simulator: valid-artifact gates, 14 malformed
+preimage cases, 43 malformed snapshot cases and an unscored empty snapshot. The PR reports
+geth passing all scored cases and Nethermind missing three through crashes. Both agree
+on the fixture's anchor root. This advances multi-client ingestion/verification testing;
+it does not demonstrate chunk serving, resumability or integration with range sync.
+Snapshot byte agreement remains inconclusive with geth as the sole producer; geth and
+Erigon agree on preimage bytes. See the [testing inventory](../../knowledge-base/12-testing-inventory.md#implemented--hive-artifact-conformance-draft-pr-1614) for source pins and reported results.
+The PR is draft and uses geth's corrected `pbt-preimage-format` branch.
 
 ## Scope — what ships
 - Snapshot **serving**: emit the ~100+ GB artifact as manifest-described chunks,
@@ -85,8 +96,8 @@ plumbing the migration snapshot pipeline depends on.
 ## Risks & open questions
 - Snapshot **transport chunking** remains an open §14 parameter and is left to the
   distribution layer by EIP-8347; the **preimage format** is specified but moved on
-  2026-08-20 to fixed-width, hashed-key-ordered records, and the one existing implementation
-  still writes the old layout. Serving/verification code must track that, not a manifest
+  2026-08-20 to fixed-width, hashed-key-ordered records, and the older geth branch lagged that format at the September check. Hive #1614
+  now selects the corrected `pbt-preimage-format` branch. Serving/verification code must track that, not a manifest
   spec. See [open-questions.md](../../open-questions.md).
 - Consensus-anchoring (rehash under MPT schema vs block `N` `stateRoot`) is a
   migration-context check owned by the B thread; A-C4 covers internal

@@ -35,7 +35,7 @@ devnet work is materially in flight while several deliverables below still read 
 | **Reference impl. / tests** | `execution-specs@projects/binary-trie` carries the EIP-8297 implementation and test suite, proposed upstream into `forks/amsterdam` (draft [PR #3207](https://github.com/ethereum/execution-specs/pull/3207)). **Tip unchanged since 2026-08-13 — now five weeks quiet**, and still **no EIP-8347 migration code on it.** This is now the slowest-moving link in the chain. |
 | **Clients** | **geth** (`CPerezz/go-ethereum@pbt`) — tree + the only complete migration, but quiet since 2026-09-07; **Erigon** (`erigontech/erigon@binary-trie`, upstream repo) — commitment engine, 67/70 EIP-8297 fixtures, active daily, **mainnet state conversion listed in progress**; **Nethermind** (`pbt-state`) — **joined the devnet 2026-09-14** and is now the most active branch in the field, though its PR still says prototype/not-for-merge; **Besu** (`matkt/besu@glamsterdam-devnet-8-pbt` + `besu-eth/besu-stateless`) — tree + migration, weakest introspection; **Reth** — still nothing. |
 | **Devnets** | Tree-at-genesis devnet now runs **seven nodes across four implementations** (was six across three), with deliberate reorgs and six state-stranding scenarios. The **migration devnet went multi-client**: five participants across the same four clients, each migrating by a *different* mechanism, with partitions before/across/after the fork block and a judge scoring straddle rewinds, heal deadlines, orphan cleanup and shadow-root agreement. |
-| **Not yet demonstrated** | Independent producers emitting **bit-identical** artifacts; conversion at **mainnet scale** (Erigon has it in progress); any migration run on **non-trivial state** — M1 (empty state, 2026-08-27) is still the last accepted gate; the shadow-root **CL carrier** (geth's `debug_shadowRoots` is an EL debug feed, not the telemetry spec). |
+| **Not yet demonstrated** | Independent producers emitting **bit-identical snapshots** (the September 23 update below records preimage agreement); conversion at **mainnet scale** (Erigon has it in progress); any migration run on **non-trivial state** — M1 (empty state, 2026-08-27) is still the last accepted gate; the shadow-root **CL carrier** (geth's `debug_shadowRoots` is an EL debug feed, not the telemetry spec). |
 
 **Four things to act on:**
 
@@ -47,13 +47,14 @@ devnet work is materially in flight while several deliverables below still read 
 2. **Implementations have started diverging from the spec, deliberately — and neither known
    drift was fixed this sync.** Erigon still keeps zero-valued leaves (against current
    EIP-8297), refuses account removal, and leaks code chunks above a shortened redeploy's
-   length; geth's preimage writer still emits the pre-2026-08-20 RLP address-sorted format,
-   four weeks on. Alongside those sit gas divergences — Erigon on the pre-revision EIP-8038
+   length; geth's `pbt` preimage writer still emitted the old format at that check;
+   the September 23 Hive update below tests a corrected branch. Alongside those sit gas divergences — Erigon on the pre-revision EIP-8038
    schedule, three different answers to the EIP-7610 `CREATE2` rule. A root-agreement
    readiness gate trips over these before it trips over tree bugs.
 3. **The reference suite is now the bottleneck, not the clients.** Four implementations are
    being differentially tested against a branch nobody has advanced since 2026-08-13, whose
-   upstreaming PR is equally stale, and which still contains no migration tests at all. The
+   upstreaming PR is equally stale, and which still contains no migration tests. Shared artifact tests now exist separately
+   in Hive draft #1614 (September 23 update below). The
    test deliverables ([A-T1](deliverables/A-T1-eest-test-suite-port.md),
    [B-T1](deliverables/B-T1-conversion-replay-vectors.md)) are where attention buys the most
    right now — client velocity is not the constraint.
@@ -63,6 +64,28 @@ devnet work is materially in flight while several deliverables below still read 
    bookkeeping side effect of this sync.
 
 ---
+
+## Artifact-conformance update — 2026-09-23
+
+[Hive PR #1614](https://github.com/ethereum/hive/pull/1614) is **open and draft**, reviewed at `b8703d2`. It adds
+`ethereum/pbt-artifacts`, a shared converter-output and snapshot/preimage-consumer
+suite with **58 mutations** (14 preimage rejects, 43 snapshot rejects, one unscored
+empty snapshot), plus valid-pair, anchor-root and producer-agreement checks.
+The PR reports geth passing all scored cases, Nethermind missing three through crashes,
+and geth/Erigon producing byte-identical preimages. Snapshot agreement remains
+inconclusive with geth as the only producer. Results were not re-run here; see the
+[testing inventory](../knowledge-base/12-testing-inventory.md#implemented--hive-artifact-conformance-draft-pr-1614).
+
+This moves [B-T1](deliverables/B-T1-conversion-replay-vectors.md) from “not started”
+to **in flight for artifact fixtures**, advances
+[A-C4](deliverables/A-C4-snapshot-serving-verification.md)'s shared consumer checks,
+and supplies miniature failure-injection cases for
+[B-T3](deliverables/B-T3-dual-check-verification-scale.md).
+[B-C1](deliverables/B-C1-converter-prototype.md) now has a shared output check on the
+corrected geth branch. Next steps are landing the PR and its geth dependency, fixing
+consumer crashes, adding a second snapshot producer and wiring CI. Full converter-pipeline
+and BAL-replay vectors, mainnet-scale verification and the separate EIP-8297 fixture-release/
+Hive execution work remain open. Delivery windows and full exit criteria are unchanged.
 
 ## The two forks (anchors)
 
@@ -159,7 +182,7 @@ and **◆ I\*** (fork S, the swap).
 > [`deliverables/`](deliverables/)). Regenerate the chart after editing the plan with
 > `python3.12 roadmap/scripts/gen_gantt.py`.
 
-**Rows already in flight as of 2026-09-17** (bars unchanged — see point 4 of the
+**Rows already in flight (2026-09-17 snapshot, artifact update 2026-09-23)** (bars unchanged — see point 4 of the
 [status snapshot](#implementation-status-snapshot)):
 [A-S1](deliverables/A-S1-eip8297-spec-convergence.md) ·
 [A-T1](deliverables/A-T1-eest-test-suite-port.md) *(stalled — reference branch untouched since 2026-08-13)* ·
@@ -168,6 +191,7 @@ and **◆ I\*** (fork S, the swap).
 [A-C3](deliverables/A-C3-multiclient-pbt-genesis-devnets.md) *(started ~5 months early; seven nodes / four clients)* ·
 [A-C4](deliverables/A-C4-snapshot-serving-verification.md) *(dual-check implemented)* ·
 [B-S1](deliverables/B-S1-offline-migration-eip.md) ·
+[B-T1](deliverables/B-T1-conversion-replay-vectors.md) *(added 2026-09-23: artifact fixtures in Hive draft #1614; replay vectors pending)* ·
 [B-C1](deliverables/B-C1-converter-prototype.md) *(started ~2 months early)* ·
 [B-C2](deliverables/B-C2-bal-replay-engine.md) *(started ~5 months early)* ·
 [B-T2](deliverables/B-T2-full-cycle-devnet-swap.md) *(swap now exercised by **four clients**, still on trivial state)*.
@@ -197,4 +221,4 @@ does not exist yet.
 *Assumptions: H\* summer 2027, I\* summer 2028, monthly granularity. Dates and parameters
 (`N`, `S`, readiness thresholds) are placeholders until fixed by the processes in the
 deliverables above. The hash function `H` is an external dependency due end of 2026 (see top).
-Last updated 2026-09-17 (implementation-status sync; deliverable windows unchanged).*
+Last updated 2026-09-23 (targeted Hive artifact-conformance update; broader status snapshot remains 2026-09-17; deliverable windows unchanged).*

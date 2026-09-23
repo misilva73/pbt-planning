@@ -7,7 +7,7 @@
 | **Timeline** | 2026-09 → 2027-03 (7 months) |
 | **Migration phase** | Phase 1 — Prototypes & Evidence |
 | **Milestone alignment** | feeds H\* (2027-06) |
-| **Status** | Not started (as of 2026-09-17) — the preimage format has now been **stable for four weeks** (unchanged since 2026-08-20), so the "moving format" excuse has expired; meanwhile the one client that shipped ahead of the fixtures still emits the superseded layout, and the reference branch that would host these vectors has not moved since 2026-08-13 |
+| **Status** | **In flight — artifact subset** (2026-09-23). [Hive PR #1614](https://github.com/ethereum/hive/pull/1614) adds shared converter-output and snapshot/preimage-consumer fixtures; open draft, not a completed CI gate. BAL-replay and full converter-pipeline vectors remain open |
 
 ← [Back to roadmap](../README.md)
 
@@ -16,6 +16,25 @@ Produce cross-client **golden fixtures** for the two deterministic engines at th
 migration: the **Converter** (MPT leaf → PBT key/value) and **BAL-replay** translation. These vectors
 pin down exact expected outputs so that independent client implementations converge bit-for-bit,
 turning the offline-migration EIP (B-S1) into executable conformance checks.
+
+## Evidence and remaining work — 2026-09-23
+
+[Hive PR #1614](https://github.com/ethereum/hive/pull/1614) (`b8703d2`) supplies **58 mutations**: 14 preimage rejection cases,
+43 snapshot rejection cases and one unscored empty-snapshot case, plus sound-pair,
+anchor-root and producer-agreement checks. The fixture is 32 accounts / 363 leaves.
+Preimages derive from the allocation; reference-converter snapshot bytes are checked
+against an independent embedding derivation. See the [testing inventory](../../knowledge-base/12-testing-inventory.md#implemented--hive-artifact-conformance-draft-pr-1614) for the exact scope.
+
+The PR reports geth passing 14/14 and 43/43, Nethermind 12/14 and 42/43 (three crashes),
+and geth/Erigon producing byte-identical preimages. Only geth produces a snapshot,
+so snapshot agreement is inconclusive. These are reported results, not a local rerun.
+The tested geth `pbt-preimage-format` branch includes the format correction and depends
+on [CPerezz/go-ethereum#41](https://github.com/CPerezz/go-ethereum/pull/41).
+
+Next: land the simulator and dependency, fix consumer crashes, add a second snapshot
+producer and wire CI. Extend beyond artifact checks to the full scan/preimage-validation/
+sort/build pipeline and BAL-replay translation, deletion and `(E, N]` completion vectors.
+The existing full-deliverable exit criteria remain open; dates are unchanged.
 
 ## Scope — what ships
 - **Converter vectors:** MPT leaf → PBT key/value fixtures exercising the full pipeline — scan source leaves, validate `keccak(preimage)` ↔ trie path, derive PBT keys, and (at least in miniature) the external merge-sort + bottom-up construction that yields the PBT root.
@@ -39,8 +58,8 @@ turning the offline-migration EIP (B-S1) into executable conformance checks.
 - [ ] Vectors wired into CI as a conformance gate for [B-C1](B-C1-converter-prototype.md).
 
 ## Risks & open questions
-- Fixture correctness depends on frozen-enough preimage and snapshot formats — blocked on [B-S1](B-S1-offline-migration-eip.md) closing the §14 preimage/chunk-encoding parameters ([04-migration.md §Parameters](../../knowledge-base/04-migration.md)). **This risk has already fired once.** The preimage record format changed on **2026-08-20** ([PR #12215](https://github.com/ethereum/EIPs/pull/12215)) from RLP/address-sorted to fixed-width/hashed-key-ordered, *after* geth had implemented against the earlier form — so the one existing converter now disagrees with the spec. Publishing golden fixtures before that format is explicitly frozen means regenerating them; a freeze gate in B-S1 is the cheaper order of operations.
-- **A converter and a BAL-replay engine now exist, ahead of the vectors meant to validate them** (geth [#14](https://github.com/CPerezz/go-ethereum/pull/14), [#31](https://github.com/CPerezz/go-ethereum/pull/31)). Useful as an oracle *candidate*, but the "at least two independent implementations agree" criterion below is what actually matters, and deriving the fixtures from the single existing implementation would quietly convert them into a conformance test for geth's choices. Derive them from EIP text — the same failure mode already visible in `execution-specs`' EIP-8297 suite, where three fixtures pin provider behaviour rather than the spec (see [A-T1](A-T1-eest-test-suite-port.md)).
+- Fixture correctness depends on frozen-enough preimage and snapshot formats — blocked on [B-S1](B-S1-offline-migration-eip.md) closing the §14 preimage/chunk-encoding parameters ([04-migration.md §Parameters](../../knowledge-base/04-migration.md)). **This risk has already fired once.** The preimage record format changed on **2026-08-20** ([PR #12215](https://github.com/ethereum/EIPs/pull/12215)) from RLP/address-sorted to fixed-width/hashed-key-ordered, *after* geth had implemented against the earlier form — the September 17 inventory still found the old layout. Hive now tests a corrected geth branch (see above). Publishing golden fixtures before that format is explicitly frozen means regenerating them; a freeze gate in B-S1 is the cheaper order of operations.
+- **A converter and a BAL-replay engine shipped ahead of their vectors** (geth [#14](https://github.com/CPerezz/go-ethereum/pull/14), [#31](https://github.com/CPerezz/go-ethereum/pull/31)). Useful as an oracle *candidate*, but the "at least two independent implementations agree" criterion below is what actually matters, and deriving the fixtures from the single existing implementation would quietly convert them into a conformance test for geth's choices. Derive them from EIP text — the same failure mode already visible in `execution-specs`' EIP-8297 suite, where three fixtures pin provider behaviour rather than the spec (see [A-T1](A-T1-eest-test-suite-port.md)).
 - BAL-replay vectors depend on the EIP-7928 BAL format (shipped in Glamsterdam ≈ 2026-09); any late churn there forces vector regeneration.
 - Miniature fixtures cannot exercise scale behaviour (external merge-sort, ~100+ GB) — that is deferred to [B-T2](B-T2-full-cycle-devnet-swap.md) and [B-T3](B-T3-dual-check-verification-scale.md).
 
