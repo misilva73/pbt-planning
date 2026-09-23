@@ -74,7 +74,7 @@ empty snapshot), plus valid-pair, anchor-root and producer-agreement checks.
 The PR reports geth passing all scored cases, Nethermind missing three through crashes,
 and geth/Erigon producing byte-identical preimages. Snapshot agreement remains
 inconclusive with geth as the only producer. Results were not re-run here; see the
-[testing inventory](../knowledge-base/12-testing-inventory.md#implemented--hive-artifact-conformance-draft-pr-1614).
+[testing inventory](../knowledge-base/12-testing-inventory.md#artifact-conformance).
 
 This moves [B-T1](deliverables/B-T1-conversion-replay-vectors.md) from “not started”
 to **in flight for artifact fixtures**, advances

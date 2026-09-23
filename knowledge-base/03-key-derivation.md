@@ -1,7 +1,8 @@
 # 03 — Key Derivation & Tree Embedding
 
 > Current design per [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297).
-> All hash outputs are unpinned (hash function not final; BLAKE3 in the reference impl).
+> The tree hash is not final; BLAKE3 is used in the reference implementation.
+> `code_hash` remains Keccak256 of bytecode.
 
 All Ethereum state is embedded into the single key/value space. Data accessed together
 is **co-located under one shared prefix (stem)** to minimize branch openings.
@@ -81,7 +82,7 @@ No code chunk lives in the header stem — all code is content-addressed in `COD
 (see [Code](#code)).
 
 Packing basic data into one leaf needs one branch opening instead of three or four,
-lowering gas and simplifying witness generation. Setting any header field also sets
+reducing proof work. Any gas change needs a separate pricing rule. Setting any header field also sets
 `version` to zero. `code_hash` and `code_size` are set on contract or EOA creation.
 
 ### BASIC_DATA layout
@@ -104,9 +105,9 @@ the Keccak hash of empty bytecode.
 **Every** code chunk, from chunk 0 onward, lives in `CODE_ZONE`, **content-addressed by
 `code_hash`** — no chunk lives in the header stem and no chunk is keyed by address.
 Contracts with identical bytecode always share the same leaves for the whole of their
-code, not just an "overflow" tail past some size threshold. Because sharing is now
-universal, deleting an account's code MUST first check whether any other live account
-shares the same `code_hash` before removing the leaves (see
+code, not just an "overflow" tail past some size threshold. On account deletion, code leaves remain if another resulting-state account uses the
+same `code_hash`. Under current lifecycle rules this can be decided from the
+transaction, without a global reference count (see
 [02-tree-structure.md § Zero values and deletion](02-tree-structure.md#zero-values-and-deletion)).
 This replaces an earlier design where chunks 0..127 (~4 KB) lived per-account in the
 header stem and only overflow chunks were content-addressed — see
@@ -190,22 +191,11 @@ def get_tree_key_for_storage_slot(address, storage_key):
 
 ## Access events (gas)
 
-PBT's gas repricing is a dedicated **benchmark-based EIP** built around the read/write
-performance of the tree — not a witness/statelessness schedule. It combines a repricing of
-state-access opcodes (in the spirit of EIP-8038) with chunk-based code access (EIP-2926).
-The full model is documented in
-[08-gas-and-access-events.md](08-gas-and-access-events.md) and fixed by
-[A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md). Two points bear directly on
-the key derivation above:
-
-1. **Content-addressed code accounting.** Every code chunk (not just an "overflow" tail)
-   is shared between contracts with identical bytecode, so access events MUST be keyed
-   by the `(zone, tree_position, sub-index)` tree-key, **not** by `(address, chunk)` — a
-   shared chunk is charged once per block regardless of which contract triggers it.
-   There are no per-account header chunks to treat differently.
-2. **Costs derived from PBT read/write benchmarks.** State-access and code-chunk costs are
-   recalibrated from measured PBT prototype performance. **The values are not yet fixed in
-   this draft.**
+The key layout identifies shared stems and code leaves, but does not set gas charges.
+A separate repricing proposal must define event identity, warm/cold scope, and costs
+from client benchmarks. In particular, a shared code key does not by itself specify
+whether or when a transaction is charged for accessing it. See
+[gas and access events](08-gas-and-access-events.md).
 
 ## Worked test vectors
 

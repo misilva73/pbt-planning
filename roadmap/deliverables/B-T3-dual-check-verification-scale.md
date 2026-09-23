@@ -22,7 +22,7 @@ state size.
 
 [Hive PR #1614](https://github.com/ethereum/hive/pull/1614) supplies shared miniature artifact verification and failure injection,
 including wrong claimed roots, wrong-anchor snapshots, malformed encodings and
-missing/misbound preimages. Reuse these cases for scale work; see the [testing inventory](../../knowledge-base/12-testing-inventory.md#implemented--hive-artifact-conformance-draft-pr-1614).
+missing/misbound preimages. Reuse these cases for scale work; see the [testing inventory](../../knowledge-base/12-testing-inventory.md#artifact-conformance).
 This 32-account / 363-leaf fixture does not establish full-size fresh-node verification,
 transport-chunk integrity, resource budgets or `(E, N]` preimage completeness. The PR
 remains draft and its client results are author-reported. No scale exit criterion is closed.

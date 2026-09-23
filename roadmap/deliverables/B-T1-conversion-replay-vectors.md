@@ -23,7 +23,7 @@ turning the offline-migration EIP (B-S1) into executable conformance checks.
 43 snapshot rejection cases and one unscored empty-snapshot case, plus sound-pair,
 anchor-root and producer-agreement checks. The fixture is 32 accounts / 363 leaves.
 Preimages derive from the allocation; reference-converter snapshot bytes are checked
-against an independent embedding derivation. See the [testing inventory](../../knowledge-base/12-testing-inventory.md#implemented--hive-artifact-conformance-draft-pr-1614) for the exact scope.
+against an independent embedding derivation. See the [testing inventory](../../knowledge-base/12-testing-inventory.md#artifact-conformance) for the exact scope.
 
 The PR reports geth passing 14/14 and 43/43, Nethermind 12/14 and 42/43 (three crashes),
 and geth/Erigon producing byte-identical preimages. Only geth produces a snapshot,

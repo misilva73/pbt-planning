@@ -79,8 +79,8 @@ class BranchNode:
   which is invalid. This forces every prefix to be exactly the shared run, so **each
   key/value set has exactly one valid tree** (canonical form).
 
-There is no `EmptyNode` type; an empty tree/child is represented by `None` and hashes
-to 32 zero bytes.
+There is no `EmptyNode` type. An empty tree has a root of 32 zero bytes. Canonical
+branches always have two children, so an empty child is not merkelized inside a branch.
 
 ## Insertion
 
@@ -147,16 +147,9 @@ def _insert(self, node, bits, key, value, depth):
 
 ## Zero values and deletion
 
-> **Resolved as of the current EIP-8297 text.** An earlier draft kept zero-valued
-> leaves present (distinct from absence), which directly contradicted EIP-8347's
-> BAL-replay rules (zero-writes *delete* leaves) and `ethereum.state_pbt`. EIP-8297 has
-> since been revised to require deletion, matching EIP-8347 and closing the
-> contradiction. History and the case for this outcome:
-> [10-zero-value-leaves-and-deletion.md](10-zero-value-leaves-and-deletion.md).
-
-Mapping zero to absence belongs to the **state transition function**, not the tree
-itself: it **MUST** resolve a write of 32 zero bytes to a deletion rather than an
-insertion.
+The **generic tree** may store any 32-byte value, including zero. The **Ethereum state
+transition** MUST delete a key when its new value is zero. The state tree therefore
+has no zero-valued leaves. See the [decision record](10-zero-value-leaves-and-deletion.md).
 
 ```python
 def state_write(entries: dict[bytes, bytes], key: bytes, value: bytes) -> None:
@@ -175,9 +168,9 @@ applies).
 
 Account deletion (EIP-161 state clearing, or EIP-6780 SELFDESTRUCT-in-creation-tx) MUST
 remove the header and storage leaves. Code leaves in `CODE_ZONE` MUST be removed **only
-if no resulting-state account shares the same `code_hash`**, and MUST persist otherwise
-— the same content-addressing rule that lets identical bytecode share leaves also
-requires reference-counting it on deletion. There is no `storage_root` leaf in this
+if no resulting-state account shares the same `code_hash`**, and MUST persist otherwise.
+Under current account-lifecycle rules this check is local to the transaction; it does
+not require a global reference count (see [EIP-8297 rationale](https://eips.ethereum.org/EIPS/eip-8297#content-addressed-code)). There is no `storage_root` leaf in this
 tree, so "does this address have non-empty storage" (EIP-7610) is answered by "does any
 leaf exist at a header storage sub-index or in the storage bucket" — i.e. representation
 as "any non-zero value", not by a stored flag.
@@ -189,7 +182,7 @@ Tags: `LEAF_TAG = 0x00`, `BRANCH_TAG = 0x01`. `H` is the tree's 32-byte hash fun
 
 - `leaf_hash   = H(LEAF_TAG || key || value)`
 - `branch_hash = H(BRANCH_TAG || encode_bit_prefix(prefix) || left_hash || right_hash)`
-- hash of an empty tree / `None` child = `[0x00] * 32`
+- root of an empty tree = `[0x00] * 32`
 
 `encode_bit_prefix` packs a bit string as a **2-byte big-endian bit count** followed by
 the bits (MSB first), zero-padded to a byte boundary:

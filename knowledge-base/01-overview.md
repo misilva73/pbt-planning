@@ -1,86 +1,28 @@
-# 01 — PBT Overview
+# PBT overview
 
-> PBT = **Partitioned Binary Tree**. The name has also appeared as "Partitioned
-> Binary Trie"; the current spec calls it a *tree*.
+**Partitioned Binary Tree (PBT)** is a proposed replacement for Ethereum's hexary Merkle Patricia Tries (MPT). [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) is a Draft; its hash function is not final. This page describes the proposal, not an activated mainnet change.
 
-## The problem PBT solves
+## Why change the state tree?
 
-Ethereum's state today lives in **hexary (arity-16) Merkle Patricia Tries (MPT)**.
-This design has several properties that hurt future scaling, especially
-**stateless clients and validity (SNARK) proofs**:
+The MPT uses RLP, Keccak, and separate account and storage tries. That makes state proofs large, code segments hard to prove, and root computation dependent on finishing a storage trie before its account leaf. EIP-8297 gives an illustrative account branch of about 5,760 bytes and a worst-case unchunked-code witness of about 1.8 GB.
 
-1. **Proofs are large.** MPT uses RLP encoding, Keccak hashing, and a
-   "tree-of-tries" structure. A single account branch is roughly
-   `15 * 32 * 12 = 5760` bytes (15 sibling hashes × 32 bytes × ~12 levels).
-   A worst-case block touching one byte of many distinct unchunked codes can need
-   `≈ 1.8 GB` of witness data.
-2. **Sequential root computation.** Each account leaf embeds a `storage_root` hash,
-   so a storage trie must be fully computed before the account trie can be updated.
-   Root recomputation is serialized rather than parallel.
-3. **Not proving-friendly.** Variable-arity branching, RLP, and Keccak are awkward
-   in circuits; code cannot be proven in segments (chunks).
-4. **Curve-based alternatives (Verkle) are not post-quantum.** Verkle relies on
-   elliptic-curve cryptography, which NIST guidance calls to retire by 2030.
+PBT puts account data, storage, and chunked code in one binary tree. A leaf contains a full key and a 32-byte value. Binary branching and path compression reduce proof overhead; independent leaves let implementations compute parts of the root in parallel. The tree uses a hash rather than curve-based commitments. The choice of hash remains open; the reference implementation uses BLAKE3.
 
-## What PBT does about it
+## How state is organized
 
-- **One unified binary tree.** Account trie + storage tries + code merged into a
-  single key/value tree. One abstraction for DB access, caching, sync, proofs.
-- **Arity 2.** Binary branching minimizes average proof branch length. For
-  `N = 2^24` elements a branch is ~768 bytes (arity 2) vs ~1152 (arity 4).
-- **No `storage_root` inside leaves.** An account's nonce and one of its storage
-  slots are *independent* writes. The root recomputes in a single bottom-up pass;
-  branches meet near the root — enabling parallelism across zones, accounts, and stems.
-- **Zone partitioning.** The first byte of every key labels a category (account
-  headers / code / storage). This gives **structural boundaries**: a known key-space
-  region is always one category, so a node can sync, prove, or expire one category
-  without touching the rest.
-- **Content-addressed code.** Code beyond the first chunks is keyed by `code_hash`,
-  so thousands of contracts cloned from the same factory bytecode **share** leaves
-  (deduplication) instead of each storing a copy.
-- **Hash-only ⇒ post-quantum.** The tree depends only on a hash function, not on
-  elliptic curves, so it stays secure against quantum adversaries.
+The first key byte defines a **zone**: `0x00` for account headers, `0x01` for shared, content-addressed code, and `0xFF` for storage. `0x02`–`0xFE` are reserved. Each account header groups basic data, its code hash *or* delegation indicator, and storage slots 0–63. Larger storage slots live in an account-specific storage bucket. Contracts with identical bytecode share code leaves.
 
-## Design goals (why the shape is what it is)
+The EVM still uses ordinary 256-bit storage slots. Key derivation happens inside the client. `EXTCODEHASH` still uses Keccak on bytecode, independent of the tree hash. A separate proposal, [EIP-8347](https://eips.ethereum.org/EIPS/eip-8347), describes conversion from the MPT and a later commitment swap.
 
-- **Small witnesses** — proof size scales with `siblings × log_arity(N)`, minimized at arity 2.
-- **SNARK friendliness** — no RLP, no variable-arity branching; the dominant cost is
-  the merkelization hash, chosen to be efficient in and out of circuit.
-- **Parallel root computation** — no cross-reference hashing inside leaf values.
-- **Structural boundaries** — zones enable state expiry and partial statelessness.
-- **EVM-invisibility** — contracts still address storage by 256-bit slot numbers via
-  `SLOAD`/`SSTORE`; key derivation runs *inside the client, below the EVM*. No
-  contract/Solidity/Yul changes. `EXTCODEHASH` is unchanged (`code_hash` is still
-  `keccak256(bytecode)`, independent of the tree's merkelization hash).
+## Terms
 
-## Glossary
+| Term | Meaning |
+|---|---|
+| **Stem** | Shared prefix of keys in one group: zone byte plus tree position. The last byte selects one of 256 sub-indices. |
+| **Leaf / branch** | A leaf commits a full key and value. A branch commits a shared bit prefix and two children. |
+| **`key_hash` / `H`** | The same proposed 32-byte hash is used for key placement and tree nodes; its selection is open. |
+| **BAL** | Block-Level Access List, used by EIP-8347 to replay writes after conversion. |
+| **Anchor / activation** | The finalized block whose MPT state is converted; the later fork that makes PBT canonical. Neither is scheduled by EIP-8347. |
+| **Shadow root** | A pre-swap PBT root reported by an attester for a block's post-state. Reports are out of consensus. |
 
-- **PBT** — Partitioned Binary Tree; the binary state tree defined by EIP-8297.
-- **MPT** — Merkle Patricia Trie; Ethereum's current hexary state structure.
-- **Zone** — a category of state identified by the **first byte** of a key
-  (`0x00` accounts, `0x01` code — content-addressed, all chunks — `0xFF` storage;
-  `0x02`–`0xFE` reserved).
-- **Stem** — the shared key prefix that groups leaves accessed together (a key's
-  zone byte + hash-derived tree position). Up to 256 leaves share a stem, indexed by
-  the final **sub-index** byte.
-- **Sub-index** — the last byte of a key (0–255); selects a leaf within a stem's group.
-- **Leaf node** — holds the complete key + a 32-byte value. Position-independent.
-- **Branch node** — an internal node with a compressed bit **prefix** and two children.
-- **Prefix-free keys** — no key may be a prefix of another key; enforced so each
-  key/value set has exactly one valid tree.
-- **`key_hash`** — the tree's hash applied to derive key positions (same hash as
-  merkelization `H`); BLAKE3 in the reference implementation.
-- **Tree index** — which 256-slot group a storage slot or code chunk falls into
-  (`slot // 256`).
-- **BASIC_DATA** — the packed header leaf holding version, nonce, balance, code_size.
-- **BAL** — Block-Level Access List (EIP-7928); a per-block list of state accesses/writes.
-- **Anchor block N / Fork S** — migration parameters: `N` is the block whose state is
-  converted; `PBT_ACTIVATION_FORK` is the hard fork at which PBT becomes canonical.
-- **Shadow root / shadow commitment** — a PBT root published per block *before* the
-  swap, while consensus still runs on the MPT, to make conversion correctness visible.
-  Computed by **attesters** over each block's post-state and published signed with their
-  validator key on an out-of-consensus telemetry sidecar — never a block-validity condition
-  (see [04-migration.md](04-migration.md#shadow-commitment--observability)).
-
-See [02-tree-structure.md](02-tree-structure.md) for the data structure and
-[03-key-derivation.md](03-key-derivation.md) for how keys are computed.
+Read [tree structure](02-tree-structure.md), [key derivation](03-key-derivation.md), or [migration](04-migration.md) for details.

@@ -1,150 +1,22 @@
-# 08 — Gas & State-Access Pricing
+# Gas and access events
 
-> **Status: to be fixed by benchmark.** PBT's gas repricing is a **dedicated,
-> benchmark-based EIP** (tracked by [A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md)).
-> PBT is **not** designed for statelessness, so its gas schedule is not built around the
-> cost of shipping a witness; it is built around the **measured read and write performance
-> of the PBT trie** on client prototypes. The costs below are described by role and marked
-> **pending** until the repricing EIP fixes them from
-> [A-T4](../roadmap/deliverables/A-T4-hardware-matrix-benchmarks.md) benchmark data. See
-> [03-key-derivation.md](03-key-derivation.md#L138) (§ Access events) and
-> [../open-questions.md](../open-questions.md).
+PBT changes the work needed to read and write state, but [EIP-8297](https://eips.ethereum.org/EIPS/eip-8297) does **not** set new gas prices. [EIP-8347](https://eips.ethereum.org/EIPS/eip-8347#backwards-compatibility) keeps gas and execution semantics unchanged at the commitment swap and calls for a separate, benchmark-based repricing EIP. No PBT-specific costs should be treated as final yet.
 
-## What PBT gas repricing does, in one paragraph
+## What changes in the data layout
 
-Moving state from the hexary MPT into the PBT changes the real cost of touching state:
-leaves accessed together are co-located under one stem, the `storage_root` no longer sits
-inside the account leaf, and contract code lives in the tree as chunks. Gas must reflect
-those new costs. PBT's repricing has **two components**: (1) a **benchmark-based repricing
-of state-access opcodes** — the cold/warm read and write costs for accounts and storage —
-in the spirit of [EIP-8038](https://eips.ethereum.org/EIPS/eip-8038), which realigns
-state-access gas from empirical measurement rather than first principles; and (2)
-**chunk-based code access pricing** from
-[EIP-2926](https://eips.ethereum.org/EIPS/eip-2926), which charges code by the chunks an
-execution actually touches instead of a flat per-byte cost. Both are grounded in measured
-PBT prototype performance, not estimates.
+Account fields and the first 64 storage slots share a header stem. Later storage slots share account-specific groups. All contract code is stored in `CODE_ZONE`, in 31-byte payloads plus a one-byte PUSHDATA count. Contracts with identical bytecode share leaves. These facts can change read latency and caching, but the gas effect needs measurement on client implementations and representative hardware.
 
-## 0 · The baseline PBT reprices *from* (EIP-8038 / EIP-8037)
+## Baseline and proposed pricing
 
-PBT's repricing is a **delta on the Amsterdam state-gas schedule**, so the baseline matters
-as much as the delta — and the baseline has moved. As of 2026-09-02
-[EIP-8038](https://eips.ethereum.org/EIPS/eip-8038) ("State-access gas cost update") is
-`Review`, with state *creation* split out into
-[EIP-8037](https://eips.ethereum.org/EIPS/eip-8037) ("State Creation Gas Cost Increase",
-also `Review`). EIP-8038 decomposes state-touching cost into three components — **access**,
-**write**, **state creation** — and renames the EIP-2929 parameters:
+[EIP-8038](https://eips.ethereum.org/EIPS/eip-8038) and [EIP-8037](https://eips.ethereum.org/EIPS/eip-8037) are related state-access and creation-gas proposals, not the PBT price schedule. Their status and constants may change. A PBT repricing should benchmark cold and warm account reads, storage reads and writes, code-metadata reads, and access-list behavior against the gas schedule actually active at the swap. [A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md) tracks this work; [A-T4](../roadmap/deliverables/A-T4-hardware-matrix-benchmarks.md) tracks measurements.
 
-| Parameter | Component | Current | EIP-8038 | Δ |
-|---|---|---|---|---|
-| `COLD_ACCOUNT_ACCESS` (was `COLD_ACCOUNT_ACCESS_COST`) | Access | 2,600 | **3,000** | +15% |
-| `COLD_STORAGE_ACCESS` (was `COLD_SLOAD_COST`) | Access | 2,100 | 2,100 | +0% |
-| `WARM_ACCESS` (was `WARM_STORAGE_READ_COST`) | Access | 100 | 100 | +0% |
-| `ACCOUNT_WRITE` *(new named parameter)* | Write | 6,700¹ | **9,000** | +34% |
-| `CREATE_ACCESS` = `ACCOUNT_WRITE` + `COLD_ACCOUNT_ACCESS` *(new)* | Access + write | 7,000¹ | **12,000** | +71% |
-| `STORAGE_CLEAR_REFUND` (was `SSTORE_CLEARS_SCHEDULE`) | Refund | 4,800 | **11,616** | +142% |
-| `ACCESS_LIST_ADDRESS_COST` | Access (prepaid) | 2,400 | **2,900** | +21% |
-| `ACCESS_LIST_STORAGE_KEY_COST` | Access (prepaid) | 1,900 | **2,000** | +5% |
+[EIP-2926](https://eips.ethereum.org/EIPS/eip-2926) studies chunk-granular code access. PBT fixes the **tree representation** at 31 code bytes per 32-byte leaf; it does not by itself define when execution charges a code-chunk access or how sharing affects gas. Any access-event identity, warm/cold scope, and charge must be specified in the separate pricing work. A Verkle-era [mainnet code-chunk study](https://hackmd.io/@jsign/verkle-code-mainnet-chunking-analysis) is useful evidence, but its estimates are not PBT gas constants.
 
-¹ `ACCOUNT_WRITE`, `STORAGE_WRITE` and `CREATE_ACCESS` have no pre-existing counterpart —
-the "current" column is the equivalent cost extracted from composites such as
-`GAS_STORAGE_UPDATE`, `CALL_VALUE` and `GAS_CREATE`, and the old schedule is not exactly
-separable into these components, so those figures are approximate. Note the two access-list
-constants are *derived*: `ACCESS_LIST_ADDRESS_COST = COLD_ACCOUNT_ACCESS − WARM_ACCESS` and
-`ACCESS_LIST_STORAGE_KEY_COST = COLD_STORAGE_ACCESS − WARM_ACCESS`.
+## Measurement checklist
 
-**Two consequences worth holding onto.** First, `A-S2`'s numbers cannot be expressed until
-this baseline is pinned — PBT's repricing is measured *relative* to it. Second, the clients
-are **already divergent on it**: geth-pbt matches the revised schedule while Erigon's
-default Amsterdam still ships the pre-revision one (8000 / 3000 / 11000 / 12480) and does
-not subtract `WARM_ACCESS` from the access-list constants (3000 and 2100), giving 100 gas of
-drift per access-list entry. That is a consensus divergence riding alongside PBT rather than
-a tree bug, but it is what a multi-client root-agreement gate meets first. See
-[07-sources.md](07-sources.md).
+- Read and write costs by client and hardware, including same-stem and different-stem access.
+- Code execution, `EXTCODECOPY`, creation, and shared-code workloads.
+- Worst-case slot and chunk patterns, cache pressure, and concurrent MPT/PBT operation during migration.
+- Consensus safety of any proposed decrease; if PBT access is more expensive, EIP-8347 says an increase must precede the commitment swap.
 
-## 1 · Benchmark-based state-access repricing (EIP-8038 lineage)
-
-PBT keeps the familiar **cold/warm access model** (a slot or account is charged a higher
-cost on first touch in a transaction, then a cheap warm cost on subsequent touches). What
-changes is the *numbers*: they are re-derived from how fast the PBT trie actually reads and
-writes on representative hardware — the same empirical approach EIP-8038 takes to realign
-state-access gas with today's grown state.
-
-Costs repriced from PBT read/write benchmarks, by role:
-
-- **Cold account access** — first-touch read of an account header (`BASIC_DATA`,
-  `CODE_HASH`), reached via `*CALL`, `BALANCE`, `EXTCODEHASH`, etc.
-- **Cold storage access** — first-touch `SLOAD` of a slot.
-- **Storage write** — `SSTORE`, including the one-time cost of filling a previously-empty
-  slot (a tree key goes `None → not-None` exactly once and never returns; see
-  [02-tree-structure.md](02-tree-structure.md#L148)).
-- **Code-metadata reads** — `EXTCODESIZE` / `EXTCODECOPY` need a header read *plus* a code
-  read, so they price above a plain account read (an explicit EIP-8038 refinement).
-
-Because state accessed together shares a stem, PBT makes **same-stem** follow-up accesses
-(adjacent storage slots, header fields) genuinely cheap to serve — the repricing is where
-that is turned into gas. The concrete values are **pending** the repricing EIP
-([A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md)) and must be conservative
-enough to stay safe while provisional.
-
-## 2 · Chunk-based code access (EIP-2926)
-
-Contract code is split into fixed-size chunks and committed in the tree. Chunk `i` stores a
-32-byte value: bytes 1..31 are the i'th 31-byte slice of code, and byte 0 marks how many
-leading bytes fall inside a PUSH data region (`chunkify_code`, per EIP-2926 — see
-[03-key-derivation.md](03-key-derivation.md#L84)). Code access is then charged **per chunk
-touched**, not by a flat per-byte code cost:
-
-- Executing at `PC` touches chunk `PC // CHUNK_SIZE`.
-- `PUSH{n}` touches every chunk its immediate data spans.
-- A non-empty `CODECOPY` / `EXTCODECOPY` touches the chunks overlapping the copied range.
-- Contract creation touches every chunk of the deployed code.
-
-Each chunk is charged once per transaction on first access, warm afterwards.
-
-### Content-addressed code accounting
-
-**Every** code chunk lives in `CODE_ZONE`, content-addressed by `code_hash`, so contracts
-with identical bytecode **share** the same leaves for the whole of their code — there is
-no per-account "header chunk" tier (see [03-key-derivation.md](03-key-derivation.md#code)
-and [05-design-evolution.md](05-design-evolution.md), which supersede an earlier design
-that kept the first 128 chunks per-account in the header). Access events MUST therefore
-be keyed by the `(zone, tree_position, sub-index)` **tree-key**, *not* by
-`(address, chunk)`: a shared chunk is charged **once per block** regardless of which
-contract triggers it, for every chunk. This accounting is spec'd alongside the repricing
-in [A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md).
-
-## Co-location is a read-performance property
-
-PBT co-locates a stem's 256 leaves so reading many leaves of one stem is a single seek, and
-keeps the commitment tree separate from the data store so no tree traversal is needed to
-find a state element. This is what makes same-stem accesses cheap to serve, and it is
-exactly what the benchmark-based repricing measures and turns into gas — a **performance**
-property of the PBT layout, not a witness-size concern.
-
-## Empirical evidence for the code-chunk cost
-
-> An analysis of ~1M mainnet txs (Jun 2024, via a Geth live-tracer over PC traces) measured
-> code-access gas overhead averaging **~32.6% of the current tx receipt gas** (95% of txs
-> under 800k gas) once code is charged per chunk, and found a **32-byte** code chunker used
-> ≈1.5% less total gas than a **31-byte** chunker while adding far less contract-size
-> overhead (+0.6% vs +3.7%). It suggests mitigations (lower per-chunk charge, a free-chunk
-> allowance, multi-dimensional gas). Design-agnostic evidence for PBT's code-chunk pricing
-> and the chunk-size trade-off — see [07-sources.md](07-sources.md) #8.
-
-## Status & pending constants
-
-- **State-access costs** (cold/warm account and storage access, storage write, code-metadata
-  reads) — **pending**, derived from PBT read/write benchmarks.
-- **Code-chunk access cost and chunk size** — **pending**; the 31- vs 32-byte chunker
-  trade-off (source #8) is an open input.
-- **Content-addressed shared-chunk accounting** — all code chunks keyed by tree-key and
-  charged once per block; spec'd by A-S2.
-
-All of the above are fixed by the benchmark-based gas repricing EIP
-([A-S2](../roadmap/deliverables/A-S2-gas-cost-recalibration.md)), which is deliberately
-**decoupled** from the spec freeze and the swap and previewed for a later gas-focused fork.
-The published EIP text (allowed host `eips.ethereum.org`) is authoritative for
-[EIP-2926](https://eips.ethereum.org/EIPS/eip-2926) and
-[EIP-8038](https://eips.ethereum.org/EIPS/eip-8038); PBT's tree-key embedding lives in
-EIP-8297. See [07-sources.md](07-sources.md) to re-fetch and
-[../open-questions.md](../open-questions.md) for what is still open.
+See [key derivation](03-key-derivation.md#access-events-gas), [open questions](../open-questions.md), and the [source index](07-sources.md).

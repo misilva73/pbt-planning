@@ -54,4 +54,4 @@ Development branches recorded in the **2026-09-17 source review**:
 These are reference links, not a reproducible build configuration. The Hive suite uses
 its own client selections, including a different geth branch. For upstream PRs, known
 limitations and instructions to verify status, see [Sources](knowledge-base/07-sources.md)
-and the [Hive inventory](knowledge-base/12-testing-inventory.md#implemented--hive-artifact-conformance-draft-pr-1614).
+and the [Hive inventory](knowledge-base/12-testing-inventory.md#artifact-conformance).

@@ -1,54 +1,18 @@
-# 06 — Security Considerations & Historical Notes
+# Security and historical notes
 
-> **Live open questions moved out.** The tracker of unresolved trie and migration design
-> questions now lives at [../open-questions.md](../open-questions.md) (outside the
-> knowledge base). This file keeps the **settled security analysis** and the older,
-> **superseded** questions for historical context.
+The live issue tracker is [open-questions.md](../open-questions.md). This page records security properties of the current [EIP-8297 draft](https://eips.ethereum.org/EIPS/eip-8297) and design questions that older drafts raised.
 
-## Security considerations (current EIP-8297)
+## Current security properties
 
-A **collision** = two distinct items deriving the same key. Keys contain three
-hash-derived components, each a **full 256-bit digest** (≈ `2^128` birthday work — far
-beyond reach):
+- **Key collisions:** Account, storage-bucket, storage-group, and code-group positions use full 256-bit digests. Different zones have different first bytes. Identical bytecode deliberately shares code leaves; this is deduplication, not a collision.
+- **Grinding:** An attacker can choose storage slots to search for long common prefixes. Path compression stores a common run in one branch prefix. The storage-group hash also includes the address, so a set chosen for one account does not transfer to another account's bucket.
+- **Unambiguous node hashes:** Leaf and branch preimages have different tags. Branch prefixes include their bit length, so different logical nodes have different preimages before hashing.
+- **Shared code deletion:** Under the current account-lifecycle rules, deciding whether a code leaf can be removed is local to the transaction. See [EIP-8297's content-addressed-code rationale](https://eips.ethereum.org/EIPS/eip-8297#content-addressed-code). A future rule allowing live contract-code replacement would need a new sharing rule.
 
-- `key_hash(address)` — the account stem **and** the storage bucket.
-- `key_hash(address || tree_index)` — the storage suffix (spreads groups).
-- `key_hash(code_hash || tree_index)` — the code stem.
+These properties rely on collision resistance of the selected tree hash. That hash is still open.
 
-Keys of different zones differ in their first byte and cannot collide at all.
+## Superseded questions
 
-- **Content-addressed code** — two contracts with identical bytecode sharing code-zone
-  leaves is *deduplication, not a collision*. Two distinct bytecodes colliding would
-  need a 256-bit collision on Keccak (`code_hash`) or on `key_hash(code_hash||tree_index)`.
-- **Sub-index** — a direct `% 256` mapping, not a hash. Two distinct keys share a
-  sub-index only if they share a stem, in which case they are the same item.
-- **Grinding** — an attacker picks slot numbers freely (own contract, or mapping keys
-  in any contract that hashes them into slots), so they can grind digests that share
-  `k` leading bits to deepen the tree. Without compression a `k`-node chain costs
-  ~`2^(k/2)` work. **Compression** folds the run into one `BranchNode` prefix (~`k/8`
-  bytes), and `d` *real* extra nodes cost ~`2^d` work. Binding the suffix to the
-  **address** stops cross-contract reuse: a slot set grinded for one contract is random
-  in every other.
-- **Preimage injectivity** — every node preimage starts with a one-byte tag; branch
-  prefixes carry an explicit bit count → the logical-node→preimage mapping is injective.
+Early drafts used truncated address prefixes and asked how to handle bucket collisions. The current draft uses full digests and byte-wide zones. Older descriptions of fixed-depth zone boundaries, four node types, or code chunks in account headers are also superseded. See [design evolution](05-design-evolution.md).
 
-## Superseded / historical open questions (early EIP-8297 draft)
-
-Several open questions from the rendered spec site are **superseded** by the current
-EIP-8297 full-digest keys — kept here for historical context:
-- Prefix length `P` (was 60 bits → ~43 colliding pairs @10¹⁰ accounts); full digest now.
-- Bucket-collision handling (joint vs independent expiry) — largely moot at full width.
-- Header stem constants (`0x40` storage onset, `0x80` code onset) — still
-  protocol-embedded; changing them requires migrating all header stems.
-
-The **live** trie and migration open questions (hash-function selection, state-access gas
-repricing, state expiry, readiness thresholds, artifact formats, the shadow-root companion
-specification, etc.) now live in [../open-questions.md](../open-questions.md).
-
-## Privacy note — "wormholes" (from the spec site)
-
-EIP-7503 (ZK wormholes) suffers from 160-bit Ethereum addresses giving only `2^80`
-birthday collisions. PBT's full-width account keys raise the birthday bound far beyond
-feasibility, providing the *structural precondition* for protocol-level burn addresses
-(e.g. a burn identity `H(H("worm" || secret))`). PBT does **not** implement wormholes;
-this is only noted as an enabling property.
+PBT's full-width account positions may help a separate privacy design such as [EIP-7503](https://eips.ethereum.org/EIPS/eip-7503); PBT itself does not implement it.

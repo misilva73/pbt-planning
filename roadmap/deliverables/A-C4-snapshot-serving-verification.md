@@ -55,7 +55,7 @@ geth passing all scored cases and Nethermind missing three through crashes. Both
 on the fixture's anchor root. This advances multi-client ingestion/verification testing;
 it does not demonstrate chunk serving, resumability or integration with range sync.
 Snapshot byte agreement remains inconclusive with geth as the sole producer; geth and
-Erigon agree on preimage bytes. See the [testing inventory](../../knowledge-base/12-testing-inventory.md#implemented--hive-artifact-conformance-draft-pr-1614) for source pins and reported results.
+Erigon agree on preimage bytes. See the [testing inventory](../../knowledge-base/12-testing-inventory.md#artifact-conformance) for source pins and reported results.
 The PR is draft and uses geth's corrected `pbt-preimage-format` branch.
 
 ## Scope — what ships
