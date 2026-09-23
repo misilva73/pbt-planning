@@ -35,6 +35,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -121,7 +122,9 @@ def _count_rows(
     ]
 
 
-def _event_locality_rows(clean: dict[str, pd.DataFrame], reads: pd.DataFrame, s_values: list[int]) -> list[dict]:
+def _event_locality_rows(
+    clean: dict[str, pd.DataFrame], reads: pd.DataFrame, reads_block: pd.DataFrame, s_values: list[int]
+) -> list[dict]:
     """Two cost-relevant series families, each an occurrence count (one row per distinct
     key touched, never weighted by how many times it was touched -- see classify.py and
     project-scope.md for why raw multiplicity doesn't map onto either cost).
@@ -153,7 +156,6 @@ def _event_locality_rows(clean: dict[str, pd.DataFrame], reads: pd.DataFrame, s_
     rows: list[dict] = []
     ones = lambda df: np.ones(len(df), dtype=np.float64)  # noqa: E731
 
-    reads_block = classify.classify_reads_block(reads, clean["storage_block_mutations"])
     read_proxy = basic_data.build_read_proxy(clean["balance_reads"], clean["nonce_reads"])
     read_proxy_block = read_proxy[["block_number", "address"]].drop_duplicates()
     mutation_proxy = basic_data.build_mutation_proxy(
@@ -260,16 +262,33 @@ def _mutation_kind_rows(clean: dict[str, pd.DataFrame]) -> list[dict]:
     return rows
 
 
-def build_results_table(data_dir: Path, s_values: Iterable[int] = range(254)) -> pd.DataFrame:
+class PreparedData(NamedTuple):
+    """Loaded, normalized, and read-classified tables shared by `build_results_table` and
+    `validation_summary` -- computed once via `load_and_classify` so callers that need both
+    (e.g. scripts/run_part1.py) don't pay for the parquet read, normalization, and
+    read-classification joins twice."""
+
+    clean: dict[str, pd.DataFrame]
+    rejects: dict[str, dict]
+    reads: pd.DataFrame
+    reads_block: pd.DataFrame
+
+
+def load_and_classify(data_dir: Path) -> PreparedData:
     data_dir = Path(data_dir)
+    raw = _load_raw(data_dir)
+    clean, rejects = _normalize_all(raw)
+    reads = classify.classify_reads(clean["storage_reads"], clean["storage_tx_mutations"])
+    reads_block = classify.classify_reads_block(reads, clean["storage_block_mutations"])
+    return PreparedData(clean, rejects, reads, reads_block)
+
+
+def build_results_table_from_prepared(prepared: PreparedData, s_values: Iterable[int] = range(254)) -> pd.DataFrame:
+    clean, reads, reads_block = prepared.clean, prepared.reads, prepared.reads_block
     s_values = list(s_values)
 
-    raw = _load_raw(data_dir)
-    clean, _rejects = _normalize_all(raw)
-    reads = classify.classify_reads(clean["storage_reads"], clean["storage_tx_mutations"])
-
     rows: list[dict] = []
-    rows += _event_locality_rows(clean, reads, s_values)
+    rows += _event_locality_rows(clean, reads, reads_block, s_values)
     rows += _distinct_leaf_rows(clean, reads, s_values)
     rows += _distinct_stem_rows(clean, reads, s_values)
     rows += _basic_data_rows(clean, reads, s_values)
@@ -280,6 +299,10 @@ def build_results_table(data_dir: Path, s_values: Iterable[int] = range(254)) ->
     df["value"] = df["value"].astype(float)
     df["denominator"] = df["denominator"].astype(float)
     return df
+
+
+def build_results_table(data_dir: Path, s_values: Iterable[int] = range(254)) -> pd.DataFrame:
+    return build_results_table_from_prepared(load_and_classify(data_dir), s_values)
 
 
 def _uncovered_key_count(mutations: pd.DataFrame, reads: pd.DataFrame, join_keys: list[str]) -> int:
@@ -305,11 +328,11 @@ def validation_summary(data_dir: Path) -> dict:
     that hook too -- but nothing in this pipeline's own code enforces it (a broken
     extraction could still violate it), so it is checked directly against the extracted
     keys rather than assumed."""
-    data_dir = Path(data_dir)
-    raw = _load_raw(data_dir)
-    clean, rejects = _normalize_all(raw)
-    reads = classify.classify_reads(clean["storage_reads"], clean["storage_tx_mutations"])
-    reads_block = classify.classify_reads_block(reads, clean["storage_block_mutations"])
+    return validation_summary_from_prepared(load_and_classify(data_dir))
+
+
+def validation_summary_from_prepared(prepared: PreparedData) -> dict:
+    clean, rejects, reads, reads_block = prepared.clean, prepared.rejects, prepared.reads, prepared.reads_block
 
     summary: dict = {"rejected_counts": rejects}
 

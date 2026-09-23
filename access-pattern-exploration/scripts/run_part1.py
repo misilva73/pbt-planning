@@ -12,7 +12,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from apx.pipeline import build_results_table, validation_summary
+from apx.pipeline import build_results_table_from_prepared, load_and_classify, validation_summary_from_prepared
 from apx.report import build_report
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -22,8 +22,9 @@ def main() -> None:
     data_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO_ROOT / "data" / "pilot_10k"
     out_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else REPO_ROOT / "reports" / "part1_pilot"
 
-    results = build_results_table(data_dir)
-    validation = validation_summary(data_dir)
+    prepared = load_and_classify(data_dir)
+    results = build_results_table_from_prepared(prepared)
+    validation = validation_summary_from_prepared(prepared)
 
     report_path = build_report(results, validation, out_dir)
     print(f"Report: {report_path}")

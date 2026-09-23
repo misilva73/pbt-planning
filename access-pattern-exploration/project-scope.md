@@ -14,7 +14,7 @@ suffixes are reserved encoding values. Storage slots 0..63 occupy sub-indices 64
 No code chunk lives in the header: all code
 chunks, including chunk 0, are content-addressed in `CODE_ZONE`. See
 [knowledge-base/03-key-derivation.md](../knowledge-base/03-key-derivation.md) and the
-[design-evolution note](../knowledge-base/05-design-evolution.md#further-rework-code-is-now-uniformly-content-addressed-post-july-2026).
+[design-evolution note](../knowledge-base/05-design-evolution.md#old-and-current-forms).
 The current header therefore assigns or reserves 67 sub-indices and leaves 189
 unassigned.
 
@@ -464,7 +464,7 @@ mainnet history.
 
 Note: the current EIP-8297 text has already removed the header code-chunk window this
 research question was originally sized against (see
-[knowledge-base/05-design-evolution.md](../knowledge-base/05-design-evolution.md#further-rework-code-is-now-uniformly-content-addressed-post-july-2026)) —
+[knowledge-base/05-design-evolution.md](../knowledge-base/05-design-evolution.md#old-and-current-forms)) —
 confirmed against the live spec text 2026-08-05. This data still has value independent of
 that because this project explicitly evaluates counterfactual code-only and mixed header
 layouts, including whether reinstating a header code window would improve read-proof
