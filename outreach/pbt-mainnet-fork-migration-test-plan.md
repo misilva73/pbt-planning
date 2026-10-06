@@ -31,10 +31,10 @@ Consensus clients and validator assignments are expected to stay unchanged.
 
 ## Planning assumptions
 
-- **Storage and transfer:** current estimate is about 450 GB for the snapshot plus 40–50 GB for preimages. We will re-measure for the agreed PBT snapshot format and compression. ethpandaops must size storage and artifact distribution using those measurements.
+- **Storage and transfer:** For the PBT artifacts, we estimate 94.2 GB for the PBT snapshot and 61.0 GB for the preimage file. In addition, after the import, nodes will need an additional 450 GB for the PBT trie data.
 - **Hardware:** aim for two node types:
-  - 8-core, 16 GB RAM
-  - 8-core, 32 GB RAM
+  - 8-core, 16 GB RAM, 2 TB disk
+  - 8-core, 32 GB RAM, 2 TB disk
 - **BALs:** confirm that the normal 18-day retention covers generation, distribution, verification/import, and catch-up from `N + 1`, with margin for retries. Extend retention or preserve BALs separately if measurements show it is insufficient.
 - **Window:** at least 2 weeks of BAL replay and maintaining both trees before activation. Generation, transfer, and import time are additional and still TBD.
 - **Clients:** Geth, Nethermind, Besu, and Erigon.
@@ -46,21 +46,107 @@ Every receiving client needs snapshot verification/import, BAL replay, and fork 
 | Client | Converter | Snapshot consumer | BAL replay | Fork activation |
 | --- | --- | --- | --- | --- |
 | **Geth** | ✅ | ✅ | ✅ | ✅ |
-| **Nethermind** | ⚠️ | ⚠️ | ✅ | ✅ |
-| **Besu** | ❌ | ❌ | ✅ | ✅ |
-| **Erigon** | ❌ | ❌ | ✅ | ✅ |
+| **Nethermind** | ✅ | ✅ | ✅ | ✅ |
+| **Besu** | ✅ | ✅ | ✅ | ✅ |
+| **Erigon** | ✅ | ✅ | ✅ | ✅ |
 | **Testing** | ✅ | ✅ | ⚠️ | ✅ |
 
-The [pbt-devnet](https://github.com/CPerezz/pbt-devnet) already exercises BAL replay alongside activation, restart, and reorgs. Replay coverage exists but needs strengthening. We are adding the converter and snapshot consumer tests in [Hive](https://github.com/ethereum/hive/pull/1614).
+The [pbt-devnet](https://github.com/CPerezz/pbt-devnet) already exercises BAL replay alongside activation, restart, and reorgs. Replay coverage exists but needs strengthening. Converter and snapshot consumer tests are implemented in [Hive](https://github.com/ethereum/hive/pull/1614).
+
+### Client branches
+
+Client branches used by [Hive](https://github.com/ethereum/hive/pull/1614):
+
+- **Geth:** [CPerezz/go-ethereum — pbt](https://github.com/CPerezz/go-ethereum/tree/pbt)
+- **Nethermind:** [NethermindEth/nethermind — pbt-state](https://github.com/NethermindEth/nethermind/tree/pbt-state)
+- **Besu:** [matkt/besu — glamsterdam-devnet-8-pbt](https://github.com/matkt/besu/tree/glamsterdam-devnet-8-pbt), with [besu-stateless — feat/partitioned-binary-trie](https://github.com/besu-eth/besu-stateless/tree/feat/partitioned-binary-trie)
+- **Erigon:** [erigontech/erigon — binary-trie](https://github.com/erigontech/erigon/tree/binary-trie)
+
+### Commands
+
+<details>
+<summary><strong>Run the Erigon converter</strong></summary>
+
+On the dedicated source datadir preserved at `N`, export both shared artifacts:
+
+```sh
+erigon snapshots export-pbt --datadir=<source-datadir> --chain=<chain> \
+  --out=<artifact-dir> --experimental.bin-commitment.hash=blake3
+```
+
+This writes `pbt-snapshot.bin`, `framed.bin` (preimages), and metadata. There is no block flag: pin the source at `N` before export and check the recorded block/hash. [More info on export requirements](https://github.com/erigontech/erigon/blob/7b675afb/docs/pbt-migration.md#export).
+
+</details>
+
+<details>
+<summary><strong>Run the snapshot consumer</strong></summary>
+
+**Geth:** stop the node, then verify and import into its datadir. Omit `--verify-only`, which checks the files without importing them. [Source](https://github.com/CPerezz/go-ethereum/blob/fbfd486b/cmd/geth/bintrie_import.go).
+
+```sh
+geth --datadir <datadir> bintrie import <snapshot> <preimages> <N>
+```
+
+**Nethermind:** restart with the artifact paths and anchor. Import runs in the background. [Configuration](https://github.com/NethermindEth/nethermind/blob/91ba4d29/src/Nethermind/Nethermind.State.Pbt/IPbtConfig.cs).
+
+```sh
+nethermind --config <node-config> \
+  --Pbt.Enabled=true --FlatDb.Enabled=true --FlatDb.Layout=Flat \
+  --Pbt.MigrationSnapshotPath=<snapshot> --Pbt.MigrationPreimagesPath=<preimages> \
+  --Pbt.MigrationAnchor=<N> --Sync.FastSync=false
+```
+
+**Besu:** restart with the artifact paths and the hash of `N`. The migrator verifies and loads the snapshot once the anchor is finalized. [Source](https://github.com/matkt/besu/blob/ba419e5/ethereum/core/src/main/java/org/hyperledger/besu/ethereum/trie/pathbased/bonsai/migration/eip8347/README.md#importing-a-snapshot-into-a-node).
+
+```sh
+besu --data-path=<datadir> --genesis-file=<genesis> \
+  --Xpbt-snapshot-file=<snapshot> --Xpbt-preimages-file=<preimages> \
+  --Xpbt-snapshot-anchor-block-hash=<hash-of-N>
+```
+
+**Erigon:** Hive exercises verification with:
+
+```sh
+erigon --datadir <datadir> snapshots verify-pbt \
+  --snapshot <snapshot> --preimages <preimages> --block <N> --tmpdir <workdir>
+```
+
+Import is documented as **test-only**, on a stopped v3 hex datadir at the matching block end, with matching snapshot metadata:
+
+```sh
+integration commitment import-pbt --datadir=<datadir> --chain=<chain> \
+  --snapshot=<snapshot> --experimental.bin-commitment.hash=blake3
+```
+
+The production consumer procedure is **TBD**; verification alone does not import the state. [Hive shim](https://github.com/CPerezz/hive/blob/1d1a94c0e4a98ea0871d305364b118f9349c376a/simulators/ethereum/pbt-artifacts/shims/erigon.sh), [import requirements](https://github.com/erigontech/erigon/blob/7b675afb/docs/pbt-migration.md#import-test-only).
+
+</details>
+
+<details>
+<summary><strong>Run BAL replay</strong></summary>
+
+- **Geth:** restart with `geth --datadir <datadir> --syncmode=full` plus the normal node options. The [migration follower](https://github.com/CPerezz/go-ethereum/blob/fbfd486b/core/bintrie_follower.go) catches up from the imported anchor using BALs.
+- **Nethermind:** keep the consumer command above running. The [BAL follower starts after import](https://github.com/NethermindEth/nethermind/blob/91ba4d29/src/Nethermind/Nethermind.State.Pbt/Steps/InitializePbtMigration.cs); no separate replay command.
+- **Besu:** keep the consumer command above running. The migrator catches up from the anchor using trie logs where available, otherwise BALs; no separate replay command.
+- **Erigon:** snapshot-to-BAL-replay command **TBD**. The [devnet](https://github.com/CPerezz/pbt-devnet/blob/main/args/migration.yaml) uses `COMMITMENT_HEX_BIN=true` from init to maintain both trees; this does not establish replay from an imported snapshot.
+
+</details>
+
+<br>
+
+The commands above use the source tested in the October 5 Hive run and the Hive shims. Notes:
+
+- Replace placeholders with the rehearsal paths and anchor, keeping the node's normal network, Engine API, and peer configuration.
+- Migration requires `binaryTrieTime` in the chain configuration, which sets the Unix timestamp for PBT activation (`S`). This should be set to 2 weeks after `N`.
 
 ### Remaining preparation
 
-- **client teams:** confirm component status and Glamsterdam compatibility, finish missing consumer/replay/activation work, and provide pinned builds, commands, configuration keys, restart requirements, and resource measurements.
-- **State team and client teams:** settle and pin the PBT snapshot format and compression.
-- **Carlos / State team:** update the PBT devnet Kurtosis package and Hive fixtures to consume generated preimages and PBT snapshots. Run a small populated-state migration covering representative accounts, storage, and delegations through verification/import → BAL replay → activation across clients.
-- **Artem / Erigon:** provide sample preimages and a PBT snapshot for cross-client import testing.
-- **Carlos and client teams:** benchmark conversion separately on mainnet-scale state and share timing/resource results with ethpandaops.
-- **Maria / ethpandaops:** align on `N`, the dedicated converter, artifact hosting and download procedures, and a coordinated consumer restart plan that preserves network finality. Confirm live Snapshotter deployment (use a merged version of [Snapshotter PR #41](https://github.com/ethpandaops/snapshotter/pull/41) or pin its branch/image).
+- [X] **client teams:** confirm component status and Glamsterdam compatibility, finish missing consumer/replay/activation work, and provide pinned builds, commands, configuration keys, restart requirements, and resource measurements.
+- [X] **State team and client teams:** settle and pin the PBT snapshot format and compression.
+- [X] **Carlos / State team:** update the PBT devnet Kurtosis package and Hive fixtures to consume generated preimages and PBT snapshots. Run a small populated-state migration covering representative accounts, storage, and delegations through verification/import → BAL replay → activation across clients.
+- [X] **Artem / Erigon:** provide sample preimages and a PBT snapshot for cross-client import testing.
+- [ ] **Carlos and client teams:** benchmark conversion separately on mainnet-scale state and share timing/resource results with ethpandaops.
+- [ ] **Maria / ethpandaops:** align on `N`, the dedicated converter, artifact hosting and download procedures, and a coordinated consumer restart plan that preserves network finality.
 
 ## Run process
 
